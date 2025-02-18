@@ -1,24 +1,10 @@
-import os
 import streamlit as st
 from openai import OpenAI
-
-def create_openai_client():
-    """Cria e retorna um cliente OpenAI configurado"""
-    try:
-        api_key = st.secrets["OPENAI_API_KEY"]
-        if not api_key:
-            raise ValueError("OpenAI API key não encontrada nas secrets")
-        return OpenAI(api_key=api_key)
-    except Exception as e:
-        st.error(f"Erro ao criar cliente OpenAI: {str(e)}")
-        return None
 
 def get_sport_recommendations(user_data):
     """Obtém recomendações de esportes baseadas nos dados do usuário"""
     try:
-        client = create_openai_client()
-        if not client:
-            return None
+        client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
             
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
