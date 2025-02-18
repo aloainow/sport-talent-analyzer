@@ -119,7 +119,7 @@ def main():
     with st.sidebar:
         selected = option_menu(
             "Menu Principal",
-            ["Home", "Testes Físicos", "Testes Técnicos", "Testes Táticos", "Testes Psicológicos", "Recomendações"],
+            ["Home", "Testes de Força", "Testes de Velocidade", "Testes de Resistência", "Testes de Coordenação", "Recomendações"],
             icons=['house', 'activity', 'bullseye', 'diagram-3', 'person', 'star'],
             menu_icon="cast",
             default_index=0,
@@ -130,29 +130,61 @@ def main():
         st.title("🏃‍♂️ Analisador de Talentos Esportivos")
         st.header("Bem-vindo ao Analisador de Talentos Esportivos!")
         
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Como Funciona")
-            st.write("""
-            1. Complete os testes em cada categoria
-            2. Nosso sistema analisa seus resultados
-            3. Receba recomendações personalizadas de esportes
-            """)
+        # Informações Pessoais
+        st.subheader("Informações Pessoais")
+        with st.form("personal_info"):
+            col1, col2 = st.columns(2)
             
-        with col2:
-            st.subheader("Seu Progresso")
+            with col1:
+                altura = st.number_input("Altura (cm)", min_value=0, max_value=300)
+                peso = st.number_input("Peso (kg)", min_value=0, max_value=300)
+                envergadura = st.number_input("Envergadura (cm)", min_value=0, max_value=300)
+            
+            with col2:
+                idade = st.number_input("Idade", min_value=0, max_value=150)
+                ano_nascimento = st.number_input("Ano de Nascimento", min_value=1900, max_value=2024)
+            
+            # Localização
+            st.write("**Localização**")
+            col3, col4, col5 = st.columns(3)
+            
+            with col3:
+                cidade = st.text_input("Cidade")
+            with col4:
+                estado = st.text_input("Estado")
+            with col5:
+                pais = st.text_input("País")
+            
+            if st.form_submit_button("Salvar Informações"):
+                st.session_state.personal_info = {
+                    'altura': altura,
+                    'peso': peso,
+                    'envergadura': envergadura,
+                    'idade': idade,
+                    'ano_nascimento': ano_nascimento,
+                    'cidade': cidade,
+                    'estado': estado,
+                    'pais': pais
+                }
+                st.success("Informações pessoais salvas com sucesso!")
+        
+        # Progresso dos Testes
+        st.subheader("Seu Progresso")
+        col6, col7 = st.columns(2)
+        
+        with col6:
+            st.write("Testes Completados:")
             progress_data = {
-                "Testes Físicos": len(st.session_state.test_results['physical']),
-                "Testes Técnicos": len(st.session_state.test_results['technical']),
-                "Testes Táticos": len(st.session_state.test_results['tactical']),
-                "Testes Psicológicos": len(st.session_state.test_results['psychological'])
+                "Testes de Força": len(st.session_state.test_results.get('força', {})),
+                "Testes de Velocidade": len(st.session_state.test_results.get('velocidade', {})),
+                "Testes de Resistência": len(st.session_state.test_results.get('resistencia', {})),
+                "Testes de Coordenação": len(st.session_state.test_results.get('coordenacao', {}))
             }
             
             for test, count in progress_data.items():
-                progress = count / 5  # Assumindo 5 testes por categoria
+                progress = count / 2  # 2 testes por categoria
                 st.progress(progress, text=f"{test}: {int(progress * 100)}%")
-    
+                
     elif selected == "Testes Físicos":
         show_physical_tests()
     elif selected == "Testes Técnicos":
