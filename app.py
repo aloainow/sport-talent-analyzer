@@ -54,66 +54,250 @@ def create_radar_chart(results):
     
     return fig
 
-def show_physical_tests():
-    st.header("Testes Físicos")
-    with st.form("physical_tests_form"):
-        st.number_input("Velocidade (segundos)", key="velocity")
-        st.number_input("Força (repetições)", key="strength")
-        st.number_input("Resistência (metros)", key="endurance")
-        st.number_input("Agilidade (segundos)", key="agility")
-        
-        if st.form_submit_button("Salvar Resultados"):
-            st.session_state.test_results['physical'] = {
-                'velocity': st.session_state.velocity,
-                'strength': st.session_state.strength,
-                'endurance': st.session_state.endurance,
-                'agility': st.session_state.agility
-            }
-            st.success("Resultados salvos com sucesso!")
+def show_força_tests():
+    st.title("💪 Testes de Força")
+    
+    st.info("Complete os testes de força abaixo. Realize cada teste conforme as instruções.")
+    
+    # Teste 1: Flexões
+    with st.expander("Flexões de Braço", expanded=True):
+        st.write("**Descrição:** Realize o máximo de flexões em 1 minuto")
+        st.write("**Equipamento necessário:** Cronômetro")
+        st.write("**Como realizar:**")
+        st.write("""
+        1. Posição inicial: prancha
+        2. Desça o corpo mantendo alinhado
+        3. Suba até estender os braços
+        4. Conte repetições em 1 minuto
+        """)
+        st.write("**Classificação:**")
+        st.write("""
+        - Iniciante: 10-15 repetições
+        - Intermediário: 16-25 repetições
+        - Avançado: 26+ repetições
+        """)
+        flexoes = st.number_input("Número de flexões", min_value=0, max_value=100)
+    
+    # Teste 2: Abdominais
+    with st.expander("Abdominais", expanded=True):
+        st.write("**Descrição:** Máximo de abdominais em 1 minuto")
+        st.write("**Equipamento necessário:** Cronômetro, tapete")
+        st.write("**Como realizar:**")
+        st.write("""
+        1. Deitado, joelhos flexionados
+        2. Mãos na nuca
+        3. Eleve o tronco até tocar joelhos
+        4. Conte em 1 minuto
+        """)
+        st.write("**Classificação:**")
+        st.write("""
+        - Iniciante: 15-20 repetições
+        - Intermediário: 21-30 repetições
+        - Avançado: 31+ repetições
+        """)
+        abdominais = st.number_input("Número de abdominais", min_value=0, max_value=100)
+    
+    if st.button("Salvar Resultados"):
+        st.session_state.test_results['força'] = {
+            'flexoes': flexoes,
+            'abdominais': abdominais
+        }
+        st.success("Resultados salvos com sucesso!")
 
-def show_technical_tests():
-    st.header("Testes Técnicos")
-    with st.form("technical_tests_form"):
-        st.number_input("Coordenação (0-10)", key="coordination", min_value=0, max_value=10)
-        st.number_input("Equilíbrio (segundos)", key="balance")
-        st.number_input("Precisão (0-10)", key="precision", min_value=0, max_value=10)
-        
-        if st.form_submit_button("Salvar Resultados"):
-            st.session_state.test_results['technical'] = {
-                'coordination': st.session_state.coordination,
-                'balance': st.session_state.balance,
-                'precision': st.session_state.precision
-            }
-            st.success("Resultados salvos com sucesso!")
+def show_velocidade_tests():
+    st.title("⚡ Testes de Velocidade")
+    
+    st.info("Complete os testes de velocidade abaixo. Realize cada teste conforme as instruções.")
+    
+    # Teste 1: Corrida 20m
+    with st.expander("Corrida de 20m", expanded=True):
+        st.write("**Descrição:** Tempo para percorrer 20 metros")
+        st.write("**Equipamento necessário:** Cronômetro, fita métrica")
+        st.write("**Como realizar:**")
+        st.write("""
+        1. Marque 20m em linha reta
+        2. Posição inicial agachado
+        3. Corra o mais rápido possível
+        4. Registre o tempo
+        """)
+        corrida = st.number_input("Tempo (segundos)", min_value=0.0, max_value=20.0, step=0.1)
+    
+    # Teste 2: Agilidade
+    with st.expander("Teste de Agilidade", expanded=True):
+        st.write("**Descrição:** Corrida em zigue-zague entre 4 pontos")
+        st.write("**Equipamento necessário:** 4 marcadores, cronômetro")
+        st.write("**Como realizar:**")
+        st.write("""
+        1. Coloque 4 marcadores em quadrado (5m x 5m)
+        2. Corra entre eles em zigue-zague
+        3. Complete 2 voltas
+        4. Registre o tempo
+        """)
+        agilidade = st.number_input("Tempo de agilidade (segundos)", min_value=0.0, max_value=30.0, step=0.1)
+    
+    if st.button("Salvar Resultados"):
+        st.session_state.test_results['velocidade'] = {
+            'corrida_20m': corrida,
+            'agilidade': agilidade
+        }
+        st.success("Resultados salvos com sucesso!")
 
-def show_tactical_tests():
-    st.header("Testes Táticos")
-    with st.form("tactical_tests_form"):
-        st.slider("Tomada de Decisão (0-10)", min_value=0, max_value=10, key="decision_making")
-        st.slider("Visão de Jogo (0-10)", min_value=0, max_value=10, key="game_vision")
-        
-        if st.form_submit_button("Salvar Resultados"):
-            st.session_state.test_results['tactical'] = {
-                'decision_making': st.session_state.decision_making,
-                'game_vision': st.session_state.game_vision
-            }
-            st.success("Resultados salvos com sucesso!")
 
-def show_psychological_tests():
-    st.header("Testes Psicológicos")
-    with st.form("psychological_tests_form"):
-        attributes = ["Motivação", "Trabalho em Equipe", "Liderança", 
-                     "Resiliência", "Concentração", "Competitividade"]
-        results = {}
-        
-        for attr in attributes:
-            key = attr.lower().replace(" ", "_")
-            results[key] = st.slider(f"{attr} (0-10)", min_value=0, max_value=10, key=key)
-        
-        if st.form_submit_button("Salvar Resultados"):
-            st.session_state.test_results['psychological'] = results
-            st.success("Resultados salvos com sucesso!")
+def show_resistencia_tests():
+    st.title("🏃 Testes de Resistência")
+    
+    st.info("Complete os testes de resistência abaixo. Realize cada teste conforme as instruções.")
+    
+    # Teste 1: Burpee
+    with st.expander("Teste de Burpee", expanded=True):
+        st.write("**Descrição:** Máximo de burpees em 3 minutos")
+        st.write("**Equipamento necessário:** Cronômetro")
+        st.write("**Como realizar:**")
+        st.write("""
+        1. Em pé
+        2. Agache e apoie as mãos
+        3. Estenda as pernas
+        4. Volte e salte
+        5. Conte em 3 minutos
+        """)
+        st.write("**Classificação:**")
+        st.write("""
+        - Iniciante: 25-35 repetições
+        - Intermediário: 36-50 repetições
+        - Avançado: 51+ repetições
+        """)
+        burpees = st.number_input("Número de burpees", min_value=0, max_value=100)
+    
+    # Teste 2: Cooper Adaptado
+    with st.expander("Teste de Cooper Adaptado", expanded=True):
+        st.write("**Descrição:** Distância percorrida em 6 minutos")
+        st.write("**Equipamento necessário:** Cronômetro, área para correr")
+        st.write("**Como realizar:**")
+        st.write("""
+        1. Marque um percurso conhecido
+        2. Corra/ande por 6 minutos
+        3. Meça a distância total
+        """)
+        st.write("**Classificação:**")
+        st.write("""
+        - Iniciante: <1000m
+        - Intermediário: 1000-1400m
+        - Avançado: >1400m
+        """)
+        cooper = st.number_input("Distância (metros)", min_value=0, max_value=3000, step=50)
+    
+    if st.button("Salvar Resultados"):
+        st.session_state.test_results['resistencia'] = {
+            'burpees': burpees,
+            'cooper': cooper
+        }
+        st.success("Resultados salvos com sucesso!")
 
+def show_coordenacao_tests():
+    st.title("🎯 Testes de Coordenação")
+    
+    st.info("Complete os testes de coordenação abaixo. Realize cada teste conforme as instruções.")
+    
+    # Teste 1: Equilíbrio
+    with st.expander("Teste de Equilíbrio", expanded=True):
+        st.write("**Descrição:** Tempo em equilíbrio em uma perna só")
+        st.write("**Equipamento necessário:** Cronômetro")
+        st.write("**Como realizar:**")
+        st.write("""
+        1. Fique em uma perna
+        2. Olhos fechados
+        3. Braços cruzados
+        4. Meça o tempo até desequilibrar
+        """)
+        st.write("**Classificação:**")
+        st.write("""
+        - Iniciante: <20 segundos
+        - Intermediário: 20-40 segundos
+        - Avançado: >40 segundos
+        """)
+        equilibrio = st.number_input("Tempo (segundos)", min_value=0, max_value=120)
+    
+    # Teste 2: Saltos Alternados
+    with st.expander("Saltos Alternados", expanded=True):
+        st.write("**Descrição:** Coordenação de saltos em 30 segundos")
+        st.write("**Equipamento necessário:** Cronômetro")
+        st.write("**Como realizar:**")
+        st.write("""
+        1. Salte alternando pernas
+        2. Toque joelho oposto
+        3. Conte repetições em 30s
+        """)
+        st.write("**Classificação:**")
+        st.write("""
+        - Iniciante: <20 repetições
+        - Intermediário: 20-30 repetições
+        - Avançado: >30 repetições
+        """)
+        saltos = st.number_input("Número de saltos", min_value=0, max_value=100)
+    
+    if st.button("Salvar Resultados"):
+        st.session_state.test_results['coordenacao'] = {
+            'equilibrio': equilibrio,
+            'saltos': saltos
+        }
+        st.success("Resultados salvos com sucesso!")
+
+def show_recommendations():
+    st.title("⭐ Suas Recomendações de Esportes")
+    
+    # Verificar se todos os testes foram completados
+    test_categories = ['força', 'velocidade', 'resistencia', 'coordenacao']
+    all_tests_completed = all(
+        category in st.session_state.test_results 
+        for category in test_categories
+    )
+    
+    if not all_tests_completed:
+        st.warning("Por favor, complete todos os testes para receber suas recomendações!")
+        return
+    
+    # Processar resultados e obter recomendações
+    if 'recommendations' not in st.session_state:
+        with st.spinner("Analisando seus resultados..."):
+            processed_results = process_test_results(st.session_state.test_results)
+            st.session_state.recommendations = get_sport_recommendations(processed_results)
+    
+    # Mostrar gráfico radar
+    st.subheader("Seu Perfil de Habilidades")
+    radar_chart = create_radar_chart(st.session_state.test_results)
+    st.plotly_chart(radar_chart, use_container_width=True)
+    
+    # Mostrar recomendações
+    st.subheader("Esportes Recomendados")
+    
+    for sport in st.session_state.recommendations:
+        with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.write("**Pontos Fortes:**")
+                for strength in sport['strengths']:
+                    st.write(f"✓ {strength}")
+            
+            with col2:
+                st.write("**Áreas para Desenvolvimento:**")
+                for area in sport['development']:
+                    st.write(f"→ {area}")
+    
+    # Botões de ação
+    st.divider()
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("📊 Exportar Relatório"):
+            st.info("Funcionalidade de exportação em desenvolvimento")
+    
+    with col2:
+        if st.button("🔄 Recomeçar"):
+            for key in st.session_state.keys():
+                del st.session_state[key]
+            st.rerun()
+            
 def main():
     # Menu lateral
     with st.sidebar:
@@ -170,54 +354,27 @@ def main():
         
         # Progresso dos Testes
         st.subheader("Seu Progresso")
-        col6, col7 = st.columns(2)
+        progress_data = {
+            "Testes de Força": len(st.session_state.test_results['força']),
+            "Testes de Velocidade": len(st.session_state.test_results['velocidade']),
+            "Testes de Resistência": len(st.session_state.test_results['resistencia']),
+            "Testes de Coordenação": len(st.session_state.test_results['coordenacao'])
+        }
         
-        with col6:
-            st.write("Testes Completados:")
-            progress_data = {
-                "Testes de Força": len(st.session_state.test_results.get('força', {})),
-                "Testes de Velocidade": len(st.session_state.test_results.get('velocidade', {})),
-                "Testes de Resistência": len(st.session_state.test_results.get('resistencia', {})),
-                "Testes de Coordenação": len(st.session_state.test_results.get('coordenacao', {}))
-            }
+        for test, count in progress_data.items():
+            progress = count / 2  # 2 testes por categoria
+            st.progress(progress, text=f"{test}: {int(progress * 100)}%")
             
-            for test, count in progress_data.items():
-                progress = count / 2  # 2 testes por categoria
-                st.progress(progress, text=f"{test}: {int(progress * 100)}%")
-                
-    elif selected == "Testes Físicos":
-        show_physical_tests()
-    elif selected == "Testes Técnicos":
-        show_technical_tests()
-    elif selected == "Testes Táticos":
-        show_tactical_tests()
-    elif selected == "Testes Psicológicos":
-        show_psychological_tests()
+    elif selected == "Testes de Força":
+        show_força_tests()
+    elif selected == "Testes de Velocidade":
+        show_velocidade_tests()
+    elif selected == "Testes de Resistência":
+        show_resistencia_tests()
+    elif selected == "Testes de Coordenação":
+        show_coordenacao_tests()
     elif selected == "Recomendações":
-        if all(len(v) > 0 for v in st.session_state.test_results.values()):
-            if st.session_state.recommendations is None:
-                with st.spinner("Processando seus resultados..."):
-                    processed_results = process_test_results(st.session_state.test_results)
-                    st.session_state.recommendations = get_sport_recommendations(processed_results)
-            
-            st.header("Suas Recomendações de Esportes")
-            st.subheader("Seu Perfil")
-            radar_chart = create_radar_chart(st.session_state.test_results)
-            st.plotly_chart(radar_chart, use_container_width=True)
-            
-            st.subheader("Esportes Recomendados")
-            if isinstance(st.session_state.recommendations, list):
-                for sport in st.session_state.recommendations:
-                    with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
-                        st.write("**Pontos Fortes:**")
-                        for strength in sport['strengths']:
-                            st.write(f"- {strength}")
-                        
-                        st.write("\n**Áreas para Desenvolvimento:**")
-                        for area in sport['development']:
-                            st.write(f"- {area}")
-        else:
-            st.warning("Complete todos os testes para receber suas recomendações!")
+        show_recommendations()
 
 if __name__ == "__main__":
     # Esconder menu hamburger e outros elementos do Streamlit
@@ -229,4 +386,5 @@ if __name__ == "__main__":
         </style>
     """, unsafe_allow_html=True)
     
+    init_session_state()
     main()
