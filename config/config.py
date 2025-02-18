@@ -1,8 +1,6 @@
-import os
 import streamlit as st
 
 # OpenAI Configuration
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 OPENAI_MODEL = "gpt-4"
 
 # Configurações do App
