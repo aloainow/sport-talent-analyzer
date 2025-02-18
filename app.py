@@ -11,6 +11,35 @@ st.set_page_config(
     layout="wide"
 )
 
+# Remover menu hamburger e rodapé do Streamlit
+st.markdown("""
+    <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        [data-testid="stSidebarNav"] {display: none;}
+    </style>
+""", unsafe_allow_html=True)
+
+# Inicialização do estado da sessão
+def init_session_state():
+    if 'test_results' not in st.session_state:
+        st.session_state.test_results = {
+            'physical': {},
+            'technical': {},
+            'tactical': {},
+            'psychological': {}
+        }
+    if 'recommendations' not in st.session_state:
+        st.session_state.recommendations = None
+
+init_session_state()
+# Configuração da página
+st.set_page_config(
+    page_title="Analisador de Talentos Esportivos",
+    page_icon="🏃‍♂️",
+    layout="wide"
+)
+
 # Inicialização do estado da sessão
 def init_session_state():
     if 'test_results' not in st.session_state:
