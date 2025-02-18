@@ -1,60 +1,35 @@
-from openai import OpenAI
-import json
 import streamlit as st
+from openai import OpenAI
+import os
 
-# Inicializa o cliente OpenAI usando o secret do Streamlit
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-def get_sport_recommendations(test_results):
-    """
-    Obtém recomendações de esportes baseadas nos resultados dos testes usando a API da OpenAI.
-    """
-    # Criar o prompt para a API
-    prompt = f"""
-    Com base nos seguintes resultados de testes esportivos, recomende os 5 esportes mais adequados para o atleta.
-    Os resultados estão em uma escala de 0-10:
-
-    Resultados Físicos:
-    {json.dumps(test_results['physical'], indent=2)}
-
-    Resultados Técnicos:
-    {json.dumps(test_results['technical'], indent=2)}
-
-    Resultados Táticos:
-    {json.dumps(test_results['tactical'], indent=2)}
-
-    Resultados Psicológicos:
-    {json.dumps(test_results['psychological'], indent=2)}
-
-    Forneça as recomendações no seguinte formato JSON:
-    [
-        {{
-            "name": "Nome do Esporte",
-            "compatibility": percentual de compatibilidade (0-100),
-            "strengths": ["ponto forte 1", "ponto forte 2", ...],
-            "development": ["área para desenvolver 1", "área para desenvolver 2", ...]
-        }},
-        ...
-    ]
-
-    Considere as características específicas de cada esporte e como elas se alinham com o perfil do atleta.
-    """
-
+def initialize_openai_client():
     try:
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "Você é um especialista em análise esportiva e desenvolvimento de talentos."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1000
-        )
+        # Tenta primeiro pegar a chave das secrets do Streamlit
+        api_key = st.secrets.get("OPENAI_API_KEY")
         
-        # Extrair e processar a resposta
-        recommendations = json.loads(response.choices[0].message.content)
-        return recommendations
+        # Se não encontrar nas secrets, tenta pegar das variáveis de ambiente
+        if not api_key:
+            api_key = os.getenv("OPENAI_API_KEY")
+        
+        # Se ainda não encontrou a chave, lança um erro
+        if not api_key:
+            st.error("API Key da OpenAI não encontrada. Por favor, configure nas secrets do Streamlit.")
+            raise ValueError("OpenAI API Key não encontrada")
+            
+        # Inicializa o cliente com a chave encontrada
+        return OpenAI(api_key=api_key)
+        
+    except Exception as e:
+        st.error(f"Erro ao inicializar cliente OpenAI: {str(e)}")
+        raise
 
+# Inicializa o cliente
+client = initialize_openai_client()
+
+def get_sport_recommendations(user_data):
+    try:
+        # Seu código existente aqui
+        pass
     except Exception as e:
         st.error(f"Erro ao obter recomendações: {str(e)}")
-        return []
+        return None
