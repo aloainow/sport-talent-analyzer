@@ -1,8 +1,9 @@
 from openai import OpenAI
 import json
-from decouple import config
+import streamlit as st
 
-client = OpenAI(api_key=config('OPENAI_API_KEY'))
+# Inicializa o cliente OpenAI usando o secret do Streamlit
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def get_sport_recommendations(test_results):
     """
@@ -55,5 +56,5 @@ def get_sport_recommendations(test_results):
         return recommendations
 
     except Exception as e:
-        print(f"Erro ao obter recomendações: {e}")
+        st.error(f"Erro ao obter recomendações: {str(e)}")
         return []
