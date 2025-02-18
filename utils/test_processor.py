@@ -8,7 +8,6 @@ def process_test_results(test_results):
         'tactical': {},
         'psychological': {}
     }
-
     # Processamento dos testes físicos
     if test_results.get('physical'):
         physical = test_results['physical']
@@ -19,7 +18,6 @@ def process_test_results(test_results):
             'agility': normalize_score(physical.get('agility', 0), 'agility'),
             'average': calculate_average(physical)
         }
-
     # Processamento dos testes técnicos
     if test_results.get('technical'):
         technical = test_results['technical']
@@ -29,7 +27,6 @@ def process_test_results(test_results):
             'precision': normalize_score(technical.get('precision', 0), 'precision'),
             'average': calculate_average(technical)
         }
-
     # Processamento dos testes táticos
     if test_results.get('tactical'):
         tactical = test_results['tactical']
@@ -38,7 +35,6 @@ def process_test_results(test_results):
             'game_vision': tactical.get('game_vision', 0),
             'average': calculate_average(tactical)
         }
-
     # Processamento dos testes psicológicos (já estão em escala 1-10)
     if test_results.get('psychological'):
         psychological = test_results['psychological']
@@ -51,7 +47,6 @@ def process_test_results(test_results):
             'competitiveness': psychological.get('competitiveness', 0),
             'average': calculate_average(psychological)
         }
-
     return processed_results
 
 def normalize_score(value, test_type):
@@ -68,10 +63,8 @@ def normalize_score(value, test_type):
         'balance': {'min': 0, 'max': 60},  # segundos
         'precision': {'min': 0, 'max': 10}
     }
-
     if test_type not in reference_values:
         return value
-
     ref = reference_values[test_type]
     
     # Para testes onde menor valor é melhor (como velocidade)
@@ -92,4 +85,17 @@ def normalize_score(value, test_type):
 
 def calculate_average(results):
     """
-    Calcula a média dos resultados
+    Calcula a média dos resultados, excluindo a chave 'average' se ela existir
+    """
+    if not results:
+        return 0
+    
+    # Remove a chave 'average' se existir
+    results_copy = results.copy()
+    results_copy.pop('average', None)
+    
+    # Calcula a média dos valores restantes
+    values = [value for value in results_copy.values() if isinstance(value, (int, float))]
+    if not values:
+        return 0
+    return sum(values) / len(values)
