@@ -4,36 +4,7 @@ import plotly.graph_objects as go
 from utils.openai_helper import get_sport_recommendations
 from utils.test_processor import process_test_results
 
-# Configuração da página
-st.set_page_config(
-    page_title="Analisador de Talentos Esportivos",
-    page_icon="🏃‍♂️",
-    layout="wide"
-)
-
-# Remover menu hamburger e rodapé do Streamlit
-st.markdown("""
-    <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        [data-testid="stSidebarNav"] {display: none;}
-    </style>
-""", unsafe_allow_html=True)
-
-# Inicialização do estado da sessão
-def init_session_state():
-    if 'test_results' not in st.session_state:
-        st.session_state.test_results = {
-            'physical': {},
-            'technical': {},
-            'tactical': {},
-            'psychological': {}
-        }
-    if 'recommendations' not in st.session_state:
-        st.session_state.recommendations = None
-
-init_session_state()
-# Configuração da página
+# Configuração da página - DEVE SER A PRIMEIRA CHAMADA STREAMLIT
 st.set_page_config(
     page_title="Analisador de Talentos Esportivos",
     page_icon="🏃‍♂️",
@@ -51,8 +22,6 @@ def init_session_state():
         }
     if 'recommendations' not in st.session_state:
         st.session_state.recommendations = None
-    if 'current_page' not in st.session_state:
-        st.session_state.current_page = "Home"
 
 init_session_state()
 
@@ -87,7 +56,6 @@ def create_radar_chart(results):
 
 def show_physical_tests():
     st.header("Testes Físicos")
-    # Adicione aqui o código dos testes físicos
     with st.form("physical_tests_form"):
         st.number_input("Velocidade (segundos)", key="velocity")
         st.number_input("Força (repetições)", key="strength")
@@ -105,7 +73,6 @@ def show_physical_tests():
 
 def show_technical_tests():
     st.header("Testes Técnicos")
-    # Adicione aqui o código dos testes técnicos
     with st.form("technical_tests_form"):
         st.number_input("Coordenação (0-10)", key="coordination", min_value=0, max_value=10)
         st.number_input("Equilíbrio (segundos)", key="balance")
@@ -121,7 +88,6 @@ def show_technical_tests():
 
 def show_tactical_tests():
     st.header("Testes Táticos")
-    # Adicione aqui o código dos testes táticos
     with st.form("tactical_tests_form"):
         st.slider("Tomada de Decisão (0-10)", min_value=0, max_value=10, key="decision_making")
         st.slider("Visão de Jogo (0-10)", min_value=0, max_value=10, key="game_vision")
@@ -135,7 +101,6 @@ def show_tactical_tests():
 
 def show_psychological_tests():
     st.header("Testes Psicológicos")
-    # Adicione aqui o código dos testes psicológicos
     with st.form("psychological_tests_form"):
         attributes = ["Motivação", "Trabalho em Equipe", "Liderança", 
                      "Resiliência", "Concentração", "Competitividade"]
@@ -149,7 +114,6 @@ def show_psychological_tests():
             st.session_state.test_results['psychological'] = results
             st.success("Resultados salvos com sucesso!")
 
-# Interface principal
 def main():
     # Menu lateral
     with st.sidebar:
@@ -176,10 +140,6 @@ def main():
             3. Receba recomendações personalizadas de esportes
             """)
             
-            if st.button("Começar Avaliação", type="primary"):
-                st.session_state.current_page = "Testes Físicos"
-                st.rerun()
-        
         with col2:
             st.subheader("Seu Progresso")
             progress_data = {
@@ -226,9 +186,15 @@ def main():
                             st.write(f"- {area}")
         else:
             st.warning("Complete todos os testes para receber suas recomendações!")
-            if st.button("Ir para Testes"):
-                st.session_state.current_page = "Testes Físicos"
-                st.rerun()
 
 if __name__ == "__main__":
+    # Esconder menu hamburger e outros elementos do Streamlit
+    st.markdown("""
+        <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            [data-testid="stSidebarNav"] {display: none;}
+        </style>
+    """, unsafe_allow_html=True)
+    
     main()
