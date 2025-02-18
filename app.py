@@ -3,7 +3,6 @@ from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
 from utils.openai_helper import get_sport_recommendations
 from utils.test_processor import process_test_results
-import json
 
 # Configuração da página
 st.set_page_config(
@@ -23,6 +22,8 @@ def init_session_state():
         }
     if 'recommendations' not in st.session_state:
         st.session_state.recommendations = None
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "Home"
 
 init_session_state()
 
@@ -38,8 +39,8 @@ def create_radar_chart(results):
     
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(
-        r=values + [values[0]],  # Fechando o polígono
-        theta=categories + [categories[0]],  # Fechando o polígono
+        r=values + [values[0]],
+        theta=categories + [categories[0]],
         fill='toself',
         name='Seu Perfil'
     ))
@@ -55,11 +56,72 @@ def create_radar_chart(results):
     
     return fig
 
+def show_physical_tests():
+    st.header("Testes Físicos")
+    # Adicione aqui o código dos testes físicos
+    with st.form("physical_tests_form"):
+        st.number_input("Velocidade (segundos)", key="velocity")
+        st.number_input("Força (repetições)", key="strength")
+        st.number_input("Resistência (metros)", key="endurance")
+        st.number_input("Agilidade (segundos)", key="agility")
+        
+        if st.form_submit_button("Salvar Resultados"):
+            st.session_state.test_results['physical'] = {
+                'velocity': st.session_state.velocity,
+                'strength': st.session_state.strength,
+                'endurance': st.session_state.endurance,
+                'agility': st.session_state.agility
+            }
+            st.success("Resultados salvos com sucesso!")
+
+def show_technical_tests():
+    st.header("Testes Técnicos")
+    # Adicione aqui o código dos testes técnicos
+    with st.form("technical_tests_form"):
+        st.number_input("Coordenação (0-10)", key="coordination", min_value=0, max_value=10)
+        st.number_input("Equilíbrio (segundos)", key="balance")
+        st.number_input("Precisão (0-10)", key="precision", min_value=0, max_value=10)
+        
+        if st.form_submit_button("Salvar Resultados"):
+            st.session_state.test_results['technical'] = {
+                'coordination': st.session_state.coordination,
+                'balance': st.session_state.balance,
+                'precision': st.session_state.precision
+            }
+            st.success("Resultados salvos com sucesso!")
+
+def show_tactical_tests():
+    st.header("Testes Táticos")
+    # Adicione aqui o código dos testes táticos
+    with st.form("tactical_tests_form"):
+        st.slider("Tomada de Decisão (0-10)", min_value=0, max_value=10, key="decision_making")
+        st.slider("Visão de Jogo (0-10)", min_value=0, max_value=10, key="game_vision")
+        
+        if st.form_submit_button("Salvar Resultados"):
+            st.session_state.test_results['tactical'] = {
+                'decision_making': st.session_state.decision_making,
+                'game_vision': st.session_state.game_vision
+            }
+            st.success("Resultados salvos com sucesso!")
+
+def show_psychological_tests():
+    st.header("Testes Psicológicos")
+    # Adicione aqui o código dos testes psicológicos
+    with st.form("psychological_tests_form"):
+        attributes = ["Motivação", "Trabalho em Equipe", "Liderança", 
+                     "Resiliência", "Concentração", "Competitividade"]
+        results = {}
+        
+        for attr in attributes:
+            key = attr.lower().replace(" ", "_")
+            results[key] = st.slider(f"{attr} (0-10)", min_value=0, max_value=10, key=key)
+        
+        if st.form_submit_button("Salvar Resultados"):
+            st.session_state.test_results['psychological'] = results
+            st.success("Resultados salvos com sucesso!")
+
 # Interface principal
 def main():
-    # Cabeçalho
-    st.title("🏃‍♂️ Analisador de Talentos Esportivos")
-    
     # Menu lateral
     with st.sidebar:
         selected = option_menu(
@@ -70,8 +132,9 @@ def main():
             default_index=0,
         )
     
-    # Página inicial
+    # Conteúdo baseado na seleção do menu
     if selected == "Home":
+        st.title("🏃‍♂️ Analisador de Talentos Esportivos")
         st.header("Bem-vindo ao Analisador de Talentos Esportivos!")
         
         col1, col2 = st.columns(2)
@@ -85,7 +148,8 @@ def main():
             """)
             
             if st.button("Começar Avaliação", type="primary"):
-                st.switch_page("pages/01_physical_tests.py")
+                st.session_state.current_page = "Testes Físicos"
+                st.rerun()
         
         with col2:
             st.subheader("Seu Progresso")
@@ -100,40 +164,42 @@ def main():
                 progress = count / 5  # Assumindo 5 testes por categoria
                 st.progress(progress, text=f"{test}: {int(progress * 100)}%")
     
-    # Recomendações
+    elif selected == "Testes Físicos":
+        show_physical_tests()
+    elif selected == "Testes Técnicos":
+        show_technical_tests()
+    elif selected == "Testes Táticos":
+        show_tactical_tests()
+    elif selected == "Testes Psicológicos":
+        show_psychological_tests()
     elif selected == "Recomendações":
         if all(len(v) > 0 for v in st.session_state.test_results.values()):
             if st.session_state.recommendations is None:
                 with st.spinner("Processando seus resultados..."):
-                    # Processar resultados dos testes
                     processed_results = process_test_results(st.session_state.test_results)
-                    
-                    # Obter recomendações via OpenAI
                     st.session_state.recommendations = get_sport_recommendations(processed_results)
             
-            # Mostrar resultados
             st.header("Suas Recomendações de Esportes")
-            
-            # Mostrar gráfico radar
             st.subheader("Seu Perfil")
             radar_chart = create_radar_chart(st.session_state.test_results)
             st.plotly_chart(radar_chart, use_container_width=True)
             
-            # Mostrar recomendações
             st.subheader("Esportes Recomendados")
-            for sport in st.session_state.recommendations:
-                with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
-                    st.write("**Pontos Fortes:**")
-                    for strength in sport['strengths']:
-                        st.write(f"- {strength}")
-                    
-                    st.write("\n**Áreas para Desenvolvimento:**")
-                    for area in sport['development']:
-                        st.write(f"- {area}")
+            if isinstance(st.session_state.recommendations, list):
+                for sport in st.session_state.recommendations:
+                    with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
+                        st.write("**Pontos Fortes:**")
+                        for strength in sport['strengths']:
+                            st.write(f"- {strength}")
+                        
+                        st.write("\n**Áreas para Desenvolvimento:**")
+                        for area in sport['development']:
+                            st.write(f"- {area}")
         else:
             st.warning("Complete todos os testes para receber suas recomendações!")
             if st.button("Ir para Testes"):
-                st.switch_page("pages/01_physical_tests.py")
+                st.session_state.current_page = "Testes Físicos"
+                st.rerun()
 
 if __name__ == "__main__":
     main()
