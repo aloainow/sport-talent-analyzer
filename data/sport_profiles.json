@@ -1,0 +1,326 @@
+{
+  "sports": [
+    {
+      "name": "Futebol",
+      "category": "Coletivo",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 6,
+          "endurance": 9,
+          "agility": 8
+        },
+        "technical": {
+          "coordination": 8,
+          "balance": 7,
+          "precision": 8
+        },
+        "tactical": {
+          "decision_making": 8,
+          "game_vision": 9
+        },
+        "psychological": {
+          "motivation": 8,
+          "teamwork": 9,
+          "leadership": 7,
+          "resilience": 8,
+          "concentration": 7,
+          "competitiveness": 8
+        }
+      },
+      "key_attributes": [
+        "Resistência aeróbica",
+        "Coordenação com bola",
+        "Visão de jogo",
+        "Trabalho em equipe"
+      ]
+    },
+    {
+      "name": "Basquete",
+      "category": "Coletivo",
+      "requirements": {
+        "physical": {
+          "velocity": 7,
+          "strength": 7,
+          "endurance": 8,
+          "agility": 8
+        },
+        "technical": {
+          "coordination": 9,
+          "balance": 8,
+          "precision": 9
+        },
+        "tactical": {
+          "decision_making": 9,
+          "game_vision": 9
+        },
+        "psychological": {
+          "motivation": 8,
+          "teamwork": 9,
+          "leadership": 8,
+          "resilience": 7,
+          "concentration": 8,
+          "competitiveness": 8
+        }
+      },
+      "key_attributes": [
+        "Altura",
+        "Coordenação motora",
+        "Precisão",
+        "Trabalho em equipe"
+      ]
+    },
+    {
+      "name": "Natação",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 8,
+          "endurance": 9,
+          "agility": 6
+        },
+        "technical": {
+          "coordination": 9,
+          "balance": 7,
+          "precision": 7
+        },
+        "tactical": {
+          "decision_making": 6,
+          "game_vision": 5
+        },
+        "psychological": {
+          "motivation": 9,
+          "teamwork": 5,
+          "leadership": 5,
+          "resilience": 9,
+          "concentration": 9,
+          "competitiveness": 8
+        }
+      },
+      "key_attributes": [
+        "Resistência aeróbica",
+        "Força muscular",
+        "Coordenação motora",
+        "Disciplina"
+      ]
+    },
+    {
+      "name": "Vôlei",
+      "category": "Coletivo",
+      "requirements": {
+        "physical": {
+          "velocity": 7,
+          "strength": 8,
+          "endurance": 7,
+          "agility": 8
+        },
+        "technical": {
+          "coordination": 9,
+          "balance": 8,
+          "precision": 9
+        },
+        "tactical": {
+          "decision_making": 8,
+          "game_vision": 9
+        },
+        "psychological": {
+          "motivation": 8,
+          "teamwork": 9,
+          "leadership": 7,
+          "resilience": 7,
+          "concentration": 8,
+          "competitiveness": 8
+        }
+      },
+      "key_attributes": [
+        "Altura",
+        "Força explosiva",
+        "Coordenação motora",
+        "Trabalho em equipe"
+      ]
+    },
+    {
+      "name": "Atletismo",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 9,
+          "strength": 8,
+          "endurance": 9,
+          "agility": 7
+        },
+        "technical": {
+          "coordination": 8,
+          "balance": 8,
+          "precision": 7
+        },
+        "tactical": {
+          "decision_making": 6,
+          "game_vision": 5
+        },
+        "psychological": {
+          "motivation": 9,
+          "teamwork": 5,
+          "leadership": 5,
+          "resilience": 9,
+          "concentration": 9,
+          "competitiveness": 9
+        }
+      },
+      "key_attributes": [
+        "Velocidade",
+        "Força",
+        "Resistência",
+        "Determinação"
+      ]
+    },
+    {
+      "name": "Tênis",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 7,
+          "endurance": 8,
+          "agility": 9
+        },
+        "technical": {
+          "coordination": 9,
+          "balance": 8,
+          "precision": 9
+        },
+        "tactical": {
+          "decision_making": 8,
+          "game_vision": 8
+        },
+        "psychological": {
+          "motivation": 8,
+          "teamwork": 5,
+          "leadership": 6,
+          "resilience": 8,
+          "concentration": 9,
+          "competitiveness": 9
+        }
+      },
+      "key_attributes": [
+        "Coordenação motora",
+        "Agilidade",
+        "Precisão",
+        "Concentração"
+      ]
+    },
+    {
+      "name": "Ginástica Artística",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 7,
+          "strength": 9,
+          "endurance": 7,
+          "agility": 9
+        },
+        "technical": {
+          "coordination": 10,
+          "balance": 10,
+          "precision": 9
+        },
+        "tactical": {
+          "decision_making": 7,
+          "game_vision": 6
+        },
+        "psychological": {
+          "motivation": 9,
+          "teamwork": 5,
+          "leadership": 5,
+          "resilience": 9,
+          "concentration": 10,
+          "competitiveness": 8
+        }
+      },
+      "key_attributes": [
+        "Flexibilidade",
+        "Força",
+        "Equilíbrio",
+        "Precisão"
+      ]
+    },
+    {
+      "name": "Judô",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 7,
+          "strength": 9,
+          "endurance": 8,
+          "agility": 8
+        },
+        "technical": {
+          "coordination": 8,
+          "balance": 9,
+          "precision": 8
+        },
+        "tactical": {
+          "decision_making": 9,
+          "game_vision": 8
+        },
+        "psychological": {
+          "motivation": 8,
+          "teamwork": 6,
+          "leadership": 7,
+          "resilience": 9,
+          "concentration": 9,
+          "competitiveness": 8
+        }
+      },
+      "key_attributes": [
+        "Força",
+        "Equilíbrio",
+        "Disciplina",
+        "Resiliência"
+      ]
+    }
+  ],
+  "categories": {
+    "Coletivo": {
+      "description": "Esportes que requerem interação e coordenação entre membros de uma equipe",
+      "key_skills": ["Trabalho em equipe", "Comunicação", "Visão de jogo"]
+    },
+    "Individual": {
+      "description": "Esportes focados no desempenho individual do atleta",
+      "key_skills": ["Autodisciplina", "Foco", "Determinação"]
+    }
+  },
+  "physical_attributes": {
+    "velocity": {
+      "description": "Capacidade de movimentação rápida",
+      "measurement": "segundos em 20m"
+    },
+    "strength": {
+      "description": "Força muscular geral",
+      "measurement": "repetições máximas"
+    },
+    "endurance": {
+      "description": "Resistência aeróbica",
+      "measurement": "metros em 12 min"
+    },
+    "agility": {
+      "description": "Capacidade de mudança rápida de direção",
+      "measurement": "segundos no teste do quadrado"
+    }
+  },
+  "technical_attributes": {
+    "coordination": {
+      "description": "Coordenação motora geral",
+      "measurement": "escala 1-10"
+    },
+    "balance": {
+      "description": "Equilíbrio corporal",
+      "measurement": "tempo em posição"
+    },
+    "precision": {
+      "description": "Precisão de movimentos",
+      "measurement": "escala 1-10"
+    }
+  }
+}
