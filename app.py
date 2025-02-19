@@ -453,77 +453,108 @@ def show_fatores_psicologicos():
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
     
-    # Verificar se todos os testes foram completados
-    test_categories = ['dados_fisicos', 'habilidades_tecnicas', 
-                      'aspectos_taticos', 'fatores_psicologicos']
-    
-    all_tests_completed = all(
-        category in st.session_state.test_results 
-        for category in test_categories
-    )
-    
-    if not all_tests_completed:
-        missing_categories = [cat for cat in test_categories 
-                            if cat not in st.session_state.test_results]
-        st.warning("Complete os seguintes testes para receber suas recomendações:")
-        for cat in missing_categories:
-            st.write(f"- {cat.replace('_', ' ').title()}")
+    # 1. Verificar se as informações pessoais foram preenchidas
+    if not st.session_state.personal_info:
+        st.warning("Por favor, preencha suas informações pessoais na página inicial antes de continuar.")
         return
     
-    # Processar resultados e obter recomendações
-# Processar resultados e obter recomendações
-    if 'recommendations' not in st.session_state or st.session_state.recommendations is None:
-        with st.spinner("Analisando seus resultados..."):
-            try:
-                processed_scores = process_test_results(st.session_state.test_results)
-                st.session_state.recommendations = get_sport_recommendations(processed_scores)
-                st.session_state.processed_scores = processed_scores
-            except Exception as e:
-                st.error(f"Erro ao processar recomendações: {str(e)}")
-                return    
-    # Layout em duas colunas
-    col1, col2 = st.columns([2, 3])
+    # 2. Verificar se todos os testes foram completados
+    test_categories = [
+        'dados_fisicos', 
+        'habilidades_tecnicas', 
+        'aspectos_taticos', 
+        'fatores_psicologicos'
+    ]
     
-    with col1:
-        # Mostrar gráfico radar
-        st.subheader("Seu Perfil de Habilidades")
+    missing_categories = [
+        cat.replace('_', ' ').title() 
+        for cat in test_categories 
+        if cat not in st.session_state.test_results
+    ]
+    
+    if missing_categories:
+        st.warning("Complete os seguintes testes para receber suas recomendações:")
+        for cat in missing_categories:
+            st.write(f"- {cat}")
+        return
+    
+    # 3. Processar resultados e obter recomendações apenas se necessário
+    if (
+        'recommendations' not in st.session_state 
+        or st.session_state.recommendations is None 
+        or 'processed_scores' not in st.session_state
+    ):
         try:
+            with st.spinner("Analisando seus resultados..."):
+                # Processar os resultados
+                processed_scores = process_test_results(st.session_state.test_results)
+                
+                # Verificar se os scores foram processados corretamente
+                if not all(isinstance(v, (int, float)) for v in processed_scores.values()):
+                    st.error("Erro no processamento dos scores. Por favor, tente novamente.")
+                    return
+                
+                # Obter recomendações
+                recommendations = get_sport_recommendations(processed_scores)
+                
+                # Verificar se as recomendações são válidas
+                if not recommendations or not isinstance(recommendations, list):
+                    st.error("Erro ao gerar recomendações. Por favor, tente novamente.")
+                    return
+                
+                # Salvar no estado da sessão
+                st.session_state.recommendations = recommendations
+                st.session_state.processed_scores = processed_scores
+                
+        except Exception as e:
+            st.error(f"Erro ao processar recomendações: {str(e)}")
+            return
+    
+    # 4. Exibir resultados
+    try:
+        # Layout em duas colunas
+        col1, col2 = st.columns([2, 3])
+        
+        with col1:
+            # Mostrar gráfico radar
+            st.subheader("Seu Perfil de Habilidades")
             radar_chart = create_radar_chart(st.session_state.processed_scores)
             st.plotly_chart(radar_chart, use_container_width=True)
-        except Exception as e:
-            st.error(f"Erro ao criar gráfico: {str(e)}")
-    
-    with col2:
-        # Mostrar recomendações
-        st.subheader("Top 5 Esportes Recomendados")
         
-        for sport in st.session_state.recommendations:
-            with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown("**🎯 Pontos Fortes:**")
-                    for strength in sport['strengths']:
-                        st.markdown(f"- {strength}")
-                
-                with col2:
-                    st.markdown("**💪 Áreas para Desenvolvimento:**")
-                    for area in sport['development']:
-                        st.markdown(f"- {area}")
+        with col2:
+            # Mostrar recomendações
+            st.subheader("Top 5 Esportes Recomendados")
+            
+            for sport in st.session_state.recommendations:
+                with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**🎯 Pontos Fortes:**")
+                        for strength in sport['strengths']:
+                            st.markdown(f"- {strength}")
+                    
+                    with col2:
+                        st.markdown("**💪 Áreas para Desenvolvimento:**")
+                        for area in sport['development']:
+                            st.markdown(f"- {area}")
+        
+        # 5. Botões de ação
+        st.divider()
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📊 Exportar Relatório", use_container_width=True):
+                st.info("Funcionalidade de exportação em desenvolvimento")
+        
+        with col2:
+            if st.button("🔄 Recomeçar Testes", use_container_width=True):
+                reset_session_state()
+                st.experimental_rerun()
     
-   # Botões de ação
-    st.divider()
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("📊 Exportar Relatório", use_container_width=True):
-            st.info("Funcionalidade de exportação em desenvolvimento")
-    
-    with col2:
-        if st.button("🔄 Recomeçar Testes", use_container_width=True):
-            reset_session_state()
-            st.query_params["reset"] = True
-            st.rerun()
+    except Exception as e:
+        st.error(f"Erro ao exibir resultados: {str(e)}")
+        st.button("🔄 Tentar Novamente", on_click=reset_session_state)
 
 def main():
     # Verifica se é um reset
