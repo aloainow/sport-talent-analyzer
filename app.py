@@ -593,36 +593,6 @@ def show_recommendations():
                 unsafe_allow_html=True
             )
 
-    
-    # Gráfico de radar (mantenha sua implementação atual)
-    
-    # Exibir recomendações
-    st.subheader("Top 5 Esportes Recomendados")
-    
-    for sport in st.session_state.recommendations:
-        html_content = f"""
-            <div class="sport-recommendation">
-                <div class="sport-name">
-                    {sport['name']}
-                    <span class="compatibility">{sport['compatibility']}% compatível</span>
-                </div>
-                <div class="attributes-container">
-                    <div>
-                        <div class="section-title strengths-title">Pontos Fortes:</div>
-                        <ul class="attributes-list">
-                            {''.join([f"<li>{strength}</li>" for strength in sport['strengths']])}
-                        </ul>
-                    </div>
-                    <div>
-                        <div class="section-title development-title">Desenvolver:</div>
-                        <ul class="attributes-list">
-                            {''.join([f"<li>{dev}</li>" for dev in sport['development']])}
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        """
-        st.markdown(html_content, unsafe_allow_html=True)        
 def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
