@@ -181,8 +181,8 @@ def create_radar_chart(scores):
         theta=categories,
         fill='toself',
         name='Perfil do Atleta',
-        line_color='#1f77b4',
-        fillcolor='rgba(31, 119, 180, 0.5)'
+        line_color='#8884d8',
+        fillcolor='rgba(136, 132, 216, 0.6)'
     ))
     
     fig.update_layout(
@@ -196,25 +196,34 @@ def create_radar_chart(scores):
                 dtick=20,
                 showline=True,
                 linewidth=1,
-                gridcolor='rgba(0,0,0,0.1)'
+                gridcolor='rgba(0,0,0,0.1)',
+                tickfont=dict(size=10)
             ),
             angularaxis=dict(
                 tickmode='array',
-                ticktext=categories[:-1],  # Remove o valor duplicado
+                ticktext=categories[:-1],
                 tickvals=list(range(len(categories[:-1]))),
                 direction='clockwise',
-                gridcolor='rgba(0,0,0,0.1)'
+                gridcolor='rgba(0,0,0,0.1)',
+                tickfont=dict(size=12)
             )
         ),
         showlegend=True,
         legend=dict(
-            x=0.85,
-            y=1.1
+            yanchor="top",
+            y=1.2,
+            xanchor="left",
+            x=0.1
         ),
-        margin=dict(t=50, b=50, l=50, r=50)
+        margin=dict(t=80, b=50, l=50, r=50),
+        height=400,
+        width=400,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     
     return fig
+
 def show_dados_fisicos():
     st.title("💪 Dados Físicos")
     
@@ -457,14 +466,12 @@ def show_fatores_psicologicos():
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
     
-    # Verificar se as informações pessoais foram preenchidas
+    # Verificações de dados...
     if not st.session_state.personal_info or not any(st.session_state.personal_info.values()):
         st.warning("⚠️ Por favor, preencha suas informações pessoais na página inicial (Home) antes de continuar.")
-        if st.button("Ir para Home"):
-            st.switch_page("Home")
         return
     
-    # Verificar se todos os testes foram completados
+    # Verificar testes completados...
     test_categories = {
         "Dados Físicos": 'dados_fisicos',
         "Habilidades Técnicas": 'habilidades_tecnicas',
@@ -485,21 +492,53 @@ def show_recommendations():
             st.write(f"- {label}")
         return
     
-    # Se chegou aqui, pode processar as recomendações
-    if (not st.session_state.recommendations or 
-        not st.session_state.processed_scores):
+    # Processar recomendações
+    if not st.session_state.recommendations or not st.session_state.processed_scores:
         try:
             with st.spinner("Analisando seus resultados..."):
                 processed_scores = process_test_results(st.session_state.test_results)
                 recommendations = get_sport_recommendations(processed_scores)
-                
                 st.session_state.recommendations = recommendations
                 st.session_state.processed_scores = processed_scores
         except Exception as e:
             st.error(f"Erro ao processar recomendações: {str(e)}")
             return
 
-    # Exibir recomendações
+    # Estilo CSS customizado
+    st.markdown("""
+        <style>
+        .sport-card {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .sport-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .sport-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .compatibility {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .strengths-title {
+            color: #28a745;
+            font-weight: 500;
+        }
+        .development-title {
+            color: #007bff;
+            font-weight: 500;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Layout em duas colunas
     col1, col2 = st.columns([2, 3])
     
     with col1:
@@ -513,16 +552,29 @@ def show_recommendations():
     with col2:
         st.subheader("Top 5 Esportes Recomendados")
         for sport in st.session_state.recommendations:
-            with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("**🎯 Pontos Fortes:**")
-                    for strength in sport['strengths']:
-                        st.markdown(f"- {strength}")
-                with col2:
-                    st.markdown("**💪 Áreas para Desenvolvimento:**")
-                    for area in sport['development']:
-                        st.markdown(f"- {area}")
+            html_content = f"""
+                <div class="sport-card">
+                    <div class="sport-header">
+                        <span class="sport-name">{sport['name']}</span>
+                        <span class="compatibility">{sport['compatibility']}% compatível</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <span class="strengths-title">Pontos Fortes:</span>
+                            <ul style="list-style-type: none; padding-left: 10px; margin-top: 5px;">
+                                {''.join([f"<li>• {strength}</li>" for strength in sport['strengths']])}
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="development-title">Desenvolver:</span>
+                            <ul style="list-style-type: none; padding-left: 10px; margin-top: 5px;">
+                                {''.join([f"<li>• {dev}</li>" for dev in sport['development']])}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            """
+            st.markdown(html_content, unsafe_allow_html=True)
 
 def main():
     # Verifica se é um reset
