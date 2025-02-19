@@ -188,8 +188,13 @@ def create_radar_chart(scores):
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
-                visible=False,
-                range=[0, 100]
+                visible=True,  # Mudado para True
+                range=[0, 100],
+                showline=True,
+                linewidth=1,
+                linecolor='white',
+                gridcolor='rgba(255, 255, 255, 0.1)',
+                tickfont=dict(color="white")
             ),
             angularaxis=dict(
                 tickmode='array',
@@ -203,11 +208,11 @@ def create_radar_chart(scores):
                 gridcolor='rgba(255, 255, 255, 0.1)',
                 linecolor='rgba(255, 255, 255, 0.1)'
             ),
-            bgcolor='#0E1117'
+            bgcolor='rgba(0,0,0,0)'
         ),
         showlegend=False,
-        paper_bgcolor='#0E1117',
-        plot_bgcolor='#0E1117',
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
         margin=dict(t=30, b=30, l=30, r=30),
         height=400
     )
