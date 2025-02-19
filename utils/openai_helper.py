@@ -1,5 +1,6 @@
 import streamlit as st
 import json
+import os
 from openai import OpenAI
 
 def get_recommendations_without_api():
@@ -46,14 +47,17 @@ def get_sport_recommendations(scores):
             st.warning("Chave da API OpenAI não encontrada. Usando recomendações padrão.")
             return get_recommendations_without_api()
 
-        try:
-            # Tenta criar o cliente apenas com a chave da API
-            client = OpenAI(
-                api_key=st.secrets["OPENAI_API_KEY"]
-            )
-        except Exception as e:
-            st.warning(f"Erro ao inicializar OpenAI. Usando recomendações padrão. Erro: {str(e)}")
-            return get_recommendations_without_api()
+        # Limpa qualquer configuração de proxy existente
+        if 'http_proxy' in os.environ:
+            del os.environ['http_proxy']
+        if 'https_proxy' in os.environ:
+            del os.environ['https_proxy']
+        
+        # Configura a API key como variável de ambiente
+        os.environ['OPENAI_API_KEY'] = st.secrets['OPENAI_API_KEY']
+        
+        # Cria o cliente OpenAI sem argumentos adicionais
+        client = OpenAI()
 
         prompt = f"""
         Atue como um especialista em identificação de talentos esportivos. 
