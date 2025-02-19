@@ -218,6 +218,68 @@ def create_radar_chart(scores):
     )
     
     return fig
+
+def analyze_user_attributes(test_results, personal_info):
+    """Analisa os atributos do usuário e retorna pontos fortes e a desenvolver."""
+    attributes = {}
+    
+    # Análise física
+    if test_results['dados_fisicos']:
+        dados_fisicos = test_results['dados_fisicos']
+        attributes['velocidade'] = normalize_score(dados_fisicos['velocidade'], 2.5, 5.0, inverse=True)
+        attributes['forca_superior'] = normalize_score(dados_fisicos['forca_superior'], 0, 50)
+        attributes['forca_inferior'] = normalize_score(dados_fisicos['forca_inferior'], 0, 60)
+    
+    # Análise técnica
+    if test_results['habilidades_tecnicas']:
+        hab_tecnicas = test_results['habilidades_tecnicas']
+        attributes['coordenacao'] = normalize_score(hab_tecnicas['coordenacao'], 0, 50)
+        attributes['precisao'] = normalize_score(hab_tecnicas['precisao'], 0, 10)
+        attributes['agilidade'] = normalize_score(hab_tecnicas['agilidade'], 5, 15, inverse=True)
+        attributes['equilibrio'] = normalize_score(hab_tecnicas['equilibrio'], 0, 60)
+    
+    # Análise tática
+    if test_results['aspectos_taticos']:
+        aspectos_taticos = test_results['aspectos_taticos']
+        attributes['tomada_decisao'] = normalize_score(aspectos_taticos['tomada_decisao'], 0, 10)
+        attributes['visao_jogo'] = normalize_score(aspectos_taticos['visao_jogo'], 0, 10)
+        attributes['posicionamento'] = normalize_score(aspectos_taticos['posicionamento'], 1, 10)
+    
+    # Análise psicológica (médias das subcategorias)
+    if test_results['fatores_psicologicos']:
+        fatores_psic = test_results['fatores_psicologicos']
+        attributes['motivacao'] = calculate_average([
+            fatores_psic['motivacao']['dedicacao'],
+            fatores_psic['motivacao']['frequencia'],
+            fatores_psic['motivacao']['comprometimento']
+        ])
+        attributes['resiliencia'] = calculate_average([
+            fatores_psic['resiliencia']['derrotas'],
+            fatores_psic['resiliencia']['criticas'],
+            fatores_psic['resiliencia']['erros']
+        ])
+        attributes['trabalho_equipe'] = calculate_average([
+            fatores_psic['trabalho_equipe']['comunicacao'],
+            fatores_psic['trabalho_equipe']['opinioes'],
+            fatores_psic['trabalho_equipe']['contribuicao']
+        ])
+    
+    # Análise das informações pessoais
+    if personal_info:
+        attributes['altura'] = normalize_score(personal_info.get('altura', 170), 150, 210)
+        attributes['peso'] = normalize_score(personal_info.get('peso', 70), 45, 120)
+        attributes['envergadura'] = normalize_score(personal_info.get('envergadura', 170), 150, 210)
+    
+    # Identificar pontos fortes e a desenvolver
+    sorted_attrs = sorted(attributes.items(), key=lambda x: x[1], reverse=True)
+    
+    pontos_fortes = [f"{attr.replace('_', ' ').title()}: {score:.0f}%" 
+                     for attr, score in sorted_attrs[:5] if score >= 60]
+    
+    desenvolver = [f"{attr.replace('_', ' ').title()}: {score:.0f}%" 
+                  for attr, score in sorted_attrs[-5:] if score < 60]
+    
+    return pontos_fortes, desenvolver
     
 def show_dados_fisicos():
     st.title("💪 Dados Físicos")
@@ -461,88 +523,65 @@ def show_fatores_psicologicos():
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
     
-    # Verificações e processamento de dados...
-    if not st.session_state.recommendations or not st.session_state.processed_scores:
-        try:
-            with st.spinner("Analisando seus resultados..."):
-                processed_scores = process_test_results(st.session_state.test_results)
-                recommendations = get_sport_recommendations(processed_scores)
-                st.session_state.recommendations = recommendations
-                st.session_state.processed_scores = processed_scores
-        except Exception as e:
-            st.error(f"Erro ao processar recomendações: {str(e)}")
-            return
-
-    # CSS atualizado para tema escuro
-    st.markdown("""
-        <style>
-        /* Estilos gerais */
-        .sport-recommendation {
-            background-color: #1E1E1E;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        /* Cabeçalho do esporte */
-        .sport-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        /* Porcentagem de compatibilidade */
-        .compatibility {
-            color: #00FF00;
-            font-weight: bold;
-        }
-        
-        /* Container para Pontos Fortes e Desenvolver */
-        .attributes-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        
-        /* Títulos das seções */
-        .section-title {
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
-        
-        .strengths-title {
-            color: #00FF00;
-        }
-        
-        .development-title {
-            color: #0088FF;
-        }
-        
-        /* Lista de atributos */
-        .attributes-list {
-            list-style-type: none;
-            padding-left: 0;
-            margin: 0;
-        }
-        
-        .attributes-list li {
-            color: white;
-            padding: 3px 0;
-            display: flex;
-            align-items: center;
-        }
-        
-        .attributes-list li:before {
-            content: "•";
-            margin-right: 8px;
-            color: white;
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    # Verificar se todos os testes foram completados
+    all_tests_completed = all(st.session_state.test_results.values())
+    
+    if not all_tests_completed:
+        st.warning("Complete todos os testes para ver suas recomendações completas.")
+        return
+    
+    # Processar scores e gerar recomendações
+    try:
+        with st.spinner("Analisando seus resultados..."):
+            processed_scores = process_test_results(st.session_state.test_results)
+            
+            # Criar e mostrar o gráfico radar
+            st.subheader("Seu Perfil")
+            fig = create_radar_chart(processed_scores)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Analisar atributos do usuário
+            pontos_fortes, desenvolver = analyze_user_attributes(
+                st.session_state.test_results,
+                st.session_state.personal_info
+            )
+            
+            # Gerar recomendações de esportes
+            recommendations = get_sport_recommendations(processed_scores)
+            st.session_state.recommendations = recommendations
+            st.session_state.processed_scores = processed_scores
+            
+    except Exception as e:
+        st.error(f"Erro ao processar recomendações: {str(e)}")
+        return
+    
+    # Exibir recomendações com os atributos do usuário
+    st.subheader("Top 5 Esportes Recomendados")
+    
+    for sport in st.session_state.recommendations:
+        with st.container():
+            st.markdown(f"""
+                <div class="sport-recommendation">
+                    <div class="sport-name">
+                        {sport['name']}
+                        <span class="compatibility">{sport['compatibility']}% compatível</span>
+                    </div>
+                    <div class="attributes-container">
+                        <div>
+                            <div class="section-title strengths-title">Seus Pontos Fortes:</div>
+                            <ul class="attributes-list">
+                                {''.join([f"<li>{strength}</li>" for strength in pontos_fortes])}
+                            </ul>
+                        </div>
+                        <div>
+                            <div class="section-title development-title">Atributos a Desenvolver:</div>
+                            <ul class="attributes-list">
+                                {''.join([f"<li>{dev}</li>" for dev in desenvolver])}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
     
     # Gráfico de radar (mantenha sua implementação atual)
     
