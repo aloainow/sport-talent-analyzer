@@ -5,3 +5,4 @@ numpy==1.26.4
 plotly==5.18.0
 streamlit-option-menu==0.3.6
 streamlit-extras==0.4.0
+python-dotenv==1.0.0  # Para gerenciar variáveis de ambiente (API key do OpenAI)
