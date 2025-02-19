@@ -13,6 +13,7 @@ st.set_page_config(
 
 # Inicialização do estado da sessão
 def init_session_state():
+    # Inicializa o estado da sessão
     if 'test_results' not in st.session_state:
         st.session_state.test_results = {
             'força': {},
@@ -26,6 +27,9 @@ def init_session_state():
         st.session_state.personal_info = {}
     if 'form_submitted' not in st.session_state:
         st.session_state.form_submitted = False
+    # Adiciona o contador do form se não existir
+    if 'form_key' not in st.session_state:
+        st.session_state.form_key = 0
         
 # Função para criar o gráfico radar
 def create_radar_chart(results):
@@ -338,13 +342,21 @@ def main():
         
         # Informações Pessoais
 # Modifique a seção de Informações Pessoais no código (por volta da linha 342)
-st.subheader("Informações Pessoais")
-with st.form(key="personal_info_form"):  # Mudança na definição do form
-    col1, col2 = st.columns(2)
+ st.subheader("Informações Pessoais")
+    form_key = f"personal_info_form_{st.session_state.form_key}"
     
-    with col1:
-        altura = st.number_input("Altura (cm)", min_value=0, max_value=300, key="altura")
-        peso = st.number_input("Peso (kg)", min_value=0, max_value=300, key="peso")
+    with st.form(key=form_key):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            altura = st.number_input(
+                "Altura (cm)", 
+                min_value=0, 
+                max_value=300,
+                value=170,
+                key=f"altura_{st.session_state.form_key}"
+            )
+            peso = st.number_input("Peso (kg)", min_value=0, max_value=300, key="peso")
         envergadura = st.number_input("Envergadura (cm)", min_value=0, max_value=300, key="envergadura")
     
     with col2:
@@ -364,18 +376,19 @@ with st.form(key="personal_info_form"):  # Mudança na definição do form
     
     submit_button = st.form_submit_button("Salvar Informações")
     
-    if submit_button:
-        st.session_state.personal_info = {
-            'altura': altura,
-            'peso': peso,
-            'envergadura': envergadura,
-            'idade': idade,
-            'ano_nascimento': ano_nascimento,
-            'cidade': cidade,
-            'estado': estado,
-            'pais': pais
-        }
-        st.success("Informações pessoais salvas com sucesso!")        
+    if st.form_submit_button("Salvar Informações"):
+            st.session_state.personal_info = {
+                'altura': altura,
+                'peso': peso,
+                'envergadura': envergadura,
+                'idade': idade,
+                'ano_nascimento': ano_nascimento,
+                'cidade': cidade,
+                'estado': estado,
+                'pais': pais
+            }
+            st.session_state.form_key += 1
+            st.success("Informações pessoais salvas com sucesso!")      
         # Progresso dos Testes
         st.subheader("Seu Progresso")
         progress_data = {
