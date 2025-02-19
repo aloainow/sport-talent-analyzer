@@ -511,8 +511,7 @@ def show_recommendations():
                     for area in sport['development']:
                         st.markdown(f"- {area}")
     
-    # Botões de ação
-    # Botões de ação
+   # Botões de ação
     st.divider()
     col1, col2 = st.columns(2)
     
@@ -523,17 +522,15 @@ def show_recommendations():
     with col2:
         if st.button("🔄 Recomeçar Testes", use_container_width=True):
             reset_session_state()
-            st.experimental_set_query_params(reset=True)
+            st.query_params["reset"] = True
             st.rerun()
 
 def main():
-
-     # Verifica se é um reset
-    query_params = st.experimental_get_query_params()
-    if query_params.get("reset"):
+    # Verifica se é um reset
+    if "reset" in st.query_params:
         reset_session_state()
-        st.experimental_set_query_params()
-        
+        st.query_params.clear()
+    
     # Menu lateral
     with st.sidebar:
         selected = option_menu(
