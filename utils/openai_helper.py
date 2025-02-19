@@ -1,6 +1,5 @@
 import streamlit as st
 import json
-import os
 import openai
 
 def get_recommendations_without_api():
@@ -50,16 +49,16 @@ def get_sport_recommendations(scores):
         # Configura a API key
         openai.api_key = st.secrets["OPENAI_API_KEY"]
 
+        # Ajusta o prompt para forçar uma resposta JSON válida
         prompt = f"""
-        Atue como um especialista em identificação de talentos esportivos. 
-        Analise o perfil do atleta com base nos seguintes scores (0-100):
-        
+        Analise o perfil do atleta com os seguintes scores (0-100) e retorne APENAS um JSON válido com as 5 modalidades esportivas mais compatíveis:
+
         - Dados Físicos: {scores.get('dados_fisicos', 0)}
         - Habilidades Técnicas: {scores.get('habilidades_tecnicas', 0)}
         - Aspectos Táticos: {scores.get('aspectos_taticos', 0)}
         - Fatores Psicológicos: {scores.get('fatores_psicologicos', 0)}
-        
-        Forneça um JSON com as 5 modalidades esportivas mais compatíveis neste formato:
+
+        O JSON deve seguir EXATAMENTE este formato, sem texto adicional:
         [
             {{
                 "name": "Nome do Esporte",
@@ -68,30 +67,49 @@ def get_sport_recommendations(scores):
                 "development": ["área 1", "área 2"]
             }}
         ]
-        Retorne APENAS o JSON, sem texto adicional.
         """
 
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-4-turbo-preview",
-                messages=[{"role": "user", "content": prompt}],
+                model="gpt-3.5-turbo",  # Mudando para gpt-3.5-turbo que é mais estável
+                messages=[
+                    {"role": "system", "content": "Você é um especialista em identificação de talentos esportivos. Responda apenas com JSON válido."},
+                    {"role": "user", "content": prompt}
+                ],
                 temperature=0.7,
                 max_tokens=1000
             )
             
-            content = response.choices[0].message.content.strip()
-            recommendations = json.loads(content)
+            # Debug: mostra a resposta raw
+            st.write("Debug - Resposta da API:", response.choices[0].message.content)
             
-            if isinstance(recommendations, list) and len(recommendations) > 0:
-                return recommendations
-            else:
-                st.warning("Resposta da API inválida. Usando recomendações padrão.")
+            content = response.choices[0].message.content.strip()
+            
+            # Tenta encontrar JSON válido na resposta
+            try:
+                # Remove qualquer texto antes e depois dos colchetes
+                json_start = content.find("[")
+                json_end = content.rfind("]") + 1
+                if json_start >= 0 and json_end > json_start:
+                    content = content[json_start:json_end]
+                
+                recommendations = json.loads(content)
+                
+                if isinstance(recommendations, list) and len(recommendations) > 0:
+                    return recommendations
+                else:
+                    st.warning("Formato de resposta inválido. Usando recomendações padrão.")
+                    return get_recommendations_without_api()
+                    
+            except json.JSONDecodeError as e:
+                st.warning(f"Erro ao processar JSON da resposta: {str(e)}")
+                st.write("Debug - Conteúdo que causou erro:", content)
                 return get_recommendations_without_api()
                 
         except Exception as e:
-            st.warning(f"Erro ao processar recomendações da API. Usando recomendações padrão. Erro: {str(e)}")
+            st.warning(f"Erro ao processar recomendações da API: {str(e)}")
             return get_recommendations_without_api()
             
     except Exception as e:
-        st.warning(f"Erro inesperado. Usando recomendações padrão. Erro: {str(e)}")
+        st.warning(f"Erro inesperado: {str(e)}")
         return get_recommendations_without_api()
