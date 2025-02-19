@@ -13,7 +13,6 @@ st.set_page_config(
 
 # Inicialização do estado da sessão
 def init_session_state():
-    # Inicializa o dicionário de resultados dos testes se não existir
     if 'test_results' not in st.session_state:
         st.session_state.test_results = {
             'força': {},
@@ -21,13 +20,13 @@ def init_session_state():
             'resistencia': {},
             'coordenacao': {}
         }
-    # Inicializa as recomendações se não existirem
     if 'recommendations' not in st.session_state:
         st.session_state.recommendations = None
-    # Inicializa as informações pessoais se não existirem
     if 'personal_info' not in st.session_state:
         st.session_state.personal_info = {}
-
+    if 'form_submitted' not in st.session_state:
+        st.session_state.form_submitted = False
+        
 # Função para criar o gráfico radar
 def create_radar_chart(results):
     categories = ['Físico', 'Técnico', 'Tático', 'Psicológico']
@@ -338,43 +337,45 @@ def main():
         st.header("Bem-vindo ao Analisador de Talentos Esportivos!")
         
         # Informações Pessoais
-        st.subheader("Informações Pessoais")
-        with st.form("personal_info"):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                altura = st.number_input("Altura (cm)", min_value=0, max_value=300)
-                peso = st.number_input("Peso (kg)", min_value=0, max_value=300)
-                envergadura = st.number_input("Envergadura (cm)", min_value=0, max_value=300)
-            
-            with col2:
-                idade = st.number_input("Idade", min_value=0, max_value=150)
-                ano_nascimento = st.number_input("Ano de Nascimento", min_value=1900, max_value=2024)
-            
-            # Localização
-            st.write("**Localização**")
-            col3, col4, col5 = st.columns(3)
-            
-            with col3:
-                cidade = st.text_input("Cidade")
-            with col4:
-                estado = st.text_input("Estado")
-            with col5:
-                pais = st.text_input("País")
-            
-            if st.form_submit_button("Salvar Informações"):
-                st.session_state.personal_info = {
-                    'altura': altura,
-                    'peso': peso,
-                    'envergadura': envergadura,
-                    'idade': idade,
-                    'ano_nascimento': ano_nascimento,
-                    'cidade': cidade,
-                    'estado': estado,
-                    'pais': pais
-                }
-                st.success("Informações pessoais salvas com sucesso!")
-        
+# Modifique a seção de Informações Pessoais no código (por volta da linha 342)
+st.subheader("Informações Pessoais")
+with st.form(key="personal_info_form"):  # Mudança na definição do form
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        altura = st.number_input("Altura (cm)", min_value=0, max_value=300, key="altura")
+        peso = st.number_input("Peso (kg)", min_value=0, max_value=300, key="peso")
+        envergadura = st.number_input("Envergadura (cm)", min_value=0, max_value=300, key="envergadura")
+    
+    with col2:
+        idade = st.number_input("Idade", min_value=0, max_value=150, key="idade")
+        ano_nascimento = st.number_input("Ano de Nascimento", min_value=1900, max_value=2024, key="ano_nascimento")
+    
+    # Localização
+    st.write("**Localização**")
+    col3, col4, col5 = st.columns(3)
+    
+    with col3:
+        cidade = st.text_input("Cidade", key="cidade")
+    with col4:
+        estado = st.text_input("Estado", key="estado")
+    with col5:
+        pais = st.text_input("País", key="pais")
+    
+    submit_button = st.form_submit_button("Salvar Informações")
+    
+    if submit_button:
+        st.session_state.personal_info = {
+            'altura': altura,
+            'peso': peso,
+            'envergadura': envergadura,
+            'idade': idade,
+            'ano_nascimento': ano_nascimento,
+            'cidade': cidade,
+            'estado': estado,
+            'pais': pais
+        }
+        st.success("Informações pessoais salvas com sucesso!")        
         # Progresso dos Testes
         st.subheader("Seu Progresso")
         progress_data = {
