@@ -79,10 +79,7 @@ def get_sport_recommendations(scores):
                 temperature=0.7,
                 max_tokens=1000
             )
-            
-            # Debug: mostra a resposta raw
-            st.write("Debug - Resposta da API:", response.choices[0].message.content)
-            
+                        
             content = response.choices[0].message.content.strip()
             
             # Tenta encontrar JSON válido na resposta
