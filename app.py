@@ -535,11 +535,9 @@ def show_recommendations():
         with st.spinner("Analisando seus resultados..."):
             processed_scores = process_test_results(st.session_state.test_results)
 
-            # Armazena os resultados na sessão
             st.session_state.processed_scores = processed_scores
             st.session_state.recommendations = get_sport_recommendations(processed_scores)
 
-            # Analisar atributos do usuário (pontos fortes e a desenvolver)
             pontos_fortes, desenvolver = analyze_user_attributes(
                 st.session_state.test_results,
                 st.session_state.personal_info
@@ -562,28 +560,29 @@ def show_recommendations():
             st.markdown(
                 f"""
                 <div style="
-                    background-color: #f9f9f9;
+                    background-color: #1e1e1e;
                     padding: 15px;
                     border-radius: 12px;
                     margin-bottom: 10px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                    color: white;
                 ">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <h3 style="margin: 0;">{index}. {sport['name']}</h3>
-                        <span style="color: green; font-weight: bold; font-size: 18px;">
+                        <h3 style="margin: 0; color: white;">{index}. {sport['name']}</h3>
+                        <span style="color: #4caf50; font-weight: bold; font-size: 18px;">
                             {sport['compatibility']}% compatível
                         </span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <div style="flex: 1; margin-right: 20px;">
-                            <strong style="color: green;">Pontos Fortes:</strong>
-                            <ul style="margin-top: 5px;">
+                            <strong style="color: #81c784;">Pontos Fortes:</strong>
+                            <ul style="margin-top: 5px; color: white;">
                                 {''.join(f'<li>{strength}</li>' for strength in sport['strengths'])}
                             </ul>
                         </div>
                         <div style="flex: 1;">
-                            <strong style="color: blue;">Desenvolver:</strong>
-                            <ul style="margin-top: 5px;">
+                            <strong style="color: #64b5f6;">Desenvolver:</strong>
+                            <ul style="margin-top: 5px; color: white;">
                                 {''.join(f'<li>{dev}</li>' for dev in sport['development'])}
                             </ul>
                         </div>
