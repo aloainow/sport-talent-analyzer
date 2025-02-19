@@ -1,20 +1,33 @@
 import streamlit as st
 import json
-import os
 from openai import OpenAI
+
+def create_openai_client():
+    """
+    Cria uma instância do cliente OpenAI com configuração mínima
+    """
+    try:
+        if "OPENAI_API_KEY" not in st.secrets:
+            raise ValueError("Chave da API OpenAI não encontrada!")
+        
+        # Criando cliente com configuração mínima
+        return OpenAI(
+            api_key=st.secrets["OPENAI_API_KEY"],
+            base_url="https://api.openai.com/v1"  # URL base explícita
+        )
+    except Exception as e:
+        st.error(f"Erro ao criar cliente OpenAI: {str(e)}")
+        return None
 
 def get_sport_recommendations(scores):
     """
     Gera recomendações de esportes usando a API do OpenAI baseado nos scores do atleta
     """
     try:
-        # Verifica se a chave da API está configurada
-        if "OPENAI_API_KEY" not in st.secrets:
-            st.error("Chave da API OpenAI não encontrada!")
+        # Cria o cliente OpenAI
+        client = create_openai_client()
+        if client is None:
             return []
-        
-        # Configura o cliente OpenAI com apenas a API key
-        client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
         
         # Prepara o prompt
         prompt = f"""
@@ -38,7 +51,7 @@ def get_sport_recommendations(scores):
         Retorne APENAS o JSON, sem texto adicional.
         """
         
-        # Faz a chamada à API
+        # Faz a chamada à API com configuração mínima
         response = client.chat.completions.create(
             model="gpt-4-turbo-preview",
             messages=[
