@@ -35,66 +35,77 @@ def process_test_results(test_results):
     Processa os resultados dos testes e retorna os scores normalizados.
     """
     try:
-        # Verificar se todos os testes foram completados
-        if not all(test_results.get(category) for category in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
-            return None
+        if not test_results:
+            return {
+                'dados_fisicos': 0,
+                'habilidades_tecnicas': 0,
+                'aspectos_taticos': 0,
+                'fatores_psicologicos': 0
+            }
 
         # Processar dados físicos
         dados_fisicos = test_results.get('dados_fisicos', {})
         if dados_fisicos:
-            score_fisico = normalize_score([
-                dados_fisicos.get('velocidade', 0),
-                dados_fisicos.get('forca_superior', 0),
-                dados_fisicos.get('forca_inferior', 0)
-            ])
+            velocidade_score = normalize_score(dados_fisicos.get('velocidade'), 2.5, 5.0, inverse=True)
+            forca_sup_score = normalize_score(dados_fisicos.get('forca_superior'), 0, 50)
+            forca_inf_score = normalize_score(dados_fisicos.get('forca_inferior'), 0, 60)
+            score_fisico = calculate_average([velocidade_score, forca_sup_score, forca_inf_score])
         else:
             score_fisico = 0
 
         # Processar habilidades técnicas
         habilidades_tecnicas = test_results.get('habilidades_tecnicas', {})
         if habilidades_tecnicas:
-            score_tecnico = normalize_score([
-                habilidades_tecnicas.get('coordenacao', 0),
-                habilidades_tecnicas.get('precisao', 0),
-                habilidades_tecnicas.get('agilidade', 0),
-                habilidades_tecnicas.get('equilibrio', 0)
-            ])
+            coord_score = normalize_score(habilidades_tecnicas.get('coordenacao'), 0, 50)
+            prec_score = normalize_score(habilidades_tecnicas.get('precisao'), 0, 10)
+            agil_score = normalize_score(habilidades_tecnicas.get('agilidade'), 5, 15, inverse=True)
+            equil_score = normalize_score(habilidades_tecnicas.get('equilibrio'), 0, 60)
+            score_tecnico = calculate_average([coord_score, prec_score, agil_score, equil_score])
         else:
             score_tecnico = 0
 
         # Processar aspectos táticos
         aspectos_taticos = test_results.get('aspectos_taticos', {})
         if aspectos_taticos:
-            score_tatico = normalize_score([
-                aspectos_taticos.get('tomada_decisao', 0),
-                aspectos_taticos.get('visao_jogo', 0),
-                aspectos_taticos.get('posicionamento', 0)
-            ])
+            decisao_score = normalize_score(aspectos_taticos.get('tomada_decisao'), 0, 10)
+            visao_score = normalize_score(aspectos_taticos.get('visao_jogo'), 0, 10)
+            posic_score = normalize_score(aspectos_taticos.get('posicionamento'), 1, 10)
+            score_tatico = calculate_average([decisao_score, visao_score, posic_score])
         else:
             score_tatico = 0
 
         # Processar fatores psicológicos
         fatores_psicologicos = test_results.get('fatores_psicologicos', {})
         if fatores_psicologicos:
+            # Motivação
+            mot = fatores_psicologicos.get('motivacao', {})
             motivacao = calculate_average([
-                fatores_psicologicos.get('motivacao', {}).get('dedicacao', 0),
-                fatores_psicologicos.get('motivacao', {}).get('frequencia', 0),
-                fatores_psicologicos.get('motivacao', {}).get('comprometimento', 0)
+                mot.get('dedicacao'),
+                mot.get('frequencia'),
+                mot.get('comprometimento')
             ])
             
+            # Resiliência
+            res = fatores_psicologicos.get('resiliencia', {})
             resiliencia = calculate_average([
-                fatores_psicologicos.get('resiliencia', {}).get('derrotas', 0),
-                fatores_psicologicos.get('resiliencia', {}).get('criticas', 0),
-                fatores_psicologicos.get('resiliencia', {}).get('erros', 0)
+                res.get('derrotas'),
+                res.get('criticas'),
+                res.get('erros')
             ])
             
+            # Trabalho em equipe
+            eq = fatores_psicologicos.get('trabalho_equipe', {})
             trabalho_equipe = calculate_average([
-                fatores_psicologicos.get('trabalho_equipe', {}).get('comunicacao', 0),
-                fatores_psicologicos.get('trabalho_equipe', {}).get('opinioes', 0),
-                fatores_psicologicos.get('trabalho_equipe', {}).get('contribuicao', 0)
+                eq.get('comunicacao'),
+                eq.get('opinioes'),
+                eq.get('contribuicao')
             ])
             
-            score_psicologico = normalize_score([motivacao, resiliencia, trabalho_equipe])
+            score_psicologico = calculate_average([
+                normalize_score(motivacao, 0, 10),
+                normalize_score(resiliencia, 0, 10),
+                normalize_score(trabalho_equipe, 0, 10)
+            ])
         else:
             score_psicologico = 0
 
@@ -107,4 +118,9 @@ def process_test_results(test_results):
         }
     except Exception as e:
         print(f"Erro no processamento dos scores: {str(e)}")
-        return None
+        return {
+            'dados_fisicos': 0,
+            'habilidades_tecnicas': 0,
+            'aspectos_taticos': 0,
+            'fatores_psicologicos': 0
+        }
