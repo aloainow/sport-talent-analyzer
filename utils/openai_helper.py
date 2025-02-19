@@ -5,12 +5,13 @@ def get_sport_recommendations(processed_results):
     """
     Gera recomendações de esportes baseadas nos resultados dos testes físicos
     """
-    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-    
-    # Prepara o prompt com os resultados processados
-    prompt = criar_prompt_analise(processed_results)
-    
     try:
+        # Inicializa o cliente OpenAI sem proxy
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        
+        # Prepara o prompt com os resultados processados
+        prompt = criar_prompt_analise(processed_results)
+        
         # Faz a chamada para a API do OpenAI
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -30,7 +31,7 @@ def get_sport_recommendations(processed_results):
         print(f"Erro ao gerar recomendações: {str(e)}")
         # Retorna recomendações padrão em caso de erro
         return get_default_recommendations()
-
+        
 def criar_prompt_analise(results):
     """
     Cria o prompt para a análise dos resultados
