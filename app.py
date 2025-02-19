@@ -522,66 +522,77 @@ def show_fatores_psicologicos():
 
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
-    
+
     # Verificar se todos os testes foram completados
     all_tests_completed = all(st.session_state.test_results.values())
-    
+
     if not all_tests_completed:
         st.warning("Complete todos os testes para ver suas recomendações completas.")
         return
-    
+
     # Processar scores e gerar recomendações
     try:
         with st.spinner("Analisando seus resultados..."):
             processed_scores = process_test_results(st.session_state.test_results)
-            
-            # Criar e mostrar o gráfico radar
-            st.subheader("Seu Perfil")
-            fig = create_radar_chart(processed_scores)
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Analisar atributos do usuário
+
+            # Armazena os resultados na sessão
+            st.session_state.processed_scores = processed_scores
+            st.session_state.recommendations = get_sport_recommendations(processed_scores)
+
+            # Analisar atributos do usuário (pontos fortes e a desenvolver)
             pontos_fortes, desenvolver = analyze_user_attributes(
                 st.session_state.test_results,
                 st.session_state.personal_info
             )
-            
-            # Gerar recomendações de esportes
-            recommendations = get_sport_recommendations(processed_scores)
-            st.session_state.recommendations = recommendations
-            st.session_state.processed_scores = processed_scores
-            
+
     except Exception as e:
         st.error(f"Erro ao processar recomendações: {str(e)}")
         return
-    
-    # Exibir recomendações com os atributos do usuário
+
+    # Exibir Radar Chart (Perfil)
+    st.subheader("Seu Perfil")
+    fig = create_radar_chart(st.session_state.processed_scores)
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Exibir Recomendações em cartões
     st.subheader("Top 5 Esportes Recomendados")
-    
-    for sport in st.session_state.recommendations:
+
+    for index, sport in enumerate(st.session_state.recommendations, start=1):
         with st.container():
-            st.markdown(f"""
-                <div class="sport-recommendation">
-                    <div class="sport-name">
-                        {sport['name']}
-                        <span class="compatibility">{sport['compatibility']}% compatível</span>
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: #f9f9f9;
+                    padding: 15px;
+                    border-radius: 12px;
+                    margin-bottom: 10px;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h3 style="margin: 0;">{index}. {sport['name']}</h3>
+                        <span style="color: green; font-weight: bold; font-size: 18px;">
+                            {sport['compatibility']}% compatível
+                        </span>
                     </div>
-                    <div class="attributes-container">
-                        <div>
-                            <div class="section-title strengths-title">Seus Pontos Fortes:</div>
-                            <ul class="attributes-list">
-                                {''.join([f"<li>{strength}</li>" for strength in pontos_fortes])}
+                    <div style="display: flex; justify-content: space-between;">
+                        <div style="flex: 1; margin-right: 20px;">
+                            <strong style="color: green;">Pontos Fortes:</strong>
+                            <ul style="margin-top: 5px;">
+                                {''.join(f'<li>{strength}</li>' for strength in sport['strengths'])}
                             </ul>
                         </div>
-                        <div>
-                            <div class="section-title development-title">Atributos a Desenvolver:</div>
-                            <ul class="attributes-list">
-                                {''.join([f"<li>{dev}</li>" for dev in desenvolver])}
+                        <div style="flex: 1;">
+                            <strong style="color: blue;">Desenvolver:</strong>
+                            <ul style="margin-top: 5px;">
+                                {''.join(f'<li>{dev}</li>' for dev in sport['development'])}
                             </ul>
                         </div>
                     </div>
                 </div>
-            """, unsafe_allow_html=True)
+                """,
+                unsafe_allow_html=True
+            )
+
     
     # Gráfico de radar (mantenha sua implementação atual)
     
