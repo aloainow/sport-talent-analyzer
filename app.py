@@ -578,13 +578,13 @@ def show_recommendations():
                         <div style="flex: 1; margin-right: 20px;">
                             <strong style="color: #81c784;">Pontos Fortes:</strong>
                             <ul style="margin-top: 5px; color: white;">
-                                {''.join(f'<li>{strength}</li>' for strength in sport['strengths'])}
+                                {''.join(f'<li>{pf}</li>' for pf in pontos_fortes)}
                             </ul>
                         </div>
                         <div style="flex: 1;">
                             <strong style="color: #64b5f6;">Desenvolver:</strong>
                             <ul style="margin-top: 5px; color: white;">
-                                {''.join(f'<li>{dev}</li>' for dev in sport['development'])}
+                                {''.join(f'<li>{dev}</li>' for dev in desenvolver)}
                             </ul>
                         </div>
                     </div>
