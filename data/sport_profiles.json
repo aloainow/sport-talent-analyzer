@@ -17,15 +17,13 @@
         },
         "tactical": {
           "decision_making": 8,
-          "game_vision": 9
+          "game_vision": 9,
+          "positioning": 8
         },
         "psychological": {
           "motivation": 8,
           "teamwork": 9,
-          "leadership": 7,
-          "resilience": 8,
-          "concentration": 7,
-          "competitiveness": 8
+          "resilience": 8
         }
       },
       "key_attributes": [
@@ -52,15 +50,13 @@
         },
         "tactical": {
           "decision_making": 9,
-          "game_vision": 9
+          "game_vision": 9,
+          "positioning": 8
         },
         "psychological": {
           "motivation": 8,
           "teamwork": 9,
-          "leadership": 8,
-          "resilience": 7,
-          "concentration": 8,
-          "competitiveness": 8
+          "resilience": 7
         }
       },
       "key_attributes": [
@@ -68,41 +64,6 @@
         "Coordenação motora",
         "Precisão",
         "Trabalho em equipe"
-      ]
-    },
-    {
-      "name": "Natação",
-      "category": "Individual",
-      "requirements": {
-        "physical": {
-          "velocity": 8,
-          "strength": 8,
-          "endurance": 9,
-          "agility": 6
-        },
-        "technical": {
-          "coordination": 9,
-          "balance": 7,
-          "precision": 7
-        },
-        "tactical": {
-          "decision_making": 6,
-          "game_vision": 5
-        },
-        "psychological": {
-          "motivation": 9,
-          "teamwork": 5,
-          "leadership": 5,
-          "resilience": 9,
-          "concentration": 9,
-          "competitiveness": 8
-        }
-      },
-      "key_attributes": [
-        "Resistência aeróbica",
-        "Força muscular",
-        "Coordenação motora",
-        "Disciplina"
       ]
     },
     {
@@ -122,15 +83,13 @@
         },
         "tactical": {
           "decision_making": 8,
-          "game_vision": 9
+          "game_vision": 9,
+          "positioning": 8
         },
         "psychological": {
           "motivation": 8,
           "teamwork": 9,
-          "leadership": 7,
-          "resilience": 7,
-          "concentration": 8,
-          "competitiveness": 8
+          "resilience": 7
         }
       },
       "key_attributes": [
@@ -138,6 +97,105 @@
         "Força explosiva",
         "Coordenação motora",
         "Trabalho em equipe"
+      ]
+    },
+    {
+      "name": "Handebol",
+      "category": "Coletivo",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 8,
+          "endurance": 8,
+          "agility": 8
+        },
+        "technical": {
+          "coordination": 8,
+          "balance": 7,
+          "precision": 8
+        },
+        "tactical": {
+          "decision_making": 8,
+          "game_vision": 8,
+          "positioning": 8
+        },
+        "psychological": {
+          "motivation": 8,
+          "teamwork": 9,
+          "resilience": 8
+        }
+      },
+      "key_attributes": [
+        "Força",
+        "Velocidade",
+        "Coordenação",
+        "Trabalho em equipe"
+      ]
+    },
+    {
+      "name": "Rugby",
+      "category": "Coletivo",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 9,
+          "endurance": 9,
+          "agility": 7
+        },
+        "technical": {
+          "coordination": 8,
+          "balance": 8,
+          "precision": 7
+        },
+        "tactical": {
+          "decision_making": 8,
+          "game_vision": 8,
+          "positioning": 9
+        },
+        "psychological": {
+          "motivation": 9,
+          "teamwork": 9,
+          "resilience": 9
+        }
+      },
+      "key_attributes": [
+        "Força física",
+        "Resistência",
+        "Trabalho em equipe",
+        "Coragem"
+      ]
+    },
+    {
+      "name": "Natação",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 8,
+          "endurance": 9,
+          "agility": 6
+        },
+        "technical": {
+          "coordination": 9,
+          "balance": 7,
+          "precision": 7
+        },
+        "tactical": {
+          "decision_making": 6,
+          "game_vision": 5,
+          "positioning": 7
+        },
+        "psychological": {
+          "motivation": 9,
+          "teamwork": 5,
+          "resilience": 9
+        }
+      },
+      "key_attributes": [
+        "Resistência aeróbica",
+        "Força muscular",
+        "Coordenação motora",
+        "Disciplina"
       ]
     },
     {
@@ -157,15 +215,13 @@
         },
         "tactical": {
           "decision_making": 6,
-          "game_vision": 5
+          "game_vision": 5,
+          "positioning": 7
         },
         "psychological": {
           "motivation": 9,
           "teamwork": 5,
-          "leadership": 5,
-          "resilience": 9,
-          "concentration": 9,
-          "competitiveness": 9
+          "resilience": 9
         }
       },
       "key_attributes": [
@@ -192,15 +248,13 @@
         },
         "tactical": {
           "decision_making": 8,
-          "game_vision": 8
+          "game_vision": 8,
+          "positioning": 8
         },
         "psychological": {
           "motivation": 8,
           "teamwork": 5,
-          "leadership": 6,
-          "resilience": 8,
-          "concentration": 9,
-          "competitiveness": 9
+          "resilience": 8
         }
       },
       "key_attributes": [
@@ -227,15 +281,13 @@
         },
         "tactical": {
           "decision_making": 7,
-          "game_vision": 6
+          "game_vision": 6,
+          "positioning": 8
         },
         "psychological": {
           "motivation": 9,
           "teamwork": 5,
-          "leadership": 5,
-          "resilience": 9,
-          "concentration": 10,
-          "competitiveness": 8
+          "resilience": 9
         }
       },
       "key_attributes": [
@@ -262,15 +314,13 @@
         },
         "tactical": {
           "decision_making": 9,
-          "game_vision": 8
+          "game_vision": 8,
+          "positioning": 9
         },
         "psychological": {
           "motivation": 8,
           "teamwork": 6,
-          "leadership": 7,
-          "resilience": 9,
-          "concentration": 9,
-          "competitiveness": 8
+          "resilience": 9
         }
       },
       "key_attributes": [
@@ -279,48 +329,341 @@
         "Disciplina",
         "Resiliência"
       ]
+    },
+    {
+      "name": "Karatê",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 7,
+          "endurance": 7,
+          "agility": 9
+        },
+        "technical": {
+          "coordination": 9,
+          "balance": 9,
+          "precision": 9
+        },
+        "tactical": {
+          "decision_making": 8,
+          "game_vision": 7,
+          "positioning": 8
+        },
+        "psychological": {
+          "motivation": 8,
+          "teamwork": 5,
+          "resilience": 8
+        }
+      },
+      "key_attributes": [
+        "Velocidade",
+        "Precisão",
+        "Disciplina",
+        "Concentração"
+      ]
+    },
+    {
+      "name": "Boxe",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 9,
+          "endurance": 8,
+          "agility": 8
+        },
+        "technical": {
+          "coordination": 8,
+          "balance": 8,
+          "precision": 9
+        },
+        "tactical": {
+          "decision_making": 9,
+          "game_vision": 8,
+          "positioning": 8
+        },
+        "psychological": {
+          "motivation": 9,
+          "teamwork": 5,
+          "resilience": 9
+        }
+      },
+      "key_attributes": [
+        "Força",
+        "Velocidade",
+        "Resistência",
+        "Determinação"
+      ]
+    },
+    {
+      "name": "Ciclismo",
+      "category": "Individual",
+      "requirements": {
+        "physical": {
+          "velocity": 8,
+          "strength": 7,
+          "endurance": 10,
+          "agility": 6
+        },
+        "technical": {
+          "coordination": 7,
+          "balance": 8,
+          "precision": 7
+        },
+        "tactical": {
+          "decision_making": 7,
+          "game_vision": 7,
+          "positioning": 8
+        },
+        "psychological": {
+          "motivation": 9,
+          "teamwork": 5,
+          "resilience": 9
+        }
+      },
+      "key_attributes": [
+        "Resistência",
+        "Força nas pernas",
+        "Determinação",
+        "Disciplina"
+      ]
     }
   ],
   "categories": {
     "Coletivo": {
       "description": "Esportes que requerem interação e coordenação entre membros de uma equipe",
-      "key_skills": ["Trabalho em equipe", "Comunicação", "Visão de jogo"]
+      "key_skills": [
+        "Trabalho em equipe",
+        "Comunicação",
+        "Visão de jogo",
+        "Cooperação",
+        "Liderança"
+      ]
     },
     "Individual": {
       "description": "Esportes focados no desempenho individual do atleta",
-      "key_skills": ["Autodisciplina", "Foco", "Determinação"]
+      "key_skills": [
+        "Autodisciplina",
+        "Foco",
+        "Determinação",
+        "Autoconfiança",
+        "Resiliência"
+      ]
     }
   },
   "physical_attributes": {
     "velocity": {
       "description": "Capacidade de movimentação rápida",
-      "measurement": "segundos em 20m"
+      "measurement": "Tempo em corrida de 20m",
+      "test_method": "Corrida de 20 metros",
+      "reference_values": {
+        "beginner": ">4.0s",
+        "intermediate": "3.5-4.0s",
+        "advanced": "<3.5s"
+      }
     },
     "strength": {
       "description": "Força muscular geral",
-      "measurement": "repetições máximas"
+      "measurement": "Combinação de força superior e inferior",
+      "test_methods": [
+        {
+          "name": "Flexões em 1 minuto",
+          "reference_values": {
+            "beginner": "10-15",
+            "intermediate": "16-25",
+            "advanced": "26+"
+          }
+        },
+        {
+          "name": "Agachamentos em 1 minuto",
+          "reference_values": {
+            "beginner": "20-30",
+            "intermediate": "31-40",
+            "advanced": "41+"
+          }
+        }
+      ]
     },
     "endurance": {
       "description": "Resistência aeróbica",
-      "measurement": "metros em 12 min"
+      "measurement": "Distância percorrida em 6 minutos",
+      "test_method": "Teste de Cooper adaptado",
+      "reference_values": {
+        "beginner": "<1000m",
+        "intermediate": "1000-1400m",
+        "advanced": ">1400m"
+      }
     },
     "agility": {
       "description": "Capacidade de mudança rápida de direção",
-      "measurement": "segundos no teste do quadrado"
+      "measurement": "Tempo no teste do quadrado",
+      "test_method": "Teste do quadrado (4x4m)",
+      "reference_values": {
+        "beginner": ">12s",
+        "intermediate": "10-12s",
+        "advanced": "<10s"
+      }
     }
   },
   "technical_attributes": {
     "coordination": {
       "description": "Coordenação motora geral",
-      "measurement": "escala 1-10"
+      "measurement": "Número de alternâncias em 30 segundos",
+      "test_method": "Pular corda alternando pés",
+      "reference_values": {
+        "beginner": "<20",
+        "intermediate": "20-30",
+        "advanced": ">30"
+      }
     },
     "balance": {
       "description": "Equilíbrio corporal",
-      "measurement": "tempo em posição"
+      "measurement": "Tempo em equilíbrio",
+      "test_method": "Equilíbrio em uma perna com olhos fechados",
+      "reference_values": {
+        "beginner": "<20s",
+        "intermediate": "20-40s",
+        "advanced": ">40s"
+      }
     },
     "precision": {
       "description": "Precisão de movimentos",
-      "measurement": "escala 1-10"
+      "measurement": "Acertos em alvos",
+      "test_method": "Acertar alvos na parede",
+      "reference_values": {
+        "beginner": "3-4",
+        "intermediate": "5-7",
+        "advanced": "8-10"
+      }
+    }
+  },
+"tactical_attributes": {
+    "decision_making": {
+      "description": "Capacidade de tomar decisões rápidas e efetivas",
+      "measurement": "Número de acertos em teste de reação",
+      "test_method": "Jogo de reação com cores",
+      "reference_values": {
+        "beginner": "3-4",
+        "intermediate": "5-7",
+        "advanced": "8-10"
+      }
+    },
+    "game_vision": {
+      "description": "Capacidade de leitura e antecipação do jogo",
+      "measurement": "Acertos em teste de memorização",
+      "test_method": "Memorização de padrões",
+      "reference_values": {
+        "beginner": "3-4",
+        "intermediate": "5-7",
+        "advanced": "8-10"
+      }
+    },
+    "positioning": {
+      "description": "Capacidade de se posicionar corretamente",
+      "measurement": "Precisão em teste de posicionamento",
+      "test_method": "Reagir a sinais sonoros",
+      "reference_values": {
+        "beginner": "1-3",
+        "intermediate": "4-7",
+        "advanced": "8-10"
+      }
+    }
+  },
+  "psychological_attributes": {
+    "motivation": {
+      "description": "Nível de dedicação e comprometimento",
+      "measurement": "Auto-avaliação em escala",
+      "components": [
+        {
+          "name": "Dedicação aos treinos",
+          "question": "Quanto você se dedica aos treinos?",
+          "scale": "1-10"
+        },
+        {
+          "name": "Frequência de prática",
+          "question": "Com que frequência pratica atividades físicas?",
+          "scale": "1-10"
+        },
+        {
+          "name": "Comprometimento",
+          "question": "Qual seu nível de comprometimento com objetivos?",
+          "scale": "1-10"
+        }
+      ]
+    },
+    "resilience": {
+      "description": "Capacidade de lidar com adversidades",
+      "measurement": "Auto-avaliação em escala",
+      "components": [
+        {
+          "name": "Lidar com derrotas",
+          "question": "Como lida com derrotas?",
+          "scale": "1-10"
+        },
+        {
+          "name": "Reação a críticas",
+          "question": "Como reage a críticas?",
+          "scale": "1-10"
+        },
+        {
+          "name": "Recuperação de erros",
+          "question": "Como se recupera de erros?",
+          "scale": "1-10"
+        }
+      ]
+    },
+    "teamwork": {
+      "description": "Capacidade de trabalhar em equipe",
+      "measurement": "Auto-avaliação em escala",
+      "components": [
+        {
+          "name": "Comunicação em grupo",
+          "question": "Como se comunica em grupo?",
+          "scale": "1-10"
+        },
+        {
+          "name": "Lidar com opiniões",
+          "question": "Como lida com diferentes opiniões?",
+          "scale": "1-10"
+        },
+        {
+          "name": "Contribuição coletiva",
+          "question": "Como contribui para objetivos coletivos?",
+          "scale": "1-10"
+        }
+      ]
+    }
+  },
+  "test_guidelines": {
+    "general": [
+      "Faça aquecimento adequado antes dos testes",
+      "Mantenha boa hidratação",
+      "Realize os testes em ambiente seguro",
+      "Respeite seus limites",
+      "Repita os testes periodicamente para acompanhar evolução"
+    ],
+    "safety": {
+      "pre_test": [
+        "Consulte um médico antes de iniciar os testes",
+        "Verifique o ambiente e equipamentos",
+        "Realize aquecimento adequado"
+      ],
+      "during_test": [
+        "Mantenha boa postura",
+        "Respeite intervalos de descanso",
+        "Observe sinais de fadiga excessiva"
+      ],
+      "post_test": [
+        "Faça alongamentos",
+        "Hidrate-se bem",
+        "Anote seus resultados"
+      ]
+    },
+    "frequency": {
+      "initial_assessment": "Realizar todos os testes na primeira avaliação",
+      "follow_up": "Repetir os testes a cada 3-4 meses",
+      "monitoring": "Acompanhar progresso e ajustar treinos conforme necessário"
     }
   }
 }
