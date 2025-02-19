@@ -248,7 +248,7 @@ def show_recommendations():
     # Verificar se todos os testes foram completados
     test_categories = ['força', 'velocidade', 'resistencia', 'coordenacao']
     all_tests_completed = all(
-        category in st.session_state.test_results 
+        len(st.session_state.test_results.get(category, {})) > 0 
         for category in test_categories
     )
     
@@ -257,32 +257,52 @@ def show_recommendations():
         return
     
     # Processar resultados e obter recomendações
-    if 'recommendations' not in st.session_state:
+    if 'recommendations' not in st.session_state or st.session_state.recommendations is None:
         with st.spinner("Analisando seus resultados..."):
-            processed_results = process_test_results(st.session_state.test_results)
-            st.session_state.recommendations = get_sport_recommendations(processed_results)
+            try:
+                processed_results = process_test_results(st.session_state.test_results)
+                st.session_state.recommendations = get_sport_recommendations(processed_results)
+            except Exception as e:
+                st.error(f"Erro ao processar recomendações: {str(e)}")
+                return
     
     # Mostrar gráfico radar
     st.subheader("Seu Perfil de Habilidades")
-    radar_chart = create_radar_chart(st.session_state.test_results)
-    st.plotly_chart(radar_chart, use_container_width=True)
+    try:
+        radar_chart = create_radar_chart(st.session_state.test_results)
+        st.plotly_chart(radar_chart, use_container_width=True)
+    except Exception as e:
+        st.error(f"Erro ao criar gráfico: {str(e)}")
     
     # Mostrar recomendações
     st.subheader("Esportes Recomendados")
     
-    for sport in st.session_state.recommendations:
-        with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.write("**Pontos Fortes:**")
-                for strength in sport['strengths']:
-                    st.write(f"✓ {strength}")
-            
-            with col2:
-                st.write("**Áreas para Desenvolvimento:**")
-                for area in sport['development']:
-                    st.write(f"→ {area}")
+    if not st.session_state.recommendations:
+        st.warning("Nenhuma recomendação disponível no momento.")
+        return
+        
+    # Verificar formato das recomendações
+    if isinstance(st.session_state.recommendations, list):
+        for sport in st.session_state.recommendations:
+            if isinstance(sport, dict) and 'name' in sport and 'compatibility' in sport:
+                with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write("**Pontos Fortes:**")
+                        if 'strengths' in sport and isinstance(sport['strengths'], list):
+                            for strength in sport['strengths']:
+                                st.write(f"✓ {strength}")
+                    
+                    with col2:
+                        st.write("**Áreas para Desenvolvimento:**")
+                        if 'development' in sport and isinstance(sport['development'], list):
+                            for area in sport['development']:
+                                st.write(f"→ {area}")
+            else:
+                st.error("Formato de recomendação inválido")
+    else:
+        st.error("Formato de recomendações inválido")
     
     # Botões de ação
     st.divider()
