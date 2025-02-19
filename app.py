@@ -453,114 +453,81 @@ def show_fatores_psicologicos():
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
     
-    # 1. Verificar se as informações pessoais foram preenchidas
-    if not st.session_state.personal_info:
-        st.warning("Por favor, preencha suas informações pessoais na página inicial antes de continuar.")
+    # Verificar se as informações pessoais foram preenchidas
+    if not st.session_state.personal_info or not any(st.session_state.personal_info.values()):
+        st.warning("⚠️ Por favor, preencha suas informações pessoais na página inicial (Home) antes de continuar.")
+        if st.button("Ir para Home"):
+            st.switch_page("Home")
         return
     
-    # 2. Verificar se todos os testes foram completados
-    test_categories = [
-        'dados_fisicos', 
-        'habilidades_tecnicas', 
-        'aspectos_taticos', 
-        'fatores_psicologicos'
-    ]
+    # Verificar se todos os testes foram completados
+    test_categories = {
+        "Dados Físicos": 'dados_fisicos',
+        "Habilidades Técnicas": 'habilidades_tecnicas',
+        "Aspectos Táticos": 'aspectos_taticos',
+        "Fatores Psicológicos": 'fatores_psicologicos'
+    }
     
-    missing_categories = [
-        cat.replace('_', ' ').title() 
-        for cat in test_categories 
-        if cat not in st.session_state.test_results
-    ]
+    incomplete_tests = {
+        label: category
+        for label, category in test_categories.items()
+        if category not in st.session_state.test_results
+        or not st.session_state.test_results[category]
+    }
     
-    if missing_categories:
-        st.warning("Complete os seguintes testes para receber suas recomendações:")
-        for cat in missing_categories:
-            st.write(f"- {cat}")
+    if incomplete_tests:
+        st.warning("⚠️ Complete os seguintes testes para receber suas recomendações:")
+        for label in incomplete_tests:
+            st.write(f"- {label}")
         return
     
-    # 3. Processar resultados e obter recomendações apenas se necessário
-    if (
-        'recommendations' not in st.session_state 
-        or st.session_state.recommendations is None 
-        or 'processed_scores' not in st.session_state
-    ):
+    # Se chegou aqui, pode processar as recomendações
+    if (not st.session_state.recommendations or 
+        not st.session_state.processed_scores):
         try:
             with st.spinner("Analisando seus resultados..."):
-                # Processar os resultados
                 processed_scores = process_test_results(st.session_state.test_results)
-                
-                # Verificar se os scores foram processados corretamente
-                if not all(isinstance(v, (int, float)) for v in processed_scores.values()):
-                    st.error("Erro no processamento dos scores. Por favor, tente novamente.")
-                    return
-                
-                # Obter recomendações
                 recommendations = get_sport_recommendations(processed_scores)
                 
-                # Verificar se as recomendações são válidas
-                if not recommendations or not isinstance(recommendations, list):
-                    st.error("Erro ao gerar recomendações. Por favor, tente novamente.")
-                    return
-                
-                # Salvar no estado da sessão
                 st.session_state.recommendations = recommendations
                 st.session_state.processed_scores = processed_scores
-                
         except Exception as e:
             st.error(f"Erro ao processar recomendações: {str(e)}")
             return
+
+    # Exibir recomendações
+    col1, col2 = st.columns([2, 3])
     
-    # 4. Exibir resultados
-    try:
-        # Layout em duas colunas
-        col1, col2 = st.columns([2, 3])
-        
-        with col1:
-            # Mostrar gráfico radar
-            st.subheader("Seu Perfil de Habilidades")
+    with col1:
+        st.subheader("Seu Perfil de Habilidades")
+        try:
             radar_chart = create_radar_chart(st.session_state.processed_scores)
             st.plotly_chart(radar_chart, use_container_width=True)
-        
-        with col2:
-            # Mostrar recomendações
-            st.subheader("Top 5 Esportes Recomendados")
-            
-            for sport in st.session_state.recommendations:
-                with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown("**🎯 Pontos Fortes:**")
-                        for strength in sport['strengths']:
-                            st.markdown(f"- {strength}")
-                    
-                    with col2:
-                        st.markdown("**💪 Áreas para Desenvolvimento:**")
-                        for area in sport['development']:
-                            st.markdown(f"- {area}")
-        
-        # 5. Botões de ação
-        st.divider()
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if st.button("📊 Exportar Relatório", use_container_width=True):
-                st.info("Funcionalidade de exportação em desenvolvimento")
-        
-        with col2:
-            if st.button("🔄 Recomeçar Testes", use_container_width=True):
-                reset_session_state()
-                st.experimental_rerun()
+        except Exception as e:
+            st.error(f"Erro ao criar gráfico: {str(e)}")
     
-    except Exception as e:
-        st.error(f"Erro ao exibir resultados: {str(e)}")
-        st.button("🔄 Tentar Novamente", on_click=reset_session_state)
+    with col2:
+        st.subheader("Top 5 Esportes Recomendados")
+        for sport in st.session_state.recommendations:
+            with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("**🎯 Pontos Fortes:**")
+                    for strength in sport['strengths']:
+                        st.markdown(f"- {strength}")
+                with col2:
+                    st.markdown("**💪 Áreas para Desenvolvimento:**")
+                    for area in sport['development']:
+                        st.markdown(f"- {area}")
 
 def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
         reset_session_state()
         st.query_params.clear()
+    
+    # Inicializa o estado da sessão
+    init_session_state()
     
     # Menu lateral
     with st.sidebar:
@@ -585,8 +552,7 @@ def main():
     elif selected == "Fatores Psicológicos":
         show_fatores_psicologicos()
     elif selected == "Recomendações":
-        show_recommendations()
-        
+        show_recommendations()        
         # Informações Pessoais
         st.subheader("Informações Pessoais")
         form_key = f"personal_info_form_{st.session_state.form_key}"
