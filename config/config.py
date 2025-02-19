@@ -1,7 +1,7 @@
 import streamlit as st
 
 # OpenAI Configuration
-OPENAI_MODEL = "gpt-4"
+OPENAI_MODEL = "gpt-4-turbo-preview"
 
 # Configurações do App
 APP_NAME = "Analisador de Talentos Esportivos"
@@ -10,128 +10,210 @@ APP_VERSION = "1.0.0"
 
 # Configurações dos Testes
 TESTS_CONFIG = {
-    "physical": {
-        "name": "Testes Físicos",
+    "dados_fisicos": {
+        "name": "Dados Físicos",
+        "icon": "💪",
         "tests": {
-            "velocity": {
+            "velocidade": {
                 "name": "Velocidade (20m)",
                 "unit": "segundos",
                 "description": "Tempo para percorrer 20 metros em linha reta",
-                "min": 2.5,
-                "max": 8.0
+                "min": 3.0,
+                "max": 6.0,
+                "reference": {
+                    "iniciante": ">4.0s",
+                    "intermediario": "3.5-4.0s",
+                    "avancado": "<3.5s"
+                }
             },
-            "strength": {
-                "name": "Força (Flexões)",
+            "forca_superior": {
+                "name": "Força Superior (Flexões)",
                 "unit": "repetições",
                 "description": "Número máximo de flexões em 1 minuto",
                 "min": 0,
-                "max": 50
+                "max": 50,
+                "reference": {
+                    "iniciante": "10-15",
+                    "intermediario": "16-25",
+                    "avancado": "26+"
+                }
             },
-            "endurance": {
-                "name": "Resistência (Cooper)",
-                "unit": "metros",
-                "description": "Distância percorrida em 12 minutos",
+            "forca_inferior": {
+                "name": "Força Inferior (Agachamentos)",
+                "unit": "repetições",
+                "description": "Número máximo de agachamentos em 1 minuto",
                 "min": 0,
-                "max": 3000
-            },
-            "agility": {
-                "name": "Agilidade",
-                "unit": "segundos",
-                "description": "Teste do quadrado (4x4m)",
-                "min": 5,
-                "max": 15
+                "max": 60,
+                "reference": {
+                    "iniciante": "20-30",
+                    "intermediario": "31-40",
+                    "avancado": "41+"
+                }
             }
         }
     },
-    "technical": {
-        "name": "Testes Técnicos",
+    "habilidades_tecnicas": {
+        "name": "Habilidades Técnicas",
+        "icon": "🎯",
         "tests": {
-            "coordination": {
-                "name": "Coordenação Motora",
-                "unit": "pontos",
-                "description": "Teste de coordenação motora geral",
+            "coordenacao": {
+                "name": "Coordenação (Pular Corda)",
+                "unit": "alternâncias",
+                "description": "Número de alternâncias em 30 segundos",
                 "min": 0,
-                "max": 10
+                "max": 50,
+                "reference": {
+                    "iniciante": "<20",
+                    "intermediario": "20-30",
+                    "avancado": ">30"
+                }
             },
-            "balance": {
+            "precisao": {
+                "name": "Precisão (Alvos)",
+                "unit": "acertos",
+                "description": "Número de acertos em 10 tentativas",
+                "min": 0,
+                "max": 10,
+                "reference": {
+                    "iniciante": "3-4",
+                    "intermediario": "5-7",
+                    "avancado": "8-10"
+                }
+            },
+            "agilidade": {
+                "name": "Agilidade (Teste do Quadrado)",
+                "unit": "segundos",
+                "description": "Tempo no teste do quadrado 4x4m",
+                "min": 8,
+                "max": 15,
+                "reference": {
+                    "iniciante": ">12s",
+                    "intermediario": "10-12s",
+                    "avancado": "<10s"
+                }
+            },
+            "equilibrio": {
                 "name": "Equilíbrio",
                 "unit": "segundos",
                 "description": "Tempo em equilíbrio em uma perna",
                 "min": 0,
-                "max": 60
-            },
-            "precision": {
-                "name": "Precisão",
-                "unit": "pontos",
-                "description": "Teste de precisão de movimentos",
-                "min": 0,
-                "max": 10
+                "max": 120,
+                "reference": {
+                    "iniciante": "<20s",
+                    "intermediario": "20-40s",
+                    "avancado": ">40s"
+                }
             }
         }
     },
-    "tactical": {
-        "name": "Testes Táticos",
+    "aspectos_taticos": {
+        "name": "Aspectos Táticos",
+        "icon": "🧠",
         "tests": {
-            "decision_making": {
+            "tomada_decisao": {
                 "name": "Tomada de Decisão",
-                "unit": "pontos",
-                "description": "Avaliação de decisões em situações de jogo",
+                "unit": "acertos",
+                "description": "Acertos em teste de reação",
                 "min": 0,
-                "max": 10
+                "max": 10,
+                "reference": {
+                    "iniciante": "3-4",
+                    "intermediario": "5-7",
+                    "avancado": "8-10"
+                }
             },
-            "game_vision": {
+            "visao_jogo": {
                 "name": "Visão de Jogo",
-                "unit": "pontos",
-                "description": "Capacidade de leitura e antecipação",
+                "unit": "acertos",
+                "description": "Acertos em teste de memorização",
                 "min": 0,
-                "max": 10
+                "max": 10,
+                "reference": {
+                    "iniciante": "3-4",
+                    "intermediario": "5-7",
+                    "avancado": "8-10"
+                }
+            },
+            "posicionamento": {
+                "name": "Posicionamento",
+                "unit": "escala",
+                "description": "Precisão no posicionamento",
+                "min": 1,
+                "max": 10,
+                "reference": {
+                    "iniciante": "1-3",
+                    "intermediario": "4-7",
+                    "avancado": "8-10"
+                }
             }
         }
     },
-    "psychological": {
-        "name": "Testes Psicológicos",
+    "fatores_psicologicos": {
+        "name": "Fatores Psicológicos",
+        "icon": "🎯",
         "tests": {
-            "motivation": {
+            "motivacao": {
                 "name": "Motivação",
                 "unit": "escala",
-                "description": "Nível de motivação para prática esportiva",
-                "min": 1,
-                "max": 10
+                "components": {
+                    "dedicacao": {
+                        "name": "Dedicação aos treinos",
+                        "min": 1,
+                        "max": 10
+                    },
+                    "frequencia": {
+                        "name": "Frequência de prática",
+                        "min": 1,
+                        "max": 10
+                    },
+                    "comprometimento": {
+                        "name": "Comprometimento com objetivos",
+                        "min": 1,
+                        "max": 10
+                    }
+                }
             },
-            "teamwork": {
-                "name": "Trabalho em Equipe",
-                "unit": "escala",
-                "description": "Capacidade de trabalhar em equipe",
-                "min": 1,
-                "max": 10
-            },
-            "leadership": {
-                "name": "Liderança",
-                "unit": "escala",
-                "description": "Habilidades de liderança",
-                "min": 1,
-                "max": 10
-            },
-            "resilience": {
+            "resiliencia": {
                 "name": "Resiliência",
                 "unit": "escala",
-                "description": "Capacidade de lidar com adversidades",
-                "min": 1,
-                "max": 10
+                "components": {
+                    "derrotas": {
+                        "name": "Lidar com derrotas",
+                        "min": 1,
+                        "max": 10
+                    },
+                    "criticas": {
+                        "name": "Reação a críticas",
+                        "min": 1,
+                        "max": 10
+                    },
+                    "erros": {
+                        "name": "Recuperação de erros",
+                        "min": 1,
+                        "max": 10
+                    }
+                }
             },
-            "concentration": {
-                "name": "Concentração",
+            "trabalho_equipe": {
+                "name": "Trabalho em Equipe",
                 "unit": "escala",
-                "description": "Capacidade de manter o foco",
-                "min": 1,
-                "max": 10
-            },
-            "competitiveness": {
-                "name": "Competitividade",
-                "unit": "escala",
-                "description": "Nível de espírito competitivo",
-                "min": 1,
-                "max": 10
+                "components": {
+                    "comunicacao": {
+                        "name": "Comunicação em grupo",
+                        "min": 1,
+                        "max": 10
+                    },
+                    "opinioes": {
+                        "name": "Lidar com diferentes opiniões",
+                        "min": 1,
+                        "max": 10
+                    },
+                    "contribuicao": {
+                        "name": "Contribuição para objetivos coletivos",
+                        "min": 1,
+                        "max": 10
+                    }
+                }
             }
         }
     }
@@ -157,7 +239,8 @@ STYLE_CONFIG = {
 RECOMMENDATION_CONFIG = {
     "min_compatibility": 70,  # Compatibilidade mínima para recomendar um esporte
     "max_recommendations": 5,  # Número máximo de recomendações
-    "confidence_threshold": 0.8  # Limiar de confiança para recomendações
+    "confidence_threshold": 0.8,  # Limiar de confiança para recomendações
+    "sports_data_path": "data/sport_profiles.json"  # Caminho para o arquivo de perfis dos esportes
 }
 
 # Mensagens do Sistema
@@ -167,15 +250,11 @@ MESSAGES = {
     Complete os testes em cada categoria para receber recomendações personalizadas.
     """,
     "incomplete_tests": "Por favor, complete todos os testes para receber suas recomendações.",
-    "processing": "Processando seus resultados...",
+    "processing": "Analisando seus resultados...",
     "error": "Ocorreu um erro ao processar sua solicitação. Tente novamente.",
-    "success": "Análise concluída com sucesso!"
-}
-
-# Cache Configuration
-CACHE_CONFIG = {
-    "enable": True,
-    "ttl": 3600  # Time to live em segundos (1 hora)
+    "success": "Análise concluída com sucesso!",
+    "save_success": "Resultados salvos com sucesso!",
+    "test_instructions": "Complete os testes abaixo. Realize cada teste conforme as instruções."
 }
 
 def get_prompt_template():
@@ -183,23 +262,32 @@ def get_prompt_template():
     Template para o prompt do OpenAI
     """
     return """
-    Analise os seguintes resultados de testes esportivos e recomende os esportes mais adequados.
-    Considere todas as características e forneça uma análise detalhada.
+    Atue como um especialista em identificação de talentos esportivos.
+    Analise os seguintes resultados de testes e recomende os esportes mais adequados:
 
-    Resultados dos testes:
-    {test_results}
+    Dados Físicos:
+    {dados_fisicos}
 
-    Por favor, forneça:
-    1. Top 5 esportes mais adequados
-    2. Porcentagem de compatibilidade para cada esporte
-    3. Pontos fortes do atleta para cada esporte
-    4. Áreas que precisam de desenvolvimento
-    
-    Formato da resposta em JSON:
+    Habilidades Técnicas:
+    {habilidades_tecnicas}
+
+    Aspectos Táticos:
+    {aspectos_taticos}
+
+    Fatores Psicológicos:
+    {fatores_psicologicos}
+
+    Com base nos dados do arquivo sport_profiles.json e nos resultados acima:
+    1. Identifique os 5 esportes mais compatíveis
+    2. Calcule a porcentagem de compatibilidade
+    3. Liste os pontos fortes específicos para cada esporte
+    4. Sugira áreas para desenvolvimento
+
+    Retorne apenas o JSON no seguinte formato:
     {
         "recommendations": [
             {
-                "sport": "nome do esporte",
+                "name": "nome do esporte",
                 "compatibility": porcentagem,
                 "strengths": ["ponto forte 1", "ponto forte 2"],
                 "development": ["área 1", "área 2"]
@@ -207,17 +295,3 @@ def get_prompt_template():
         ]
     }
     """
-
-def init_session_state():
-    """
-    Inicializa o estado da sessão do Streamlit
-    """
-    if 'test_results' not in st.session_state:
-        st.session_state.test_results = {
-            'physical': {},
-            'technical': {},
-            'tactical': {},
-            'psychological': {}
-        }
-    if 'recommendations' not in st.session_state:
-        st.session_state.recommendations = None
