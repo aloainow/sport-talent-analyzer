@@ -1,54 +1,40 @@
-def process_test_results(results):
+# utils/test_processor.py
+
+def process_test_results(test_data):
     """
-    Processa e normaliza os resultados dos testes.
+    Processa os resultados dos testes e retorna os dados normalizados
     """
-    processed = {
-        'força': {},
-        'velocidade': {},
-        'resistencia': {},
-        'coordenacao': {}
-    }
+    results = {}
     
-    # Normalização de força
-    if 'força' in results:
-        força = results['força']
-        processed['força'] = {
-            'flexoes': min(10, força.get('flexoes', 0) / 3),  # Max 30 flexões = 10 pontos
-            'abdominais': min(10, força.get('abdominais', 0) / 4),  # Max 40 abdominais = 10 pontos
-            'average': 0  # Será calculado abaixo
+    # Processamento dos resultados de força
+    if 'força' in test_data:
+        força_results = test_data['força']
+        results['physical'] = {
+            'flexoes': normalize_score(força_results.get('flexoes', 0), 0, 50),
+            'abdominais': normalize_score(força_results.get('abdominais', 0), 0, 50),
+            'average': calculate_average([
+                normalize_score(força_results.get('flexoes', 0), 0, 50),
+                normalize_score(força_results.get('abdominais', 0), 0, 50)
+            ])
         }
     
-    # Normalização de velocidade
-    if 'velocidade' in results:
-        vel = results['velocidade']
-        processed['velocidade'] = {
-            'corrida_20m': max(0, 10 - (vel.get('corrida_20m', 0) - 2) * 2),  # 2s = 10 pontos, 7s = 0 pontos
-            'agilidade': max(0, 10 - (vel.get('agilidade', 0) - 8) * 2),  # 8s = 10 pontos, 13s = 0 pontos
-            'average': 0
-        }
+    # Adicione processamento para outros tipos de testes aqui
     
-    # Normalização de resistência
-    if 'resistencia' in results:
-        res = results['resistencia']
-        processed['resistencia'] = {
-            'burpees': min(10, res.get('burpees', 0) / 5),  # Max 50 burpees = 10 pontos
-            'cooper': min(10, res.get('cooper', 0) / 200),  # 2000m = 10 pontos
-            'average': 0
-        }
-    
-    # Normalização de coordenação
-    if 'coordenacao' in results:
-        coord = results['coordenacao']
-        processed['coordenacao'] = {
-            'equilibrio': min(10, coord.get('equilibrio', 0) / 6),  # 60s = 10 pontos
-            'saltos': min(10, coord.get('saltos', 0) / 4),  # 40 saltos = 10 pontos
-            'average': 0
-        }
-    
-    # Calcula médias
-    for categoria in processed:
-        if processed[categoria]:
-            valores = [v for k, v in processed[categoria].items() if k != 'average']
-            processed[categoria]['average'] = sum(valores) / len(valores)
-    
-    return processed
+    return results
+
+def normalize_score(value, min_val, max_val):
+    """
+    Normaliza um valor entre 0 e 10
+    """
+    if max_val == min_val:
+        return 0
+    normalized = ((value - min_val) / (max_val - min_val)) * 10
+    return max(0, min(10, normalized))
+
+def calculate_average(scores):
+    """
+    Calcula a média de uma lista de scores
+    """
+    if not scores:
+        return 0
+    return sum(scores) / len(scores)
