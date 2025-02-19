@@ -376,19 +376,18 @@ def main():
                 st.success("Informações pessoais salvas com sucesso!")
         
         # Progresso dos Testes
-st.subheader("Seu Progresso")
-    progress_data = {
-        "Testes de Força": len(st.session_state.test_results.get('força', {})),
-        "Testes de Velocidade": len(st.session_state.test_results.get('velocidade', {})),
-        "Testes de Resistência": len(st.session_state.test_results.get('resistencia', {})),
-        "Testes de Coordenação": len(st.session_state.test_results.get('coordenacao', {}))
-    }
-    
-    for test, count in progress_data.items():
-        # Calcula a porcentagem baseada no número de testes completados
-        progress = min(count / 2, 1.0)  # Divide por 2 pois cada categoria tem 2 testes
-        st.progress(progress, text=f"{test}: {int(progress * 100)}%")
+        st.subheader("Seu Progresso")
+        progress_data = {
+            "Testes de Força": len(st.session_state.test_results.get('força', {})),
+            "Testes de Velocidade": len(st.session_state.test_results.get('velocidade', {})),
+            "Testes de Resistência": len(st.session_state.test_results.get('resistencia', {})),
+            "Testes de Coordenação": len(st.session_state.test_results.get('coordenacao', {}))
+        }
         
+        for test, count in progress_data.items():
+            progress = min(count / 2, 1.0)
+            st.progress(progress, text=f"{test}: {int(progress * 100)}%")
+            
     elif selected == "Testes de Força":
         show_força_tests()
     elif selected == "Testes de Velocidade":
@@ -399,7 +398,7 @@ st.subheader("Seu Progresso")
         show_coordenacao_tests()
     elif selected == "Recomendações":
         show_recommendations()
-
+        
 if __name__ == "__main__":
     # Esconder menu hamburger e outros elementos do Streamlit
     st.markdown("""
