@@ -2,34 +2,57 @@ import streamlit as st
 import json
 from openai import OpenAI
 
-def create_openai_client():
-    """
-    Cria uma instância do cliente OpenAI com configuração mínima
-    """
-    try:
-        if "OPENAI_API_KEY" not in st.secrets:
-            raise ValueError("Chave da API OpenAI não encontrada!")
-        
-        # Criando cliente com configuração mínima
-        return OpenAI(
-            api_key=st.secrets["OPENAI_API_KEY"],
-            base_url="https://api.openai.com/v1"  # URL base explícita
-        )
-    except Exception as e:
-        st.error(f"Erro ao criar cliente OpenAI: {str(e)}")
-        return None
+def get_recommendations_without_api():
+    """Retorna recomendações padrão caso haja problema com a API"""
+    return [
+        {
+            "name": "Natação",
+            "compatibility": 85,
+            "strengths": ["Condicionamento físico geral", "Baixo impacto"],
+            "development": ["Técnica específica"]
+        },
+        {
+            "name": "Corrida",
+            "compatibility": 80,
+            "strengths": ["Resistência cardiovascular", "Acessibilidade"],
+            "development": ["Força muscular"]
+        },
+        {
+            "name": "Ciclismo",
+            "compatibility": 75,
+            "strengths": ["Resistência", "Baixo impacto articular"],
+            "development": ["Equilíbrio"]
+        },
+        {
+            "name": "Musculação",
+            "compatibility": 70,
+            "strengths": ["Força muscular", "Controle motor"],
+            "development": ["Flexibilidade"]
+        },
+        {
+            "name": "Yoga",
+            "compatibility": 65,
+            "strengths": ["Flexibilidade", "Equilíbrio"],
+            "development": ["Força explosiva"]
+        }
+    ]
 
 def get_sport_recommendations(scores):
     """
     Gera recomendações de esportes usando a API do OpenAI baseado nos scores do atleta
     """
     try:
-        # Cria o cliente OpenAI
-        client = create_openai_client()
-        if client is None:
-            return []
-        
-        # Prepara o prompt
+        if "OPENAI_API_KEY" not in st.secrets:
+            st.warning("Chave da API OpenAI não encontrada. Usando recomendações padrão.")
+            return get_recommendations_without_api()
+
+        # Inicializa o cliente OpenAI com configuração mínima
+        try:
+            client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+        except Exception as e:
+            st.warning(f"Erro ao inicializar cliente OpenAI. Usando recomendações padrão. Erro: {str(e)}")
+            return get_recommendations_without_api()
+
         prompt = f"""
         Atue como um especialista em identificação de talentos esportivos. 
         Analise o perfil do atleta com base nos seguintes scores (0-100):
@@ -50,28 +73,28 @@ def get_sport_recommendations(scores):
         ]
         Retorne APENAS o JSON, sem texto adicional.
         """
-        
-        # Faz a chamada à API com configuração mínima
-        response = client.chat.completions.create(
-            model="gpt-4-turbo-preview",
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1000
-        )
-        
-        # Processa e valida a resposta
-        content = response.choices[0].message.content.strip()
+
         try:
+            response = client.chat.completions.create(
+                model="gpt-4-turbo-preview",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=1000
+            )
+            
+            content = response.choices[0].message.content.strip()
             recommendations = json.loads(content)
-            if not isinstance(recommendations, list):
-                raise ValueError("Resposta inválida: não é uma lista")
-            return recommendations
-        except json.JSONDecodeError as e:
-            st.error(f"Erro ao processar JSON da resposta: {str(e)}")
-            return []
+            
+            if isinstance(recommendations, list) and len(recommendations) > 0:
+                return recommendations
+            else:
+                st.warning("Resposta da API inválida. Usando recomendações padrão.")
+                return get_recommendations_without_api()
+                
+        except Exception as e:
+            st.warning(f"Erro ao processar recomendações da API. Usando recomendações padrão. Erro: {str(e)}")
+            return get_recommendations_without_api()
             
     except Exception as e:
-        st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return []
+        st.warning(f"Erro inesperado. Usando recomendações padrão. Erro: {str(e)}")
+        return get_recommendations_without_api()
