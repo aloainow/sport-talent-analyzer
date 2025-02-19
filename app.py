@@ -1,11 +1,10 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
-# Importe as funções específicas
 from utils.openai_helper import get_sport_recommendations
 from utils.test_processor import process_test_results, normalize_score, calculate_average
 
-# Configuração da página - DEVE SER A PRIMEIRA CHAMADA STREAMLIT
+# Configuração da página
 st.set_page_config(
     page_title="Analisador de Talentos Esportivos",
     page_icon="🏃‍♂️",
@@ -14,47 +13,46 @@ st.set_page_config(
 
 # Inicialização do estado da sessão
 def init_session_state():
-    # Inicializa o estado da sessão
     if 'test_results' not in st.session_state:
         st.session_state.test_results = {
-            'força': {},
-            'velocidade': {},
-            'resistencia': {},
-            'coordenacao': {}
+            'dados_fisicos': {},
+            'habilidades_tecnicas': {},
+            'aspectos_taticos': {},
+            'fatores_psicologicos': {}
         }
     if 'recommendations' not in st.session_state:
         st.session_state.recommendations = None
     if 'personal_info' not in st.session_state:
         st.session_state.personal_info = {}
-    if 'form_submitted' not in st.session_state:
-        st.session_state.form_submitted = False
-    # Adiciona o contador do form se não existir
     if 'form_key' not in st.session_state:
         st.session_state.form_key = 0
-        
-# Função para criar o gráfico radar
-def create_radar_chart(results):
-    categories = ['Físico', 'Técnico', 'Tático', 'Psicológico']
+
+def create_radar_chart(scores):
+    """Cria um gráfico radar com os scores processados."""
+    categories = ['Dados Físicos', 'Habilidades Técnicas', 
+                 'Aspectos Táticos', 'Fatores Psicológicos']
+    
     values = [
-        results.get('physical', {}).get('average', 0),
-        results.get('technical', {}).get('average', 0),
-        results.get('tactical', {}).get('average', 0),
-        results.get('psychological', {}).get('average', 0)
+        scores.get('dados_fisicos', 0),
+        scores.get('habilidades_tecnicas', 0),
+        scores.get('aspectos_taticos', 0),
+        scores.get('fatores_psicologicos', 0)
     ]
     
     fig = go.Figure()
     fig.add_trace(go.Scatterpolar(
-        r=values + [values[0]],
-        theta=categories + [categories[0]],
+        r=values,
+        theta=categories,
         fill='toself',
-        name='Seu Perfil'
+        name='Seu Perfil',
+        line_color='#8884d8'
     ))
     
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
-                range=[0, 10]
+                range=[0, 100]
             )),
         showlegend=False
     )
@@ -299,88 +297,89 @@ def show_fatores_psicologicos():
             }
         }
         st.success("Resultados salvos com sucesso!")
+
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
     
     # Verificar se todos os testes foram completados
-    test_categories = ['força', 'velocidade', 'resistencia', 'coordenacao']
+    test_categories = ['dados_fisicos', 'habilidades_tecnicas', 
+                      'aspectos_taticos', 'fatores_psicologicos']
+    
     all_tests_completed = all(
-        len(st.session_state.test_results.get(category, {})) > 0 
+        category in st.session_state.test_results 
         for category in test_categories
     )
     
     if not all_tests_completed:
-        st.warning("Por favor, complete todos os testes para receber suas recomendações!")
+        missing_categories = [cat for cat in test_categories 
+                            if cat not in st.session_state.test_results]
+        st.warning("Complete os seguintes testes para receber suas recomendações:")
+        for cat in missing_categories:
+            st.write(f"- {cat.replace('_', ' ').title()}")
         return
     
     # Processar resultados e obter recomendações
     if 'recommendations' not in st.session_state or st.session_state.recommendations is None:
         with st.spinner("Analisando seus resultados..."):
             try:
-                processed_results = process_test_results(st.session_state.test_results)
-                st.session_state.recommendations = get_sport_recommendations(processed_results)
-            except Exception as e:
+                processed_scores = process_test_results(st.session_state.test_results)
+                st.session_state.recommendations = get_sport_recommendations(processed_scores)
+                st.session_state.processed_scores = processed_scores
+Exception as e:
                 st.error(f"Erro ao processar recomendações: {str(e)}")
                 return
     
-    # Mostrar gráfico radar
-    st.subheader("Seu Perfil de Habilidades")
-    try:
-        radar_chart = create_radar_chart(st.session_state.test_results)
-        st.plotly_chart(radar_chart, use_container_width=True)
-    except Exception as e:
-        st.error(f"Erro ao criar gráfico: {str(e)}")
+    # Layout em duas colunas
+    col1, col2 = st.columns([2, 3])
     
-    # Mostrar recomendações
-    st.subheader("Esportes Recomendados")
+    with col1:
+        # Mostrar gráfico radar
+        st.subheader("Seu Perfil de Habilidades")
+        try:
+            radar_chart = create_radar_chart(st.session_state.processed_scores)
+            st.plotly_chart(radar_chart, use_container_width=True)
+        except Exception as e:
+            st.error(f"Erro ao criar gráfico: {str(e)}")
     
-    if not st.session_state.recommendations:
-        st.warning("Nenhuma recomendação disponível no momento.")
-        return
+    with col2:
+        # Mostrar recomendações
+        st.subheader("Top 5 Esportes Recomendados")
         
-    # Verificar formato das recomendações
-    if isinstance(st.session_state.recommendations, list):
         for sport in st.session_state.recommendations:
-            if isinstance(sport, dict) and 'name' in sport and 'compatibility' in sport:
-                with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write("**Pontos Fortes:**")
-                        if 'strengths' in sport and isinstance(sport['strengths'], list):
-                            for strength in sport['strengths']:
-                                st.write(f"✓ {strength}")
-                    
-                    with col2:
-                        st.write("**Áreas para Desenvolvimento:**")
-                        if 'development' in sport and isinstance(sport['development'], list):
-                            for area in sport['development']:
-                                st.write(f"→ {area}")
-            else:
-                st.error("Formato de recomendação inválido")
-    else:
-        st.error("Formato de recomendações inválido")
+            with st.expander(f"{sport['name']} - {sport['compatibility']}% compatível"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown("**🎯 Pontos Fortes:**")
+                    for strength in sport['strengths']:
+                        st.markdown(f"- {strength}")
+                
+                with col2:
+                    st.markdown("**💪 Áreas para Desenvolvimento:**")
+                    for area in sport['development']:
+                        st.markdown(f"- {area}")
     
     # Botões de ação
     st.divider()
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("📊 Exportar Relatório"):
+        if st.button("📊 Exportar Relatório", use_container_width=True):
             st.info("Funcionalidade de exportação em desenvolvimento")
     
     with col2:
-        if st.button("🔄 Recomeçar"):
+        if st.button("🔄 Recomeçar Testes", use_container_width=True):
             for key in st.session_state.keys():
                 del st.session_state[key]
             st.rerun()
-            
+
 def main():
     # Menu lateral
     with st.sidebar:
         selected = option_menu(
             "Menu Principal",
-            ["Home", "Testes de Força", "Testes de Velocidade", "Testes de Resistência", "Testes de Coordenação", "Recomendações"],
+            ["Home", "Dados Físicos", "Habilidades Técnicas", 
+             "Aspectos Táticos", "Fatores Psicológicos", "Recomendações"],
             icons=['house', 'activity', 'bullseye', 'diagram-3', 'person', 'star'],
             menu_icon="cast",
             default_index=0,
@@ -475,27 +474,29 @@ def main():
         
         # Progresso dos Testes
         st.subheader("Seu Progresso")
-        progress_data = {
-            "Testes de Força": len(st.session_state.test_results.get('força', {})),
-            "Testes de Velocidade": len(st.session_state.test_results.get('velocidade', {})),
-            "Testes de Resistência": len(st.session_state.test_results.get('resistencia', {})),
-            "Testes de Coordenação": len(st.session_state.test_results.get('coordenacao', {}))
+        
+        test_categories = {
+            "Dados Físicos": 'dados_fisicos',
+            "Habilidades Técnicas": 'habilidades_tecnicas',
+            "Aspectos Táticos": 'aspectos_taticos',
+            "Fatores Psicológicos": 'fatores_psicologicos'
         }
         
-        for test, count in progress_data.items():
-            progress = min(count / 2, 1.0)
-            st.progress(progress, text=f"{test}: {int(progress * 100)}%")
+        for label, category in test_categories.items():
+            progress = 1.0 if category in st.session_state.test_results else 0.0
+            st.progress(progress, text=f"{label}: {int(progress * 100)}%")
             
-    elif selected == "Testes de Força":
-        show_força_tests()
-    elif selected == "Testes de Velocidade":
-        show_velocidade_tests()
-    elif selected == "Testes de Resistência":
-        show_resistencia_tests()
-    elif selected == "Testes de Coordenação":
-        show_coordenacao_tests()
+    elif selected == "Dados Físicos":
+        show_dados_fisicos()
+    elif selected == "Habilidades Técnicas":
+        show_habilidades_tecnicas()
+    elif selected == "Aspectos Táticos":
+        show_aspectos_taticos()
+    elif selected == "Fatores Psicológicos":
+        show_fatores_psicologicos()
     elif selected == "Recomendações":
         show_recommendations()
+
 if __name__ == "__main__":
     # Esconder menu hamburger e outros elementos do Streamlit
     st.markdown("""
