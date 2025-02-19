@@ -51,12 +51,24 @@ def get_sport_recommendations(scores):
 
         # Ajusta o prompt para forçar uma resposta JSON válida
         prompt = f"""
-        Analise o perfil do atleta com os seguintes scores (0-100) e retorne APENAS um JSON válido com as 5 modalidades esportivas mais compatíveis:
+Analise o perfil do atleta com os seguintes scores (de 0 a 100) em atributos individuais e retorne APENAS um JSON válido com as 5 modalidades esportivas mais compatíveis.
 
-        - Dados Físicos: {scores.get('dados_fisicos', 0)}
-        - Habilidades Técnicas: {scores.get('habilidades_tecnicas', 0)}
-        - Aspectos Táticos: {scores.get('aspectos_taticos', 0)}
-        - Fatores Psicológicos: {scores.get('fatores_psicologicos', 0)}
+- Velocidade: {scores.get('velocidade', 0)}
+- Força Superior: {scores.get('forca_superior', 0)}
+- Força Inferior: {scores.get('forca_inferior', 0)}
+- Coordenação: {scores.get('coordenacao', 0)}
+- Precisão: {scores.get('precisao', 0)}
+- Agilidade: {scores.get('agilidade', 0)}
+- Equilíbrio: {scores.get('equilibrio', 0)}
+- Tomada de Decisão: {scores.get('tomada_decisao', 0)}
+- Visão de Jogo: {scores.get('visao_jogo', 0)}
+- Posicionamento: {scores.get('posicionamento', 0)}
+- Motivação: {scores.get('motivacao', 0)}
+- Resiliência: {scores.get('resiliencia', 0)}
+- Trabalho em Equipe: {scores.get('trabalho_equipe', 0)}
+- Altura: {scores.get('altura', 0)}
+- Peso: {scores.get('peso', 0)}
+- Envergadura: {scores.get('envergadura', 0)}
 
         O JSON deve seguir EXATAMENTE este formato, sem texto adicional:
         [
