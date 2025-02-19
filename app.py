@@ -214,7 +214,7 @@ def create_radar_chart(scores):
     
     return fig
     
-    def show_dados_fisicos():
+def show_dados_fisicos():
     st.title("💪 Dados Físicos")
     
     st.info("Complete os testes físicos abaixo. Realize cada teste conforme as instruções.")
@@ -278,7 +278,7 @@ def create_radar_chart(scores):
             'forca_inferior': forca_inferior
         }
         st.success("Resultados salvos com sucesso!")
-
+        
 def show_habilidades_tecnicas():
     st.title("🎯 Habilidades Técnicas")
     
