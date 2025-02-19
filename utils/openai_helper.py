@@ -1,7 +1,6 @@
 import streamlit as st
 import json
-import os
-from importlib import import_module
+from openai import OpenAI
 
 def get_recommendations_without_api():
     """Retorna recomendações padrão caso haja problema com a API"""
@@ -38,28 +37,6 @@ def get_recommendations_without_api():
         }
     ]
 
-def create_openai_client():
-    """Cria um cliente OpenAI com configuração mínima"""
-    try:
-        OpenAI = import_module('openai').OpenAI
-        http_client = import_module('openai.http_client').HttpClient
-        
-        # Força a configuração mínima do cliente HTTP
-        minimal_http_client = http_client(
-            base_url="https://api.openai.com/v1",
-            timeout=60.0,
-            max_retries=2
-        )
-        
-        # Cria o cliente OpenAI com o cliente HTTP personalizado
-        return OpenAI(
-            api_key=st.secrets["OPENAI_API_KEY"],
-            http_client=minimal_http_client
-        )
-    except Exception as e:
-        st.warning(f"Erro ao criar cliente OpenAI: {str(e)}")
-        return None
-
 def get_sport_recommendations(scores):
     """
     Gera recomendações de esportes usando a API do OpenAI baseado nos scores do atleta
@@ -69,8 +46,13 @@ def get_sport_recommendations(scores):
             st.warning("Chave da API OpenAI não encontrada. Usando recomendações padrão.")
             return get_recommendations_without_api()
 
-        client = create_openai_client()
-        if client is None:
+        try:
+            # Tenta criar o cliente apenas com a chave da API
+            client = OpenAI(
+                api_key=st.secrets["OPENAI_API_KEY"]
+            )
+        except Exception as e:
+            st.warning(f"Erro ao inicializar OpenAI. Usando recomendações padrão. Erro: {str(e)}")
             return get_recommendations_without_api()
 
         prompt = f"""
