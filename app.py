@@ -457,14 +457,7 @@ def show_fatores_psicologicos():
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
     
-    # Verificações iniciais...
-    if not st.session_state.personal_info or not any(st.session_state.personal_info.values()):
-        st.warning("⚠️ Por favor, preencha suas informações pessoais na página inicial (Home) antes de continuar.")
-        return
-
-    # ... (manter verificações de testes)
-
-    # Processar recomendações
+    # Verificações e processamento de dados...
     if not st.session_state.recommendations or not st.session_state.processed_scores:
         try:
             with st.spinner("Analisando seus resultados..."):
@@ -475,77 +468,107 @@ def show_recommendations():
         except Exception as e:
             st.error(f"Erro ao processar recomendações: {str(e)}")
             return
-    
-    # Estilo CSS
+
+    # CSS atualizado para tema escuro
     st.markdown("""
         <style>
-        .stMarkdown p { color: #333333; }
-        .recommendation-card {
+        /* Estilos gerais */
+        .sport-recommendation {
             background-color: #1E1E1E;
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 20px;
-            margin-bottom: 15px;
-            color: white;
+            margin-bottom: 20px;
         }
-        .sport-header {
+        
+        /* Cabeçalho do esporte */
+        .sport-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
-            color: white;
         }
-        .sport-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
-        }
+        
+        /* Porcentagem de compatibilidade */
         .compatibility {
             color: #00FF00;
             font-weight: bold;
         }
-        .section-title {
-            margin-bottom: 8px;
+        
+        /* Container para Pontos Fortes e Desenvolver */
+        .attributes-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
         }
-        .strengths { color: #00FF00; }
-        .development { color: #0088FF; }
+        
+        /* Títulos das seções */
+        .section-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .strengths-title {
+            color: #00FF00;
+        }
+        
+        .development-title {
+            color: #0088FF;
+        }
+        
+        /* Lista de atributos */
+        .attributes-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+        
+        .attributes-list li {
+            color: white;
+            padding: 3px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .attributes-list li:before {
+            content: "•";
+            margin-right: 8px;
+            color: white;
+        }
         </style>
     """, unsafe_allow_html=True)
     
-    # Gráfico Radar
-    st.subheader("Seu Perfil de Habilidades")
-    try:
-        radar_chart = create_radar_chart(st.session_state.processed_scores)
-        st.plotly_chart(radar_chart, use_container_width=True)
-    except Exception as e:
-        st.error(f"Erro ao criar gráfico: {str(e)}")
-        
-    # Recomendações
+    # Gráfico de radar (mantenha sua implementação atual)
+    
+    # Exibir recomendações
     st.subheader("Top 5 Esportes Recomendados")
+    
     for sport in st.session_state.recommendations:
         html_content = f"""
-            <div class="recommendation-card">
-                <div class="sport-header">
-                    <span class="sport-name">{sport['name']}</span>
+            <div class="sport-recommendation">
+                <div class="sport-name">
+                    {sport['name']}
                     <span class="compatibility">{sport['compatibility']}% compatível</span>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="attributes-container">
                     <div>
-                        <p class="section-title strengths">Pontos Fortes:</p>
-                        <ul style="list-style-type: none; padding-left: 0;">
-                            {''.join([f"<li style='color: white;'>• {strength}</li>" for strength in sport['strengths']])}
+                        <div class="section-title strengths-title">Pontos Fortes:</div>
+                        <ul class="attributes-list">
+                            {''.join([f"<li>{strength}</li>" for strength in sport['strengths']])}
                         </ul>
                     </div>
                     <div>
-                        <p class="section-title development">Desenvolver:</p>
-                        <ul style="list-style-type: none; padding-left: 0;">
-                            {''.join([f"<li style='color: white;'>• {dev}</li>" for dev in sport['development']])}
+                        <div class="section-title development-title">Desenvolver:</div>
+                        <ul class="attributes-list">
+                            {''.join([f"<li>{dev}</li>" for dev in sport['development']])}
                         </ul>
                     </div>
                 </div>
             </div>
         """
-        st.markdown(html_content, unsafe_allow_html=True)
-        
+        st.markdown(html_content, unsafe_allow_html=True)        
 def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
