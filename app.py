@@ -188,14 +188,15 @@ def create_radar_chart(scores):
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
-                visible=True,  # Mudado para True
-                range=[0, 100],
-                showline=True,
-                linewidth=1,
-                linecolor='white',
-                gridcolor='rgba(255, 255, 255, 0.1)',
-                tickfont=dict(color="white")
-            ),
+    visible=True,
+    range=[0, 100],
+    showticklabels=False,  # REMOVE OS NÚMEROS
+    showline=True,
+    linewidth=1,
+    linecolor='white',
+    gridcolor='rgba(255, 255, 255, 0.1)'
+),
+
             angularaxis=dict(
                 tickmode='array',
                 ticktext=categories[:-1],
