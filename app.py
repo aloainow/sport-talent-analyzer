@@ -341,54 +341,87 @@ def main():
         st.header("Bem-vindo ao Analisador de Talentos Esportivos!")
         
         # Informações Pessoais
-# Modifique a seção de Informações Pessoais no código (por volta da linha 342)
- st.subheader("Informações Pessoais")
-    form_key = f"personal_info_form_{st.session_state.form_key}"
-    
-    with st.form(key=form_key):
-        col1, col2 = st.columns(2)
+        st.subheader("Informações Pessoais")
+        form_key = f"personal_info_form_{st.session_state.form_key}"
         
-        with col1:
-            altura = st.number_input(
-                "Altura (cm)", 
-                min_value=0, 
-                max_value=300,
-                value=170,
-                key=f"altura_{st.session_state.form_key}"
-            )
-            peso = st.number_input("Peso (kg)", min_value=0, max_value=300, key="peso")
-        envergadura = st.number_input("Envergadura (cm)", min_value=0, max_value=300, key="envergadura")
-    
-    with col2:
-        idade = st.number_input("Idade", min_value=0, max_value=150, key="idade")
-        ano_nascimento = st.number_input("Ano de Nascimento", min_value=1900, max_value=2024, key="ano_nascimento")
-    
-    # Localização
-    st.write("**Localização**")
-    col3, col4, col5 = st.columns(3)
-    
-    with col3:
-        cidade = st.text_input("Cidade", key="cidade")
-    with col4:
-        estado = st.text_input("Estado", key="estado")
-    with col5:
-        pais = st.text_input("País", key="pais")
-    
-    submit_button = st.form_submit_button("Salvar Informações")
-    
-    if st.form_submit_button("Salvar Informações"):
-            st.session_state.personal_info = {
-                'altura': altura,
-                'peso': peso,
-                'envergadura': envergadura,
-                'idade': idade,
-                'ano_nascimento': ano_nascimento,
-                'cidade': cidade,
-                'estado': estado,
-                'pais': pais
-            }
-            st.session_state.form_key += 1
-            st.success("Informações pessoais salvas com sucesso!")      
+        with st.form(key=form_key):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                altura = st.number_input(
+                    "Altura (cm)", 
+                    min_value=0, 
+                    max_value=300,
+                    value=170,
+                    key=f"altura_{st.session_state.form_key}"
+                )
+                peso = st.number_input(
+                    "Peso (kg)", 
+                    min_value=0, 
+                    max_value=300,
+                    value=70,
+                    key=f"peso_{st.session_state.form_key}"
+                )
+                envergadura = st.number_input(
+                    "Envergadura (cm)", 
+                    min_value=0, 
+                    max_value=300,
+                    value=170,
+                    key=f"envergadura_{st.session_state.form_key}"
+                )
+            
+            with col2:
+                idade = st.number_input(
+                    "Idade", 
+                    min_value=0, 
+                    max_value=150,
+                    value=25,
+                    key=f"idade_{st.session_state.form_key}"
+                )
+                ano_nascimento = st.number_input(
+                    "Ano de Nascimento", 
+                    min_value=1900, 
+                    max_value=2024,
+                    value=2000,
+                    key=f"ano_nascimento_{st.session_state.form_key}"
+                )
+            
+            # Localização
+            st.write("**Localização**")
+            col3, col4, col5 = st.columns(3)
+            
+            with col3:
+                cidade = st.text_input(
+                    "Cidade",
+                    key=f"cidade_{st.session_state.form_key}"
+                )
+            with col4:
+                estado = st.text_input(
+                    "Estado",
+                    key=f"estado_{st.session_state.form_key}"
+                )
+            with col5:
+                pais = st.text_input(
+                    "País",
+                    key=f"pais_{st.session_state.form_key}"
+                )
+            
+            submitted = st.form_submit_button("Salvar Informações")
+            
+            if submitted:
+                st.session_state.personal_info = {
+                    'altura': altura,
+                    'peso': peso,
+                    'envergadura': envergadura,
+                    'idade': idade,
+                    'ano_nascimento': ano_nascimento,
+                    'cidade': cidade,
+                    'estado': estado,
+                    'pais': pais
+                }
+                st.session_state.form_key += 1
+                st.success("Informações pessoais salvas com sucesso!")
+        
         # Progresso dos Testes
         st.subheader("Seu Progresso")
         progress_data = {
@@ -412,7 +445,6 @@ def main():
         show_coordenacao_tests()
     elif selected == "Recomendações":
         show_recommendations()
-        
 if __name__ == "__main__":
     # Esconder menu hamburger e outros elementos do Streamlit
     st.markdown("""
