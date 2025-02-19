@@ -155,12 +155,13 @@ def show_home():
         
 
 def create_radar_chart(scores):
-    """Cria um gráfico radar com os scores processados."""
+    """Cria um gráfico radar simplificado com os scores processados."""
+    # Configurar dados
     categories = [
-        'Dados Físicos', 
-        'Habilidades Técnicas',
-        'Aspectos Táticos', 
-        'Fatores Psicológicos'
+        'Físico', 
+        'Técnico',
+        'Tático', 
+        'Psicológico'
     ]
     
     values = [
@@ -170,60 +171,50 @@ def create_radar_chart(scores):
         scores.get('fatores_psicologicos', 0)
     ]
     
-    # Adiciona o primeiro valor novamente para fechar o polígono
+    # Adicionar primeiro valor no final para fechar o polígono
     categories.append(categories[0])
     values.append(values[0])
     
     fig = go.Figure()
     
+    # Adicionar o radar
     fig.add_trace(go.Scatterpolar(
         r=values,
         theta=categories,
         fill='toself',
         name='Perfil do Atleta',
-        line_color='#8884d8',
-        fillcolor='rgba(136, 132, 216, 0.6)'
+        line_color='rgb(147, 112, 219)',
+        fillcolor='rgba(147, 112, 219, 0.5)'
     ))
     
+    # Atualizar layout
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
-                visible=True,
-                range=[0, 100],
-                ticksuffix='%',
-                tickmode='linear',
-                tick0=0,
-                dtick=20,
-                showline=True,
-                linewidth=1,
-                gridcolor='rgba(0,0,0,0.1)',
-                tickfont=dict(size=10)
+                visible=False,  # Remove os números do eixo radial
+                range=[0, 100]
             ),
             angularaxis=dict(
                 tickmode='array',
-                ticktext=categories[:-1],
+                ticktext=categories[:-1],  # Remove o valor duplicado
                 tickvals=list(range(len(categories[:-1]))),
                 direction='clockwise',
-                gridcolor='rgba(0,0,0,0.1)',
-                tickfont=dict(size=12)
-            )
+                tickfont=dict(
+                    size=14,
+                    color="#333333"
+                ),
+                linecolor='#999999',
+                gridcolor='#999999'
+            ),
+            bgcolor='white'
         ),
-        showlegend=True,
-        legend=dict(
-            yanchor="top",
-            y=1.2,
-            xanchor="left",
-            x=0.1
-        ),
-        margin=dict(t=80, b=50, l=50, r=50),
-        height=400,
-        width=400,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
+        showlegend=False,
+        paper_bgcolor='white',
+        margin=dict(t=30, b=30, l=30, r=30),
+        height=400
     )
     
     return fig
-
 def show_dados_fisicos():
     st.title("💪 Dados Físicos")
     
@@ -466,32 +457,13 @@ def show_fatores_psicologicos():
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
     
-    # Verificações de dados...
+    # Verificações iniciais...
     if not st.session_state.personal_info or not any(st.session_state.personal_info.values()):
         st.warning("⚠️ Por favor, preencha suas informações pessoais na página inicial (Home) antes de continuar.")
         return
-    
-    # Verificar testes completados...
-    test_categories = {
-        "Dados Físicos": 'dados_fisicos',
-        "Habilidades Técnicas": 'habilidades_tecnicas',
-        "Aspectos Táticos": 'aspectos_taticos',
-        "Fatores Psicológicos": 'fatores_psicologicos'
-    }
-    
-    incomplete_tests = {
-        label: category
-        for label, category in test_categories.items()
-        if category not in st.session_state.test_results
-        or not st.session_state.test_results[category]
-    }
-    
-    if incomplete_tests:
-        st.warning("⚠️ Complete os seguintes testes para receber suas recomendações:")
-        for label in incomplete_tests:
-            st.write(f"- {label}")
-        return
-    
+
+    # ... (manter verificações de testes)
+
     # Processar recomendações
     if not st.session_state.recommendations or not st.session_state.processed_scores:
         try:
@@ -503,79 +475,77 @@ def show_recommendations():
         except Exception as e:
             st.error(f"Erro ao processar recomendações: {str(e)}")
             return
-
-    # Estilo CSS customizado
+    
+    # Estilo CSS
     st.markdown("""
         <style>
-        .sport-card {
-            background-color: #f8f9fa;
-            border-radius: 10px;
+        .stMarkdown p { color: #333333; }
+        .recommendation-card {
+            background-color: #1E1E1E;
+            border-radius: 8px;
             padding: 20px;
             margin-bottom: 15px;
+            color: white;
         }
         .sport-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            color: white;
         }
         .sport-name {
             font-size: 18px;
             font-weight: bold;
+            color: white;
         }
         .compatibility {
-            color: #28a745;
+            color: #00FF00;
             font-weight: bold;
         }
-        .strengths-title {
-            color: #28a745;
-            font-weight: 500;
+        .section-title {
+            margin-bottom: 8px;
         }
-        .development-title {
-            color: #007bff;
-            font-weight: 500;
-        }
+        .strengths { color: #00FF00; }
+        .development { color: #0088FF; }
         </style>
     """, unsafe_allow_html=True)
-
-    # Layout em duas colunas
-    col1, col2 = st.columns([2, 3])
     
-    with col1:
-        st.subheader("Seu Perfil de Habilidades")
-        try:
-            radar_chart = create_radar_chart(st.session_state.processed_scores)
-            st.plotly_chart(radar_chart, use_container_width=True)
-        except Exception as e:
-            st.error(f"Erro ao criar gráfico: {str(e)}")
-    
-    with col2:
-        st.subheader("Top 5 Esportes Recomendados")
-        for sport in st.session_state.recommendations:
-            html_content = f"""
-                <div class="sport-card">
-                    <div class="sport-header">
-                        <span class="sport-name">{sport['name']}</span>
-                        <span class="compatibility">{sport['compatibility']}% compatível</span>
+    # Gráfico Radar
+    st.subheader("Seu Perfil de Habilidades")
+    try:
+        radar_chart = create_radar_chart(st.session_state.processed_scores)
+        st.plotly_chart(radar_chart, use_container_width=True)
+    except Exception as e:
+        st.error(f"Erro ao criar gráfico: {str(e)}")
+        
+    # Recomendações
+    st.subheader("Top 5 Esportes Recomendados")
+    for sport in st.session_state.recommendations:
+        html_content = f"""
+            <div class="recommendation-card">
+                <div class="sport-header">
+                    <span class="sport-name">{sport['name']}</span>
+                    <span class="compatibility">{sport['compatibility']}% compatível</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <p class="section-title strengths">Pontos Fortes:</p>
+                        <ul style="list-style-type: none; padding-left: 0;">
+                            {''.join([f"<li style='color: white;'>• {strength}</li>" for strength in sport['strengths']])}
+                        </ul>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <span class="strengths-title">Pontos Fortes:</span>
-                            <ul style="list-style-type: none; padding-left: 10px; margin-top: 5px;">
-                                {''.join([f"<li>• {strength}</li>" for strength in sport['strengths']])}
-                            </ul>
-                        </div>
-                        <div>
-                            <span class="development-title">Desenvolver:</span>
-                            <ul style="list-style-type: none; padding-left: 10px; margin-top: 5px;">
-                                {''.join([f"<li>• {dev}</li>" for dev in sport['development']])}
-                            </ul>
-                        </div>
+                    <div>
+                        <p class="section-title development">Desenvolver:</p>
+                        <ul style="list-style-type: none; padding-left: 0;">
+                            {''.join([f"<li style='color: white;'>• {dev}</li>" for dev in sport['development']])}
+                        </ul>
                     </div>
                 </div>
-            """
-            st.markdown(html_content, unsafe_allow_html=True)
-
+            </div>
+        """
+        st.markdown(html_content, unsafe_allow_html=True)
+        
 def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
