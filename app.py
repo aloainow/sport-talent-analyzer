@@ -29,8 +29,12 @@ def init_session_state():
 
 def create_radar_chart(scores):
     """Cria um gráfico radar com os scores processados."""
-    categories = ['Dados Físicos', 'Habilidades Técnicas', 
-                 'Aspectos Táticos', 'Fatores Psicológicos']
+    categories = [
+        'Dados Físicos', 
+        'Habilidades Técnicas',
+        'Aspectos Táticos', 
+        'Fatores Psicológicos'
+    ]
     
     values = [
         scores.get('dados_fisicos', 0),
@@ -39,26 +43,51 @@ def create_radar_chart(scores):
         scores.get('fatores_psicologicos', 0)
     ]
     
+    # Adiciona o primeiro valor novamente para fechar o polígono
+    categories.append(categories[0])
+    values.append(values[0])
+    
     fig = go.Figure()
+    
     fig.add_trace(go.Scatterpolar(
         r=values,
         theta=categories,
         fill='toself',
-        name='Seu Perfil',
-        line_color='#8884d8'
+        name='Perfil do Atleta',
+        line_color='#1f77b4',
+        fillcolor='rgba(31, 119, 180, 0.5)'
     ))
     
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
-                range=[0, 100]
-            )),
-        showlegend=False
+                range=[0, 100],
+                ticksuffix='%',
+                tickmode='linear',
+                tick0=0,
+                dtick=20,
+                showline=True,
+                linewidth=1,
+                gridcolor='rgba(0,0,0,0.1)'
+            ),
+            angularaxis=dict(
+                tickmode='array',
+                ticktext=categories[:-1],  # Remove o valor duplicado
+                tickvals=list(range(len(categories[:-1]))),
+                direction='clockwise',
+                gridcolor='rgba(0,0,0,0.1)'
+            )
+        ),
+        showlegend=True,
+        legend=dict(
+            x=0.85,
+            y=1.1
+        ),
+        margin=dict(t=50, b=50, l=50, r=50)
     )
     
     return fig
-
 def show_dados_fisicos():
     st.title("💪 Dados Físicos")
     
