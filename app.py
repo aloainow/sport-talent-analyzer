@@ -319,16 +319,16 @@ def show_recommendations():
         return
     
     # Processar resultados e obter recomendações
+# Processar resultados e obter recomendações
     if 'recommendations' not in st.session_state or st.session_state.recommendations is None:
         with st.spinner("Analisando seus resultados..."):
             try:
                 processed_scores = process_test_results(st.session_state.test_results)
                 st.session_state.recommendations = get_sport_recommendations(processed_scores)
                 st.session_state.processed_scores = processed_scores
-Exception as e:
+            except Exception as e:
                 st.error(f"Erro ao processar recomendações: {str(e)}")
-                return
-    
+                return    
     # Layout em duas colunas
     col1, col2 = st.columns([2, 3])
     
