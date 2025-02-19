@@ -11,6 +11,24 @@ st.set_page_config(
     layout="wide"
 )
 
+def reset_session_state():
+    """Reseta completamente o estado da sessão"""
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    
+    # Reinicializa com valores padrão
+    st.session_state.test_results = {
+        'dados_fisicos': {},
+        'habilidades_tecnicas': {},
+        'aspectos_taticos': {},
+        'fatores_psicologicos': {}
+    }
+    st.session_state.recommendations = None
+    st.session_state.personal_info = {}
+    st.session_state.form_key = 0
+    st.session_state.processed_scores = None
+    st.session_state.initialized = True
+
 # Inicialização do estado da sessão
 def init_session_state():
     if 'test_results' not in st.session_state:
@@ -26,6 +44,111 @@ def init_session_state():
         st.session_state.personal_info = {}
     if 'form_key' not in st.session_state:
         st.session_state.form_key = 0
+
+def show_home():
+    """Exibe a página inicial do aplicativo"""
+    st.title("🏃‍♂️ Analisador de Talentos Esportivos")
+    st.header("Bem-vindo ao Analisador de Talentos Esportivos!")
+    
+    # Informações Pessoais
+    st.subheader("Informações Pessoais")
+    form_key = f"personal_info_form_{st.session_state.form_key}"
+    
+    with st.form(key=form_key):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            altura = st.number_input(
+                "Altura (cm)", 
+                min_value=0, 
+                max_value=300,
+                value=st.session_state.personal_info.get('altura', 170),
+                key=f"altura_{st.session_state.form_key}"
+            )
+            peso = st.number_input(
+                "Peso (kg)", 
+                min_value=0, 
+                max_value=300,
+                value=st.session_state.personal_info.get('peso', 70),
+                key=f"peso_{st.session_state.form_key}"
+            )
+            envergadura = st.number_input(
+                "Envergadura (cm)", 
+                min_value=0, 
+                max_value=300,
+                value=st.session_state.personal_info.get('envergadura', 170),
+                key=f"envergadura_{st.session_state.form_key}"
+            )
+        
+        with col2:
+            idade = st.number_input(
+                "Idade", 
+                min_value=0, 
+                max_value=150,
+                value=st.session_state.personal_info.get('idade', 25),
+                key=f"idade_{st.session_state.form_key}"
+            )
+            ano_nascimento = st.number_input(
+                "Ano de Nascimento", 
+                min_value=1900, 
+                max_value=2024,
+                value=st.session_state.personal_info.get('ano_nascimento', 2000),
+                key=f"ano_nascimento_{st.session_state.form_key}"
+            )
+        
+        # Localização
+        st.write("**Localização**")
+        col3, col4, col5 = st.columns(3)
+        
+        with col3:
+            cidade = st.text_input(
+                "Cidade",
+                value=st.session_state.personal_info.get('cidade', ''),
+                key=f"cidade_{st.session_state.form_key}"
+            )
+        with col4:
+            estado = st.text_input(
+                "Estado",
+                value=st.session_state.personal_info.get('estado', ''),
+                key=f"estado_{st.session_state.form_key}"
+            )
+        with col5:
+            pais = st.text_input(
+                "País",
+                value=st.session_state.personal_info.get('pais', ''),
+                key=f"pais_{st.session_state.form_key}"
+            )
+        
+        submitted = st.form_submit_button("Salvar Informações")
+        
+        if submitted:
+            st.session_state.personal_info = {
+                'altura': altura,
+                'peso': peso,
+                'envergadura': envergadura,
+                'idade': idade,
+                'ano_nascimento': ano_nascimento,
+                'cidade': cidade,
+                'estado': estado,
+                'pais': pais
+            }
+            st.session_state.form_key += 1
+            st.success("Informações pessoais salvas com sucesso!")
+    
+    # Progresso dos Testes
+    st.subheader("Seu Progresso")
+    
+    test_categories = {
+        "Dados Físicos": 'dados_fisicos',
+        "Habilidades Técnicas": 'habilidades_tecnicas',
+        "Aspectos Táticos": 'aspectos_taticos',
+        "Fatores Psicológicos": 'fatores_psicologicos'
+    }
+    
+    for label, category in test_categories.items():
+        progress = 1.0 if category in st.session_state.test_results and st.session_state.test_results[category] else 0.0
+        st.progress(progress, text=f"{label}: {int(progress * 100)}%")
+        
 
 def create_radar_chart(scores):
     """Cria um gráfico radar com os scores processados."""
@@ -389,6 +512,7 @@ def show_recommendations():
                         st.markdown(f"- {area}")
     
     # Botões de ação
+    # Botões de ação
     st.divider()
     col1, col2 = st.columns(2)
     
@@ -398,11 +522,18 @@ def show_recommendations():
     
     with col2:
         if st.button("🔄 Recomeçar Testes", use_container_width=True):
-            for key in st.session_state.keys():
-                del st.session_state[key]
+            reset_session_state()
+            st.experimental_set_query_params(reset=True)
             st.rerun()
 
 def main():
+
+     # Verifica se é um reset
+    query_params = st.experimental_get_query_params()
+    if query_params.get("reset"):
+        reset_session_state()
+        st.experimental_set_query_params()
+        
     # Menu lateral
     with st.sidebar:
         selected = option_menu(
@@ -416,8 +547,17 @@ def main():
     
     # Conteúdo baseado na seleção do menu
     if selected == "Home":
-        st.title("🏃‍♂️ Analisador de Talentos Esportivos")
-        st.header("Bem-vindo ao Analisador de Talentos Esportivos!")
+        show_home()
+    elif selected == "Dados Físicos":
+        show_dados_fisicos()
+    elif selected == "Habilidades Técnicas":
+        show_habilidades_tecnicas()
+    elif selected == "Aspectos Táticos":
+        show_aspectos_taticos()
+    elif selected == "Fatores Psicológicos":
+        show_fatores_psicologicos()
+    elif selected == "Recomendações":
+        show_recommendations()
         
         # Informações Pessoais
         st.subheader("Informações Pessoais")
