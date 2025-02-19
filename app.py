@@ -1,8 +1,9 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
+# Importe as funções específicas
 from utils.openai_helper import get_sport_recommendations
-from utils.test_processor import process_test_results
+from utils.test_processor import process_test_results, normalize_score, calculate_average
 
 # Configuração da página - DEVE SER A PRIMEIRA CHAMADA STREAMLIT
 st.set_page_config(
