@@ -1,13 +1,13 @@
-# utils/openai_helper.py
-
 from openai import OpenAI
 import json
+import os
 
 def get_sport_recommendations(scores):
     """
     Gera recomendações de esportes usando a API do OpenAI baseado nos scores do atleta
     """
-    client = OpenAI()
+    # Inicializa o cliente OpenAI
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
     # Criar o prompt para o GPT com os scores e contexto
     prompt = f"""
