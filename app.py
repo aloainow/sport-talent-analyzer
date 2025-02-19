@@ -155,8 +155,7 @@ def show_home():
         
 
 def create_radar_chart(scores):
-    """Cria um gráfico radar simplificado com os scores processados."""
-    # Configurar dados
+    """Cria um gráfico radar com os scores processados."""
     categories = [
         'Físico', 
         'Técnico',
@@ -171,13 +170,12 @@ def create_radar_chart(scores):
         scores.get('fatores_psicologicos', 0)
     ]
     
-    # Adicionar primeiro valor no final para fechar o polígono
+    # Adiciona o primeiro valor novamente para fechar o polígono
     categories.append(categories[0])
     values.append(values[0])
     
     fig = go.Figure()
     
-    # Adicionar o radar
     fig.add_trace(go.Scatterpolar(
         r=values,
         theta=categories,
@@ -187,35 +185,36 @@ def create_radar_chart(scores):
         fillcolor='rgba(147, 112, 219, 0.5)'
     ))
     
-    # Atualizar layout
     fig.update_layout(
         polar=dict(
             radialaxis=dict(
-                visible=False,  # Remove os números do eixo radial
+                visible=False,
                 range=[0, 100]
             ),
             angularaxis=dict(
                 tickmode='array',
-                ticktext=categories[:-1],  # Remove o valor duplicado
+                ticktext=categories[:-1],
                 tickvals=list(range(len(categories[:-1]))),
                 direction='clockwise',
                 tickfont=dict(
                     size=14,
-                    color="#333333"
+                    color="white"
                 ),
-                linecolor='#999999',
-                gridcolor='#999999'
+                gridcolor='rgba(255, 255, 255, 0.1)',
+                linecolor='rgba(255, 255, 255, 0.1)'
             ),
-            bgcolor='white'
+            bgcolor='#0E1117'
         ),
         showlegend=False,
-        paper_bgcolor='white',
+        paper_bgcolor='#0E1117',
+        plot_bgcolor='#0E1117',
         margin=dict(t=30, b=30, l=30, r=30),
         height=400
     )
     
     return fig
-def show_dados_fisicos():
+    
+    def show_dados_fisicos():
     st.title("💪 Dados Físicos")
     
     st.info("Complete os testes físicos abaixo. Realize cada teste conforme as instruções.")
