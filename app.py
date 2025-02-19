@@ -13,17 +13,20 @@ st.set_page_config(
 
 # Inicialização do estado da sessão
 def init_session_state():
+    # Inicializa o dicionário de resultados dos testes se não existir
     if 'test_results' not in st.session_state:
         st.session_state.test_results = {
-            'physical': {},
-            'technical': {},
-            'tactical': {},
-            'psychological': {}
+            'força': {},
+            'velocidade': {},
+            'resistencia': {},
+            'coordenacao': {}
         }
+    # Inicializa as recomendações se não existirem
     if 'recommendations' not in st.session_state:
         st.session_state.recommendations = None
-
-init_session_state()
+    # Inicializa as informações pessoais se não existirem
+    if 'personal_info' not in st.session_state:
+        st.session_state.personal_info = {}
 
 # Função para criar o gráfico radar
 def create_radar_chart(results):
@@ -373,18 +376,19 @@ def main():
                 st.success("Informações pessoais salvas com sucesso!")
         
         # Progresso dos Testes
-        st.subheader("Seu Progresso")
-        progress_data = {
-            "Testes de Força": len(st.session_state.test_results['força']),
-            "Testes de Velocidade": len(st.session_state.test_results['velocidade']),
-            "Testes de Resistência": len(st.session_state.test_results['resistencia']),
-            "Testes de Coordenação": len(st.session_state.test_results['coordenacao'])
-        }
+st.subheader("Seu Progresso")
+    progress_data = {
+        "Testes de Força": len(st.session_state.test_results.get('força', {})),
+        "Testes de Velocidade": len(st.session_state.test_results.get('velocidade', {})),
+        "Testes de Resistência": len(st.session_state.test_results.get('resistencia', {})),
+        "Testes de Coordenação": len(st.session_state.test_results.get('coordenacao', {}))
+    }
+    
+    for test, count in progress_data.items():
+        # Calcula a porcentagem baseada no número de testes completados
+        progress = min(count / 2, 1.0)  # Divide por 2 pois cada categoria tem 2 testes
+        st.progress(progress, text=f"{test}: {int(progress * 100)}%")
         
-        for test, count in progress_data.items():
-            progress = count / 2  # 2 testes por categoria
-            st.progress(progress, text=f"{test}: {int(progress * 100)}%")
-            
     elif selected == "Testes de Força":
         show_força_tests()
     elif selected == "Testes de Velocidade":
