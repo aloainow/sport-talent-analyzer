@@ -18,10 +18,10 @@ def reset_session_state():
     
     # Reinicializa com valores padrão
     st.session_state.test_results = {
-        'dados_fisicos': {},
-        'habilidades_tecnicas': {},
-        'aspectos_taticos': {},
-        'fatores_psicologicos': {}
+        'dados_fisicos': None,  # Mudado de {} para None
+        'habilidades_tecnicas': None,  # Mudado de {} para None
+        'aspectos_taticos': None,  # Mudado de {} para None
+        'fatores_psicologicos': None  # Mudado de {} para None
     }
     st.session_state.recommendations = None
     st.session_state.personal_info = {}
@@ -33,10 +33,10 @@ def reset_session_state():
 def init_session_state():
     if 'test_results' not in st.session_state:
         st.session_state.test_results = {
-            'dados_fisicos': {},
-            'habilidades_tecnicas': {},
-            'aspectos_taticos': {},
-            'fatores_psicologicos': {}
+            'dados_fisicos': None,  # Mudado de {} para None
+            'habilidades_tecnicas': None,  # Mudado de {} para None
+            'aspectos_taticos': None,  # Mudado de {} para None
+            'fatores_psicologicos': None  # Mudado de {} para None
         }
     if 'recommendations' not in st.session_state:
         st.session_state.recommendations = None
@@ -44,7 +44,11 @@ def init_session_state():
         st.session_state.personal_info = {}
     if 'form_key' not in st.session_state:
         st.session_state.form_key = 0
-
+    if 'processed_scores' not in st.session_state:
+        st.session_state.processed_scores = None
+    if 'initialized' not in st.session_state:
+        st.session_state.initialized = True
+        
 def show_home():
     """Exibe a página inicial do aplicativo"""
     st.title("🏃‍♂️ Analisador de Talentos Esportivos")
@@ -527,7 +531,8 @@ def main():
         st.query_params.clear()
     
     # Inicializa o estado da sessão
-    init_session_state()
+    if 'initialized' not in st.session_state:
+        init_session_state()
     
     # Menu lateral
     with st.sidebar:
@@ -552,112 +557,6 @@ def main():
     elif selected == "Fatores Psicológicos":
         show_fatores_psicologicos()
     elif selected == "Recomendações":
-        show_recommendations()        
-        # Informações Pessoais
-        st.subheader("Informações Pessoais")
-        form_key = f"personal_info_form_{st.session_state.form_key}"
-        
-        with st.form(key=form_key):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                altura = st.number_input(
-                    "Altura (cm)", 
-                    min_value=0, 
-                    max_value=300,
-                    value=170,
-                    key=f"altura_{st.session_state.form_key}"
-                )
-                peso = st.number_input(
-                    "Peso (kg)", 
-                    min_value=0, 
-                    max_value=300,
-                    value=70,
-                    key=f"peso_{st.session_state.form_key}"
-                )
-                envergadura = st.number_input(
-                    "Envergadura (cm)", 
-                    min_value=0, 
-                    max_value=300,
-                    value=170,
-                    key=f"envergadura_{st.session_state.form_key}"
-                )
-            
-            with col2:
-                idade = st.number_input(
-                    "Idade", 
-                    min_value=0, 
-                    max_value=150,
-                    value=25,
-                    key=f"idade_{st.session_state.form_key}"
-                )
-                ano_nascimento = st.number_input(
-                    "Ano de Nascimento", 
-                    min_value=1900, 
-                    max_value=2024,
-                    value=2000,
-                    key=f"ano_nascimento_{st.session_state.form_key}"
-                )
-            
-            # Localização
-            st.write("**Localização**")
-            col3, col4, col5 = st.columns(3)
-            
-            with col3:
-                cidade = st.text_input(
-                    "Cidade",
-                    key=f"cidade_{st.session_state.form_key}"
-                )
-            with col4:
-                estado = st.text_input(
-                    "Estado",
-                    key=f"estado_{st.session_state.form_key}"
-                )
-            with col5:
-                pais = st.text_input(
-                    "País",
-                    key=f"pais_{st.session_state.form_key}"
-                )
-            
-            submitted = st.form_submit_button("Salvar Informações")
-            
-            if submitted:
-                st.session_state.personal_info = {
-                    'altura': altura,
-                    'peso': peso,
-                    'envergadura': envergadura,
-                    'idade': idade,
-                    'ano_nascimento': ano_nascimento,
-                    'cidade': cidade,
-                    'estado': estado,
-                    'pais': pais
-                }
-                st.session_state.form_key += 1
-                st.success("Informações pessoais salvas com sucesso!")
-        
-        # Progresso dos Testes
-        st.subheader("Seu Progresso")
-        
-        test_categories = {
-            "Dados Físicos": 'dados_fisicos',
-            "Habilidades Técnicas": 'habilidades_tecnicas',
-            "Aspectos Táticos": 'aspectos_taticos',
-            "Fatores Psicológicos": 'fatores_psicologicos'
-        }
-        
-        for label, category in test_categories.items():
-            progress = 1.0 if category in st.session_state.test_results else 0.0
-            st.progress(progress, text=f"{label}: {int(progress * 100)}%")
-            
-    elif selected == "Dados Físicos":
-        show_dados_fisicos()
-    elif selected == "Habilidades Técnicas":
-        show_habilidades_tecnicas()
-    elif selected == "Aspectos Táticos":
-        show_aspectos_taticos()
-    elif selected == "Fatores Psicológicos":
-        show_fatores_psicologicos()
-    elif selected == "Recomendações":
         show_recommendations()
 
 if __name__ == "__main__":
@@ -670,5 +569,4 @@ if __name__ == "__main__":
         </style>
     """, unsafe_allow_html=True)
     
-    init_session_state()
     main()
