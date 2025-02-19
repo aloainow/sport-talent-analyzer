@@ -1,13 +1,13 @@
 from openai import OpenAI
 import json
-import os
+import streamlit as st
 
 def get_sport_recommendations(scores):
     """
     Gera recomendações de esportes usando a API do OpenAI baseado nos scores do atleta
     """
-    # Inicializa o cliente OpenAI
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    # Inicializa o cliente OpenAI usando a chave do Streamlit Secrets
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     
     # Criar o prompt para o GPT com os scores e contexto
     prompt = f"""
