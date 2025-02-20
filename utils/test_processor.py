@@ -124,3 +124,64 @@ def process_test_results(test_results):
             'aspectos_taticos': 0,
             'fatores_psicologicos': 0
         }
+        def normalize_olympic_stats(value, mean, min_val, max_val):
+    """
+    Normaliza um valor em relação às estatísticas olímpicas
+    
+    Args:
+        value: Valor a ser normalizado
+        mean: Média olímpica
+        min_val: Valor mínimo olímpico
+        max_val: Valor máximo olímpico
+    
+    Returns:
+        float: Score normalizado de 0 a 100
+    """
+    try:
+        if value is None:
+            return 0
+            
+        value = float(value)
+        
+        # Se o valor está dentro do range olímpico
+        if min_val <= value <= max_val:
+            # Quanto mais próximo da média, melhor o score
+            deviation = abs(value - mean)
+            max_deviation = max(mean - min_val, max_val - mean)
+            return 100 * (1 - deviation / max_deviation)
+        
+        # Se está fora do range, penaliza proporcionalmente
+        if value < min_val:
+            return max(0, 50 * (value / min_val))
+        else:
+            return max(0, 50 * (max_val / value))
+            
+    except (TypeError, ValueError):
+        return 0
+
+def get_attribute_importance(attribute_name: str) -> float:
+    """
+    Retorna o peso de importância para cada atributo na comparação
+    
+    Args:
+        attribute_name: Nome do atributo
+        
+    Returns:
+        float: Peso do atributo (0 a 1)
+    """
+    importance_weights = {
+        'altura': 0.3,
+        'peso': 0.3,
+        'velocidade': 0.4,
+        'forca_superior': 0.3,
+        'forca_inferior': 0.3,
+        'coordenacao': 0.25,
+        'precisao': 0.25,
+        'agilidade': 0.25,
+        'equilibrio': 0.25,
+        'tomada_decisao': 0.2,
+        'visao_jogo': 0.2,
+        'posicionamento': 0.2
+    }
+    
+    return importance_weights.get(attribute_name, 0.1)  # default 0.1 para outros atributos
