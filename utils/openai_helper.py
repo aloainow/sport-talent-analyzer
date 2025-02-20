@@ -171,8 +171,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.warning("Nenhum esporte foi recomendado. Exibindo sugestões padrão.")
             return get_recommendations_without_api()
 
-        st.write(f"Esportes recomendados: {len(recommendations)}")
-        return recommendations[:10]
+                return recommendations[:10]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
