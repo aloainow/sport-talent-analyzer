@@ -8,7 +8,9 @@ try:
     from .test_processor import (
         process_test_results,
         normalize_score,
-        calculate_average
+        calculate_average,
+        normalize_olympic_stats,
+        get_attribute_importance
     )
 except ImportError as e:
     import streamlit as st
@@ -19,7 +21,9 @@ __all__ = [
     'get_sport_recommendations',
     'process_test_results',
     'normalize_score',
-    'calculate_average'
+    'calculate_average',
+    'normalize_olympic_stats',
+    'get_attribute_importance'
 ]
 
 # Versão do módulo
