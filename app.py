@@ -500,7 +500,6 @@ def show_recommendations():
     # Processar scores e gerar recomendações
     try:
         with st.spinner("Analisando seus resultados..."):
-            # Criar dicionário com todos os dados do usuário
             user_data = {
                 'altura': st.session_state.personal_info.get('altura'),
                 'peso': st.session_state.personal_info.get('peso'),
@@ -511,18 +510,10 @@ def show_recommendations():
                 'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
             }
 
-            # Processar scores para o gráfico radar
             processed_scores = process_test_results(st.session_state.test_results)
             st.session_state.processed_scores = processed_scores
 
-            # Gerar recomendações usando IA ou outra lógica
             st.session_state.recommendations = get_sport_recommendations(user_data)
-
-            # Analisar pontos fortes e a desenvolver (se você ainda usa essa lógica)
-            pontos_fortes, desenvolver = analyze_user_attributes(
-                st.session_state.test_results,
-                st.session_state.personal_info
-            )
 
     except Exception as e:
         st.error(f"Erro ao processar recomendações: {str(e)}")
@@ -544,6 +535,12 @@ def show_recommendations():
     top_5_recomendacoes = st.session_state.recommendations[:5]
 
     for index, sport in enumerate(top_5_recomendacoes, start=1):
+        strengths = sport['strengths'] or ["Não informado"]
+        development = sport['development'] or ["Não informado"]
+
+        strengths_html = "".join(f"<li>{s}</li>" for s in strengths)
+        development_html = "".join(f"<li>{d}</li>" for d in development)
+
         with st.container():
             st.markdown(
                 f"""
@@ -565,13 +562,13 @@ def show_recommendations():
                         <div style="flex: 1; margin-right: 20px;">
                             <strong style="color: #81c784;">Pontos Fortes:</strong>
                             <ul style="margin-top: 5px; color: white;">
-                                {''.join(f'<li>{strength}</li>' for strength in sport['strengths'])}
+                                {strengths_html}
                             </ul>
                         </div>
                         <div style="flex: 1;">
                             <strong style="color: #64b5f6;">Áreas para Desenvolver:</strong>
                             <ul style="margin-top: 5px; color: white;">
-                                {''.join(f'<li>{dev}</li>' for dev in sport['development'])}
+                                {development_html}
                             </ul>
                         </div>
                     </div>
