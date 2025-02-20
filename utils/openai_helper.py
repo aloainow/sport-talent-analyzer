@@ -118,25 +118,25 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     """
     Gera recomendações de esportes baseadas nos dados do usuário e estatísticas olímpicas
     """
+    import streamlit as st  # Garante que tenha isso dentro da função caso precise
+
     try:
         # Carregar dados
         sports_data = load_and_process_data()
         if sports_data is None:
+            st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
             return get_recommendations_without_api()
         
         recommendations = []
-        
+
         # Avaliar cada esporte
         for _, sport in sports_data.iterrows():
             sport_name = sport['base_sport']
-            
+
             # Calcular compatibilidades
             biotype_score = calculate_biotype_compatibility(user_data, sport)
             physical_score = calculate_physical_compatibility(user_data, sport_name)
 
-            st.write(f"{sport_name}: Biotipo {biotype_score:.1f}, Físico {physical_score:.1f}")
-
-            
             # Calcular técnica e tática baseado nos testes
             technical_score = 50  # Score base
             if user_data.get('habilidades_tecnicas'):
@@ -146,7 +146,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60)
                 ]
                 technical_score = np.mean(tech_scores)
-            
+
             tactical_score = 50  # Score base
             if user_data.get('aspectos_taticos'):
                 tactic_scores = [
@@ -155,34 +155,39 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     normalize_score(user_data['aspectos_taticos'].get('posicionamento', 0), 0, 10)
                 ]
                 tactical_score = np.mean(tactic_scores)
-            
+
             # Calcular score final
             final_score = np.mean([
                 biotype_score * 0.3,    # 30% peso para biótipo
-                physical_score * 0.3,    # 30% peso para capacidade física
-                technical_score * 0.2,   # 20% peso para técnica
-                tactical_score * 0.2     # 20% peso para tática
+                physical_score * 0.3,   # 30% peso para capacidade física
+                technical_score * 0.2,  # 20% peso para técnica
+                tactical_score * 0.2    # 20% peso para tática
             ])
-            
-            if final_score >= 50:  # Só incluir compatibilidade > 50%
-                recommendations.append({
-                    "name": sport_name,
-                    "compatibility": round(final_score),
-                    "strengths": get_sport_strengths(sport_name, user_data),
-                    "development": get_development_areas(sport_name, user_data)
-                })
-        
-        # Ordenar por compatibilidade e retornar top 5
-if not recommendations:
-    st.warning("Nenhum esporte foi recomendado. Exibindo sugestões padrão.")
-    return get_recommendations_without_api()
 
-recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-st.write(f"Esportes recomendados: {len(recommendations)}")
-return recommendations[:10]  # Só pra exibir mais
-        
+            # Debug de compatibilidades
+            st.write(f"{sport_name}: Biotipo {biotype_score:.1f}, Físico {physical_score:.1f}, Técnico {technical_score:.1f}, Tático {tactical_score:.1f}, Final {final_score:.1f}")
+
+            # Adicionar independente do valor final
+            recommendations.append({
+                "name": sport_name,
+                "compatibility": round(final_score),
+                "strengths": get_sport_strengths(sport_name, user_data),
+                "development": get_development_areas(sport_name, user_data)
+            })
+
+        # Ordenar e retornar até 10 recomendações
+        recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+
+        # Se nenhuma recomendação tiver sido feita, retorna padrão
+        if not recommendations:
+            st.warning("Nenhum esporte foi recomendado. Exibindo sugestões padrão.")
+            return get_recommendations_without_api()
+
+        st.write(f"Esportes recomendados: {len(recommendations)}")
+        return recommendations[:10]
+
     except Exception as e:
-        print(f"Erro ao gerar recomendações: {str(e)}")
+        st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api()
 
 
