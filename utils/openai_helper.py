@@ -1,156 +1,253 @@
 import pandas as pd
+import json
 import numpy as np
 from typing import Dict, List, Any
+import os
 
-def calculate_compatibility_score(user_data: Dict[str, Any], event_data: pd.Series) -> float:
+def normalize_score(value, min_val, max_val, inverse=False):
+    """Normaliza um valor para escala 0-100"""
+    try:
+        if value is None:
+            return 0
+        value = float(value)
+        if inverse:
+            if value <= min_val:
+                return 100
+            elif value >= max_val:
+                return 0
+            return ((max_val - value) / (max_val - min_val)) * 100
+        else:
+            if value >= max_val:
+                return 100
+            elif value <= min_val:
+                return 0
+            return ((value - min_val) / (max_val - min_val)) * 100
+    except (TypeError, ValueError):
+        return 0
+
+def load_and_process_data():
     """
-    Calculate compatibility score between user data and event requirements
+    Carrega e processa os dados olímpicos e perfis de esportes
     """
-    score = 0
-    total_weight = 0
+    try:
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+        # Carregar dados olímpicos
+        csv_path = os.path.join(current_dir, 'data', 'perfil_eventos_olimpicos_verao.csv')
+        olympic_data = pd.read_csv(csv_path)
+        
+        # Processar modalidades únicas
+        olympic_data['base_sport'] = olympic_data['Event'].apply(lambda x: x.split("'")[0].strip())
+        unique_sports = olympic_data.groupby('base_sport').agg({
+            'idade_media': 'mean',
+            'idade_min': 'min',
+            'idade_max': 'max',
+            'altura_media': 'mean',
+            'altura_min': 'min',
+            'altura_max': 'max',
+            'peso_media': 'mean',
+            'peso_min': 'min',
+            'peso_max': 'max',
+            'total_atletas': 'sum'
+        }).reset_index()
+        
+        return unique_sports
+        
+    except Exception as e:
+        print(f"Erro ao carregar dados: {str(e)}")
+        return None
+
+def calculate_biotype_compatibility(user_data: Dict, sport_data: pd.Series) -> float:
+    """
+    Calcula compatibilidade biométrica com dados olímpicos
+    """
+    scores = []
     
-    # Physical attributes matching (height and weight)
-    if 'altura' in user_data and 'peso' in user_data:
-        # Height compatibility
-        height_score = max(0, 100 - abs(user_data['altura'] - event_data['altura_media']) * 2)
-        if event_data['altura_min'] <= user_data['altura'] <= event_data['altura_max']:
+    # Altura
+    if 'altura' in user_data:
+        height = user_data['altura']
+        height_score = normalize_score(height, sport_data['altura_min'], sport_data['altura_max'])
+        if sport_data['altura_min'] <= height <= sport_data['altura_max']:
             height_score += 20
-        score += height_score * 0.3
-        
-        # Weight compatibility
-        weight_score = max(0, 100 - abs(user_data['peso'] - event_data['peso_media']) * 2)
-        if event_data['peso_min'] <= user_data['peso'] <= event_data['peso_max']:
+        scores.append(height_score)
+    
+    # Peso
+    if 'peso' in user_data:
+        weight = user_data['peso']
+        weight_score = normalize_score(weight, sport_data['peso_min'], sport_data['peso_max'])
+        if sport_data['peso_min'] <= weight <= sport_data['peso_max']:
             weight_score += 20
-        score += weight_score * 0.3
-        
-        total_weight += 0.6
+        scores.append(weight_score)
+    
+    return np.mean(scores) if scores else 50
 
-    # Performance metrics
-    if 'dados_fisicos' in user_data:
-        physical_score = 0
-        # Speed-based sports get bonus from velocity test
-        if user_data['dados_fisicos'].get('velocidade'):
-            speed_score = max(0, 100 - (user_data['dados_fisicos']['velocidade'] - 2.5) * 20)
-            physical_score += speed_score
-        
-        # Strength-based sports get bonus from strength tests
-        strength_score = (
-            user_data['dados_fisicos'].get('forca_superior', 0) * 1.5 +
-            user_data['dados_fisicos'].get('forca_inferior', 0) * 1.5
-        ) / 2
-        physical_score += strength_score
-        
-        score += (physical_score / 2) * 0.2
-        total_weight += 0.2
-
-    # Technical skills
-    if 'habilidades_tecnicas' in user_data:
-        tech_score = (
-            user_data['habilidades_tecnicas'].get('coordenacao', 0) * 2 +
-            user_data['habilidades_tecnicas'].get('precisao', 0) * 10 +
-            max(0, 100 - user_data['habilidades_tecnicas'].get('agilidade', 0) * 6.67) +
-            user_data['habilidades_tecnicas'].get('equilibrio', 0) * 1.67
-        ) / 4
-        
-        score += tech_score * 0.1
-        total_weight += 0.1
-
-    # Tactical aspects
-    if 'aspectos_taticos' in user_data:
-        tactical_score = (
-            user_data['aspectos_taticos'].get('tomada_decisao', 0) * 10 +
-            user_data['aspectos_taticos'].get('visao_jogo', 0) * 10 +
-            user_data['aspectos_taticos'].get('posicionamento', 0) * 10
-        ) / 3
-        
-        score += tactical_score * 0.1
-        total_weight += 0.1
-
-    # Normalize final score
-    if total_weight > 0:
-        final_score = (score / total_weight)
-        return min(max(final_score, 0), 100)
-    return 0
-
-def get_sport_strengths(event: str, user_data: Dict[str, Any]) -> List[str]:
+def calculate_physical_compatibility(user_data: Dict, sport_name: str) -> float:
     """
-    Determine strengths for recommended sport based on user data
+    Calcula compatibilidade física baseada nos testes
+    """
+    if not user_data.get('dados_fisicos'):
+        return 50
+        
+    scores = []
+    
+    # Velocidade (esportes que valorizam velocidade)
+    velocity_sports = ['Athletics', 'Swimming', 'Cycling', 'Sprint']
+    if any(sport in sport_name for sport in velocity_sports):
+        velocity_score = normalize_score(
+            user_data['dados_fisicos'].get('velocidade', 5),
+            2.5, 5.0, inverse=True
+        )
+        scores.append(velocity_score * 1.5)  # Peso maior para esportes de velocidade
+    
+    # Força (esportes que valorizam força)
+    strength_sports = ['Weightlifting', 'Wrestling', 'Judo', 'Boxing']
+    if any(sport in sport_name for sport in strength_sports):
+        strength_upper = normalize_score(
+            user_data['dados_fisicos'].get('forca_superior', 0),
+            0, 50
+        )
+        strength_lower = normalize_score(
+            user_data['dados_fisicos'].get('forca_inferior', 0),
+            0, 60
+        )
+        scores.extend([strength_upper * 1.5, strength_lower * 1.5])
+    
+    return np.mean(scores) if scores else 50
+
+def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Gera recomendações de esportes baseadas nos dados do usuário e estatísticas olímpicas
+    """
+    try:
+        # Carregar dados
+        sports_data = load_and_process_data()
+        if sports_data is None:
+            return get_recommendations_without_api()
+        
+        recommendations = []
+        
+        # Avaliar cada esporte
+        for _, sport in sports_data.iterrows():
+            sport_name = sport['base_sport']
+            
+            # Calcular compatibilidades
+            biotype_score = calculate_biotype_compatibility(user_data, sport)
+            physical_score = calculate_physical_compatibility(user_data, sport_name)
+            
+            # Calcular técnica e tática baseado nos testes
+            technical_score = 50  # Score base
+            if user_data.get('habilidades_tecnicas'):
+                tech_scores = [
+                    normalize_score(user_data['habilidades_tecnicas'].get('coordenacao', 0), 0, 50),
+                    normalize_score(user_data['habilidades_tecnicas'].get('precisao', 0), 0, 10),
+                    normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60)
+                ]
+                technical_score = np.mean(tech_scores)
+            
+            tactical_score = 50  # Score base
+            if user_data.get('aspectos_taticos'):
+                tactic_scores = [
+                    normalize_score(user_data['aspectos_taticos'].get('tomada_decisao', 0), 0, 10),
+                    normalize_score(user_data['aspectos_taticos'].get('visao_jogo', 0), 0, 10),
+                    normalize_score(user_data['aspectos_taticos'].get('posicionamento', 0), 0, 10)
+                ]
+                tactical_score = np.mean(tactic_scores)
+            
+            # Calcular score final
+            final_score = np.mean([
+                biotype_score * 0.3,    # 30% peso para biótipo
+                physical_score * 0.3,    # 30% peso para capacidade física
+                technical_score * 0.2,   # 20% peso para técnica
+                tactical_score * 0.2     # 20% peso para tática
+            ])
+            
+            if final_score >= 50:  # Só incluir compatibilidade > 50%
+                recommendations.append({
+                    "name": sport_name,
+                    "compatibility": round(final_score),
+                    "strengths": get_sport_strengths(sport_name, user_data),
+                    "development": get_development_areas(sport_name, user_data)
+                })
+        
+        # Ordenar por compatibilidade e retornar top 5
+        recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+        return recommendations[:5]
+        
+    except Exception as e:
+        print(f"Erro ao gerar recomendações: {str(e)}")
+        return get_recommendations_without_api()
+
+def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
+    """
+    Determina pontos fortes para o esporte baseado nos dados do usuário
     """
     strengths = []
     
-    if 'dados_fisicos' in user_data:
+    # Análise física
+    if user_data.get('dados_fisicos'):
         if user_data['dados_fisicos'].get('velocidade', 5) < 3.5:
             strengths.append("Velocidade")
         if user_data['dados_fisicos'].get('forca_superior', 0) > 25:
             strengths.append("Força Superior")
         if user_data['dados_fisicos'].get('forca_inferior', 0) > 40:
             strengths.append("Força Inferior")
-            
-    if 'habilidades_tecnicas' in user_data:
+    
+    # Análise técnica
+    if user_data.get('habilidades_tecnicas'):
         if user_data['habilidades_tecnicas'].get('coordenacao', 0) > 30:
             strengths.append("Coordenação")
         if user_data['habilidades_tecnicas'].get('precisao', 0) > 7:
             strengths.append("Precisão")
         if user_data['habilidades_tecnicas'].get('equilibrio', 0) > 40:
             strengths.append("Equilíbrio")
-            
-    return strengths[:2]  # Return top 2 strengths
-
-def get_development_areas(event: str, user_data: Dict[str, Any]) -> List[str]:
-    """
-    Determine areas for development based on user data
-    """
-    development = []
     
-    if 'dados_fisicos' in user_data:
-        if user_data['dados_fisicos'].get('velocidade', 5) > 4:
-            development.append("Velocidade")
-        if user_data['dados_fisicos'].get('forca_superior', 0) < 15:
-            development.append("Força Superior")
-        if user_data['dados_fisicos'].get('forca_inferior', 0) < 30:
-            development.append("Força Inferior")
-            
-    if 'habilidades_tecnicas' in user_data:
-        if user_data['habilidades_tecnicas'].get('coordenacao', 0) < 20:
-            development.append("Coordenação")
-        if user_data['habilidades_tecnicas'].get('precisao', 0) < 5:
-            development.append("Precisão")
-        if user_data['habilidades_tecnicas'].get('equilibrio', 0) < 20:
-            development.append("Equilíbrio")
-            
-    return development[:2]  # Return top 2 areas for development
+    return strengths[:2]  # Retorna os 2 principais pontos fortes
 
-def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
     """
-    Generate sport recommendations based on user data and Olympic sports database
+    Determina áreas para desenvolvimento baseado nos dados do usuário
     """
-    try:
-        # Read the Olympic sports database
-        import os
-        
-        # Get the directory of the current file
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        csv_path = os.path.join(current_dir, 'data', 'perfil_eventos_olimpicos_verao.csv')
-        
-        # Read the CSV file
-        df = pd.read_csv(csv_path)
-        
-        # Calculate compatibility scores for each sport
-        recommendations = []
-        for _, event in df.iterrows():
-            compatibility = calculate_compatibility_score(user_data, event)
-            if compatibility >= 50:  # Only include sports with >50% compatibility
-                recommendations.append({
-                    "name": event['Event'],
-                    "compatibility": round(compatibility),
-                    "strengths": get_sport_strengths(event['Event'], user_data),
-                    "development": get_development_areas(event['Event'], user_data)
-                })
-        
-        # Sort by compatibility score and get top 5
-        recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        return recommendations[:5]
-        
-    except Exception as e:
-        print(f"Error generating recommendations: {str(e)}")
-        return get_recommendations_without_api()  
+    areas = []
+    
+    # Análise física
+    if user_data.get('dados_fisicos'):
+        if user_data['dados_fisicos'].get('velocidade', 5) > 4:
+            areas.append("Velocidade")
+        if user_data['dados_fisicos'].get('forca_superior', 0) < 15:
+            areas.append("Força Superior")
+        if user_data['dados_fisicos'].get('forca_inferior', 0) < 30:
+            areas.append("Força Inferior")
+    
+    # Análise técnica
+    if user_data.get('habilidades_tecnicas'):
+        if user_data['habilidades_tecnicas'].get('coordenacao', 0) < 20:
+            areas.append("Coordenação")
+        if user_data['habilidades_tecnicas'].get('precisao', 0) < 5:
+            areas.append("Precisão")
+        if user_data['habilidades_tecnicas'].get('equilibrio', 0) < 20:
+            areas.append("Equilíbrio")
+    
+    return areas[:2]  # Retorna as 2 principais áreas para desenvolvimento
+
+def get_recommendations_without_api():
+    """Retorna recomendações padrão caso haja problema com os dados"""
+    return [
+        {
+            "name": "Athletics",
+            "compatibility": 85,
+            "strengths": ["Condicionamento físico geral", "Resistência"],
+            "development": ["Técnica específica"]
+        },
+        {
+            "name": "Swimming",
+            "compatibility": 80,
+            "strengths": ["Resistência cardiovascular", "Coordenação"],
+            "development": ["Força muscular"]
+        },
+        {
+            "name": "Cycling",
+            "compatibility": 75,
+            "strengths": ["Resistência", "Força nas pernas"],
+            "development": ["Equilíbrio"]
+        }
+    ]
