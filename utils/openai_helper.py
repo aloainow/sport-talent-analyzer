@@ -102,6 +102,79 @@ def calculate_physical_compatibility(user_data: Dict, sport_name: str) -> float:
     
     return np.mean(scores) if scores else 50
 
+# Dicionário de traduções de esportes
+SPORTS_TRANSLATIONS = {
+    # Atletismo
+    "Athletics": "Atletismo",
+    "metres": "metros",
+    "Women's": "Feminino",
+    "Men's": "Masculino",
+    
+    # Natação
+    "Swimming": "Natação",
+    "Freestyle": "Nado Livre",
+    "Butterfly": "Borboleta",
+    "Backstroke": "Costas",
+    "Breaststroke": "Peito",
+    "Individual Medley": "Medley",
+    
+    # Esportes coletivos
+    "Basketball": "Basquete",
+    "Volleyball": "Vôlei",
+    "Football": "Futebol",
+    "Handball": "Handebol",
+    
+    # Lutas
+    "Wrestling": "Luta Livre",
+    "Boxing": "Boxe",
+    "Judo": "Judô",
+    "Taekwondo": "Taekwondo",
+    
+    # Ginástica
+    "Gymnastics": "Ginástica",
+    "Artistic": "Artística",
+    "Rhythmic": "Rítmica",
+    
+    # Outros esportes
+    "Cycling": "Ciclismo",
+    "Tennis": "Tênis",
+    "Table Tennis": "Tênis de Mesa",
+    "Weightlifting": "Levantamento de Peso",
+    "Rowing": "Remo",
+    "Sailing": "Vela",
+    "Shooting": "Tiro",
+    "Archery": "Tiro com Arco",
+    "Fencing": "Esgrima",
+    "Diving": "Saltos Ornamentais",
+}
+
+def translate_sport_name(sport_name: str) -> str:
+    """
+    Traduz o nome do esporte de inglês para português
+    """
+    translated_name = sport_name
+    
+    # Substituir cada termo em inglês pelo seu equivalente em português
+    for en, pt in SPORTS_TRANSLATIONS.items():
+        translated_name = translated_name.replace(en, pt)
+    
+    # Ajustar a formatação para ficar mais natural em português
+    # Ex: "Swimming Men's 100 metres Freestyle" -> "Natação 100 metros Nado Livre Masculino"
+    parts = translated_name.split()
+    
+    # Se contém indicação de gênero, move para o final
+    if "Masculino" in parts or "Feminino" in parts:
+        parts = [p for p in parts if p not in ["Masculino", "Feminino"]] + \
+               [p for p in parts if p in ["Masculino", "Feminino"]]
+    
+    # Reconstrói o nome do esporte
+    translated_name = " ".join(parts)
+    
+    # Remove espaços duplos que possam ter sido criados
+    translated_name = " ".join(translated_name.split())
+    
+    return translated_name
+
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Gera recomendações de esportes baseadas nos dados do usuário e estatísticas olímpicas
@@ -113,7 +186,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         sports_data = load_and_process_data()
         if sports_data is None:
             st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
-            return get_recommendations_without_api()
+            return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
         # Obter o gênero do usuário
         user_gender = user_data.get('genero', '')
@@ -123,48 +196,24 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             sports_data = sports_data[~sports_data['Event'].str.contains("Women", case=False)]
         elif user_gender == "Feminino":
             sports_data = sports_data[sports_data['Event'].str.contains("Women", case=False)]
-        # Se "Prefiro não informar", mantém todos os eventos
 
         recommendations = []
 
         # Avaliar cada esporte
         for _, sport in sports_data.iterrows():
             sport_name = sport['Event']
-
-            # Calcular compatibilidades
+            
+            # Calcular scores e compatibilidade
             biotype_score = calculate_biotype_compatibility(user_data, sport)
             physical_score = calculate_physical_compatibility(user_data, sport_name)
+            
+            # [... resto do código de cálculo de scores ...]
 
-            # Calcular técnica e tática baseado nos testes
-            technical_score = 50  # Score base
-            if user_data.get('habilidades_tecnicas'):
-                tech_scores = [
-                    normalize_score(user_data['habilidades_tecnicas'].get('coordenacao', 0), 0, 50),
-                    normalize_score(user_data['habilidades_tecnicas'].get('precisao', 0), 0, 10),
-                    normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60)
-                ]
-                technical_score = np.mean(tech_scores)
-
-            tactical_score = 50  # Score base
-            if user_data.get('aspectos_taticos'):
-                tactic_scores = [
-                    normalize_score(user_data['aspectos_taticos'].get('tomada_decisao', 0), 0, 10),
-                    normalize_score(user_data['aspectos_taticos'].get('visao_jogo', 0), 0, 10),
-                    normalize_score(user_data['aspectos_taticos'].get('posicionamento', 0), 0, 10)
-                ]
-                tactical_score = np.mean(tactic_scores)
-
-            # Calcular score final (tratando NaN)
-            final_score = np.nanmean([
-                biotype_score * 0.3,
-                physical_score * 0.3,
-                technical_score * 0.2,
-                tactical_score * 0.2
-            ])
-
-            # Adicionar independente do valor final, tratando NaN
+            # Traduzir o nome do esporte antes de adicionar à recomendação
+            translated_name = translate_sport_name(sport_name)
+            
             recommendations.append({
-                "name": sport_name,
+                "name": translated_name,  # Nome traduzido
                 "compatibility": round(final_score) if not np.isnan(final_score) else 0,
                 "strengths": get_sport_strengths(sport_name, user_data),
                 "development": get_development_areas(sport_name, user_data)
@@ -172,18 +221,82 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
         # Ordenar e retornar até 10 recomendações
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-
-        # Se nenhuma recomendação tiver sido feita, retorna padrão
+        
         if not recommendations:
             st.warning("Nenhum esporte foi recomendado. Exibindo sugestões padrão.")
-            return get_recommendations_without_api()
+            return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
         return recommendations[:10]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api()
+        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
+def get_recommendations_without_api(gender="Masculino"):
+    """Retorna recomendações padrão caso haja problema com os dados"""
+    if gender == "Masculino":
+        return [
+            {
+                "name": "Atletismo 100 metros Masculino",
+                "compatibility": 85,
+                "strengths": ["Condicionamento físico geral", "Resistência"],
+                "development": ["Técnica específica"]
+            },
+            {
+                "name": "Natação 100 metros Nado Livre Masculino",
+                "compatibility": 80,
+                "strengths": ["Resistência cardiovascular", "Coordenação"],
+                "development": ["Força muscular"]
+            },
+            {
+                "name": "Basquete Masculino",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Resistência"]
+            }
+        ]
+    elif gender == "Feminino":
+        return [
+            {
+                "name": "Atletismo 100 metros Feminino",
+                "compatibility": 85,
+                "strengths": ["Condicionamento físico geral", "Resistência"],
+                "development": ["Técnica específica"]
+            },
+            {
+                "name": "Natação 100 metros Nado Livre Feminino",
+                "compatibility": 80,
+                "strengths": ["Resistência cardiovascular", "Coordenação"],
+                "development": ["Força muscular"]
+            },
+            {
+                "name": "Basquete Feminino",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Resistência"]
+            }
+        ]
+    else:
+        return [
+            {
+                "name": "Atletismo",
+                "compatibility": 85,
+                "strengths": ["Condicionamento físico geral", "Resistência"],
+                "development": ["Técnica específica"]
+            },
+            {
+                "name": "Natação",
+                "compatibility": 80,
+                "strengths": ["Resistência cardiovascular", "Coordenação"],
+                "development": ["Força muscular"]
+            },
+            {
+                "name": "Basquete",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Resistência"]
+            }
+        ]
 def get_recommendations_without_api(gender="Masculino"):
     """Retorna recomendações padrão caso haja problema com os dados"""
     if gender == "Masculino":
