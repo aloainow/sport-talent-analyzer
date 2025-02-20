@@ -115,6 +115,16 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
             return get_recommendations_without_api()
 
+        # Obter o gênero do usuário
+        user_gender = user_data.get('genero', '')
+
+        # Filtrar eventos por gênero
+        if user_gender == "Masculino":
+            sports_data = sports_data[~sports_data['Event'].str.contains("Women", case=False)]
+        elif user_gender == "Feminino":
+            sports_data = sports_data[sports_data['Event'].str.contains("Women", case=False)]
+        # Se "Prefiro não informar", mantém todos os eventos
+
         recommendations = []
 
         # Avaliar cada esporte
@@ -168,12 +178,78 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.warning("Nenhum esporte foi recomendado. Exibindo sugestões padrão.")
             return get_recommendations_without_api()
 
-        return recommendations[:10]  # <- Aqui está certo agora
+        return recommendations[:10]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api()
 
+def get_recommendations_without_api(gender="Masculino"):
+    """Retorna recomendações padrão caso haja problema com os dados"""
+    if gender == "Masculino":
+        return [
+            {
+                "name": "Athletics Men's 100 metres",
+                "compatibility": 85,
+                "strengths": ["Condicionamento físico geral", "Resistência"],
+                "development": ["Técnica específica"]
+            },
+            {
+                "name": "Swimming Men's 100 metres Freestyle",
+                "compatibility": 80,
+                "strengths": ["Resistência cardiovascular", "Coordenação"],
+                "development": ["Força muscular"]
+            },
+            {
+                "name": "Basketball Men's Basketball",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Resistência"]
+            }
+        ]
+    elif gender == "Feminino":
+        return [
+            {
+                "name": "Athletics Women's 100 metres",
+                "compatibility": 85,
+                "strengths": ["Condicionamento físico geral", "Resistência"],
+                "development": ["Técnica específica"]
+            },
+            {
+                "name": "Swimming Women's 100 metres Freestyle",
+                "compatibility": 80,
+                "strengths": ["Resistência cardiovascular", "Coordenação"],
+                "development": ["Força muscular"]
+            },
+            {
+                "name": "Basketball Women's Basketball",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Resistência"]
+            }
+        ]
+    else:
+        # Para "Prefiro não informar", retorna mix de eventos
+        return [
+            {
+                "name": "Athletics",
+                "compatibility": 85,
+                "strengths": ["Condicionamento físico geral", "Resistência"],
+                "development": ["Técnica específica"]
+            },
+            {
+                "name": "Swimming",
+                "compatibility": 80,
+                "strengths": ["Resistência cardiovascular", "Coordenação"],
+                "development": ["Força muscular"]
+            },
+            {
+                "name": "Basketball",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Resistência"]
+            }
+        ]
 
 
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
