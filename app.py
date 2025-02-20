@@ -53,78 +53,42 @@ def show_home():
     """Exibe a página inicial do aplicativo"""
     st.title("🏃‍♂️ Analisador de Talentos Esportivos")
     st.header("Bem-vindo ao Analisador de Talentos Esportivos!")
-    
+
     # Informações Pessoais
     st.subheader("Informações Pessoais")
     form_key = f"personal_info_form_{st.session_state.form_key}"
-    
+
     with st.form(key=form_key):
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            altura = st.number_input(
-                "Altura (cm)", 
-                min_value=0, 
-                max_value=300,
-                value=st.session_state.personal_info.get('altura', 170),
-                key=f"altura_{st.session_state.form_key}"
-            )
-            peso = st.number_input(
-                "Peso (kg)", 
-                min_value=0, 
-                max_value=300,
-                value=st.session_state.personal_info.get('peso', 70),
-                key=f"peso_{st.session_state.form_key}"
-            )
-            envergadura = st.number_input(
-                "Envergadura (cm)", 
-                min_value=0, 
-                max_value=300,
-                value=st.session_state.personal_info.get('envergadura', 170),
-                key=f"envergadura_{st.session_state.form_key}"
-            )
-        
+            altura = st.number_input("Altura (cm)", min_value=0, max_value=300, value=st.session_state.personal_info.get('altura', 170), key=f"altura_{st.session_state.form_key}")
+            peso = st.number_input("Peso (kg)", min_value=0, max_value=300, value=st.session_state.personal_info.get('peso', 70), key=f"peso_{st.session_state.form_key}")
+            envergadura = st.number_input("Envergadura (cm)", min_value=0, max_value=300, value=st.session_state.personal_info.get('envergadura', 170), key=f"envergadura_{st.session_state.form_key}")
+
         with col2:
-            idade = st.number_input(
-                "Idade", 
-                min_value=0, 
-                max_value=150,
-                value=st.session_state.personal_info.get('idade', 25),
-                key=f"idade_{st.session_state.form_key}"
+            idade = st.number_input("Idade", min_value=0, max_value=150, value=st.session_state.personal_info.get('idade', 25), key=f"idade_{st.session_state.form_key}")
+            ano_nascimento = st.number_input("Ano de Nascimento", min_value=1900, max_value=2024, value=st.session_state.personal_info.get('ano_nascimento', 2000), key=f"ano_nascimento_{st.session_state.form_key}")
+            genero = st.selectbox(
+                "Gênero",
+                ["Masculino", "Feminino", "Prefiro não informar"],
+                index=0,
+                key=f"genero_{st.session_state.form_key}"
             )
-            ano_nascimento = st.number_input(
-                "Ano de Nascimento", 
-                min_value=1900, 
-                max_value=2024,
-                value=st.session_state.personal_info.get('ano_nascimento', 2000),
-                key=f"ano_nascimento_{st.session_state.form_key}"
-            )
-        
+
         # Localização
         st.write("**Localização**")
         col3, col4, col5 = st.columns(3)
-        
+
         with col3:
-            cidade = st.text_input(
-                "Cidade",
-                value=st.session_state.personal_info.get('cidade', ''),
-                key=f"cidade_{st.session_state.form_key}"
-            )
+            cidade = st.text_input("Cidade", value=st.session_state.personal_info.get('cidade', ''), key=f"cidade_{st.session_state.form_key}")
         with col4:
-            estado = st.text_input(
-                "Estado",
-                value=st.session_state.personal_info.get('estado', ''),
-                key=f"estado_{st.session_state.form_key}"
-            )
+            estado = st.text_input("Estado", value=st.session_state.personal_info.get('estado', ''), key=f"estado_{st.session_state.form_key}")
         with col5:
-            pais = st.text_input(
-                "País",
-                value=st.session_state.personal_info.get('pais', ''),
-                key=f"pais_{st.session_state.form_key}"
-            )
-        
+            pais = st.text_input("País", value=st.session_state.personal_info.get('pais', ''), key=f"pais_{st.session_state.form_key}")
+
         submitted = st.form_submit_button("Salvar Informações")
-        
+
         if submitted:
             st.session_state.personal_info = {
                 'altura': altura,
@@ -134,21 +98,22 @@ def show_home():
                 'ano_nascimento': ano_nascimento,
                 'cidade': cidade,
                 'estado': estado,
-                'pais': pais
+                'pais': pais,
+                'genero': genero
             }
             st.session_state.form_key += 1
             st.success("Informações pessoais salvas com sucesso!")
-    
+
     # Progresso dos Testes
     st.subheader("Seu Progresso")
-    
+
     test_categories = {
         "Dados Físicos": 'dados_fisicos',
         "Habilidades Técnicas": 'habilidades_tecnicas',
         "Aspectos Táticos": 'aspectos_taticos',
         "Fatores Psicológicos": 'fatores_psicologicos'
     }
-    
+
     for label, category in test_categories.items():
         progress = 1.0 if category in st.session_state.test_results and st.session_state.test_results[category] else 0.0
         st.progress(progress, text=f"{label}: {int(progress * 100)}%")
