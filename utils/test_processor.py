@@ -118,13 +118,14 @@ def process_test_results(test_results):
         }
     except Exception as e:
         print(f"Erro no processamento dos scores: {str(e)}")
-        return {
+                return {
             'dados_fisicos': 0,
             'habilidades_tecnicas': 0,
             'aspectos_taticos': 0,
             'fatores_psicologicos': 0
         }
-        def normalize_olympic_stats(value, mean, min_val, max_val):
+
+def normalize_olympic_stats(value, mean, min_val, max_val):
     """
     Normaliza um valor em relação às estatísticas olímpicas
     
