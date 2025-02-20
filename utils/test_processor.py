@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
@@ -7,14 +8,12 @@ def normalize_score(value, min_val, max_val, inverse=False):
             return 0
         value = float(value)
         if inverse:
-            # Para métricas onde menor valor é melhor (ex: tempo)
             if value <= min_val:
                 return 100
             elif value >= max_val:
                 return 0
             return ((max_val - value) / (max_val - min_val)) * 100
         else:
-            # Para métricas onde maior valor é melhor
             if value >= max_val:
                 return 100
             elif value <= min_val:
@@ -23,6 +22,7 @@ def normalize_score(value, min_val, max_val, inverse=False):
     except (TypeError, ValueError):
         return 0
 
+
 def calculate_average(values):
     """Calcula a média de uma lista de valores, ignorando None"""
     valid_values = [v for v in values if v is not None and isinstance(v, (int, float))]
@@ -30,10 +30,9 @@ def calculate_average(values):
         return 0
     return float(np.mean(valid_values))
 
+
 def process_test_results(test_results):
-    """
-    Processa os resultados dos testes e retorna os scores normalizados.
-    """
+    """Processa os resultados dos testes e retorna os scores normalizados."""
     try:
         if not test_results:
             return {
@@ -77,30 +76,15 @@ def process_test_results(test_results):
         # Processar fatores psicológicos
         fatores_psicologicos = test_results.get('fatores_psicologicos', {})
         if fatores_psicologicos:
-            # Motivação
             mot = fatores_psicologicos.get('motivacao', {})
-            motivacao = calculate_average([
-                mot.get('dedicacao'),
-                mot.get('frequencia'),
-                mot.get('comprometimento')
-            ])
-            
-            # Resiliência
+            motivacao = calculate_average([mot.get('dedicacao'), mot.get('frequencia'), mot.get('comprometimento')])
+
             res = fatores_psicologicos.get('resiliencia', {})
-            resiliencia = calculate_average([
-                res.get('derrotas'),
-                res.get('criticas'),
-                res.get('erros')
-            ])
-            
-            # Trabalho em equipe
+            resiliencia = calculate_average([res.get('derrotas'), res.get('criticas'), res.get('erros')])
+
             eq = fatores_psicologicos.get('trabalho_equipe', {})
-            trabalho_equipe = calculate_average([
-                eq.get('comunicacao'),
-                eq.get('opinioes'),
-                eq.get('contribuicao')
-            ])
-            
+            trabalho_equipe = calculate_average([eq.get('comunicacao'), eq.get('opinioes'), eq.get('contribuicao')])
+
             score_psicologico = calculate_average([
                 normalize_score(motivacao, 0, 10),
                 normalize_score(resiliencia, 0, 10),
@@ -109,80 +93,18 @@ def process_test_results(test_results):
         else:
             score_psicologico = 0
 
-        # Retornar scores processados
         return {
             'dados_fisicos': score_fisico,
             'habilidades_tecnicas': score_tecnico,
             'aspectos_taticos': score_tatico,
             'fatores_psicologicos': score_psicologico
         }
+
     except Exception as e:
         print(f"Erro no processamento dos scores: {str(e)}")
-                return {
+        return {
             'dados_fisicos': 0,
             'habilidades_tecnicas': 0,
             'aspectos_taticos': 0,
             'fatores_psicologicos': 0
         }
-
-def normalize_olympic_stats(value, mean, min_val, max_val):
-    """
-    Normaliza um valor em relação às estatísticas olímpicas
-    
-    Args:
-        value: Valor a ser normalizado
-        mean: Média olímpica
-        min_val: Valor mínimo olímpico
-        max_val: Valor máximo olímpico
-    
-    Returns:
-        float: Score normalizado de 0 a 100
-    """
-    try:
-        if value is None:
-            return 0
-            
-        value = float(value)
-        
-        # Se o valor está dentro do range olímpico
-        if min_val <= value <= max_val:
-            # Quanto mais próximo da média, melhor o score
-            deviation = abs(value - mean)
-            max_deviation = max(mean - min_val, max_val - mean)
-            return 100 * (1 - deviation / max_deviation)
-        
-        # Se está fora do range, penaliza proporcionalmente
-        if value < min_val:
-            return max(0, 50 * (value / min_val))
-        else:
-            return max(0, 50 * (max_val / value))
-            
-    except (TypeError, ValueError):
-        return 0
-
-def get_attribute_importance(attribute_name: str) -> float:
-    """
-    Retorna o peso de importância para cada atributo na comparação
-    
-    Args:
-        attribute_name: Nome do atributo
-        
-    Returns:
-        float: Peso do atributo (0 a 1)
-    """
-    importance_weights = {
-        'altura': 0.3,
-        'peso': 0.3,
-        'velocidade': 0.4,
-        'forca_superior': 0.3,
-        'forca_inferior': 0.3,
-        'coordenacao': 0.25,
-        'precisao': 0.25,
-        'agilidade': 0.25,
-        'equilibrio': 0.25,
-        'tomada_decisao': 0.2,
-        'visao_jogo': 0.2,
-        'posicionamento': 0.2
-    }
-    
-    return importance_weights.get(attribute_name, 0.1)  # default 0.1 para outros atributos
