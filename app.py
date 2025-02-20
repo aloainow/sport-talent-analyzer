@@ -509,7 +509,14 @@ def show_recommendations():
                 'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
                 'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
             }
+# Exibir os dados do usuário para debug
+        st.write("DEBUG: user_data", user_data)
 
+        processed_scores = process_test_results(st.session_state.test_results)
+        st.session_state.processed_scores = processed_scores
+
+        st.session_state.recommendations = get_sport_recommendations(user_data)
+        
             processed_scores = process_test_results(st.session_state.test_results)
             st.session_state.processed_scores = processed_scores
 
