@@ -228,25 +228,3 @@ def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
     
     return areas[:2]  # Retorna as 2 principais áreas para desenvolvimento
 
-def get_recommendations_without_api():
-    """Retorna recomendações padrão caso haja problema com os dados"""
-    return [
-        {
-            "name": "Athletics",
-            "compatibility": 85,
-            "strengths": ["Condicionamento físico geral", "Resistência"],
-            "development": ["Técnica específica"]
-        },
-        {
-            "name": "Swimming",
-            "compatibility": 80,
-            "strengths": ["Resistência cardiovascular", "Coordenação"],
-            "development": ["Força muscular"]
-        },
-        {
-            "name": "Cycling",
-            "compatibility": 75,
-            "strengths": ["Resistência", "Força nas pernas"],
-            "development": ["Equilíbrio"]
-        }
-    ]
