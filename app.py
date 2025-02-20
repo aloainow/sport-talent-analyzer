@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 
 # Import functions directly from modules
 from utils.test_processor import normalize_score, calculate_average, process_test_results
-from utils.openai_helper import get_sport_recommendations, get_recommendations_without_api
+from utils.openai_helper import get_sport_recommendations
 
 # Configuração da página
 st.set_page_config(
@@ -503,12 +503,9 @@ def show_recommendations():
         with st.spinner("Analisando seus resultados..."):
             # Criar dicionário com todos os dados do usuário
             user_data = {
-                # Dados pessoais
                 'altura': st.session_state.personal_info.get('altura'),
                 'peso': st.session_state.personal_info.get('peso'),
                 'envergadura': st.session_state.personal_info.get('envergadura'),
-                
-                # Todos os resultados dos testes
                 'dados_fisicos': st.session_state.test_results['dados_fisicos'],
                 'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
                 'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
@@ -519,10 +516,10 @@ def show_recommendations():
             processed_scores = process_test_results(st.session_state.test_results)
             st.session_state.processed_scores = processed_scores
 
-            # Gerar recomendações usando todos os dados do usuário
+            # Gerar recomendações usando IA ou outra lógica
             st.session_state.recommendations = get_sport_recommendations(user_data)
 
-            # Analisar pontos fortes e a desenvolver
+            # Analisar pontos fortes e a desenvolver (se você ainda usa essa lógica)
             pontos_fortes, desenvolver = analyze_user_attributes(
                 st.session_state.test_results,
                 st.session_state.personal_info
@@ -532,15 +529,22 @@ def show_recommendations():
         st.error(f"Erro ao processar recomendações: {str(e)}")
         return
 
-    # Exibir Radar Chart (Perfil)
-    st.subheader("Seu Perfil")
+    # Exibir Radar Chart (Perfil do usuário)
+    st.subheader("📊 Seu Perfil")
     fig = create_radar_chart(st.session_state.processed_scores)
     st.plotly_chart(fig, use_container_width=True)
 
-    # Exibir Recomendações em cartões
-    st.subheader("Top 5 Esportes Recomendados")
+    # Exibir contagem de esportes recomendados
+    total_recomendacoes = len(st.session_state.recommendations)
+    st.write(f"**Esportes recomendados: {total_recomendacoes}**")
 
-    for index, sport in enumerate(st.session_state.recommendations, start=1):
+    # Exibir Top 5 recomendações em cartões
+    st.subheader("🏆 Top 5 Esportes Recomendados")
+
+    # Pegar apenas os 5 primeiros esportes da lista
+    top_5_recomendacoes = st.session_state.recommendations[:5]
+
+    for index, sport in enumerate(top_5_recomendacoes, start=1):
         with st.container():
             st.markdown(
                 f"""
@@ -622,4 +626,3 @@ if __name__ == "__main__":
     """, unsafe_allow_html=True)
     
     main()
-
