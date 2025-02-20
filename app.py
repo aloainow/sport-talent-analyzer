@@ -1,24 +1,9 @@
-# app.py
+# No topo do app.py
 import streamlit as st
 from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
-from utils.test_processor import (
-    normalize_score,
-    calculate_average,
-    process_test_results,
-    normalize_olympic_stats,
-    get_attribute_importance
-)
+from utils.test_processor import normalize_score, calculate_average, process_test_results
 from utils.openai_helper import get_sport_recommendations
-
-# utils/openai_helper.py
-import pandas as pd
-import numpy as np
-import os
-from typing import Dict, List, Any
-
-# utils/test_processor.py
-import numpy as np
 
 # Configuração da página
 st.set_page_config(
