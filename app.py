@@ -1,9 +1,10 @@
-# No topo do app.py
 import streamlit as st
 from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
+
+# Import functions directly from modules
 from utils.test_processor import normalize_score, calculate_average, process_test_results
-from utils.openai_helper import get_sport_recommendations
+from utils.openai_helper import get_sport_recommendations, get_recommendations_without_api
 
 # Configuração da página
 st.set_page_config(
