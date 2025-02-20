@@ -499,11 +499,28 @@ def show_recommendations():
     # Processar scores e gerar recomendações
     try:
         with st.spinner("Analisando seus resultados..."):
+            # Criar dicionário com todos os dados do usuário
+            user_data = {
+                # Dados pessoais
+                'altura': st.session_state.personal_info.get('altura'),
+                'peso': st.session_state.personal_info.get('peso'),
+                'envergadura': st.session_state.personal_info.get('envergadura'),
+                
+                # Todos os resultados dos testes
+                'dados_fisicos': st.session_state.test_results['dados_fisicos'],
+                'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
+                'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
+                'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
+            }
+
+            # Processar scores para o gráfico radar
             processed_scores = process_test_results(st.session_state.test_results)
-
             st.session_state.processed_scores = processed_scores
-            st.session_state.recommendations = get_sport_recommendations(processed_scores)
 
+            # Gerar recomendações usando todos os dados do usuário
+            st.session_state.recommendations = get_sport_recommendations(user_data)
+
+            # Analisar pontos fortes e a desenvolver
             pontos_fortes, desenvolver = analyze_user_attributes(
                 st.session_state.test_results,
                 st.session_state.personal_info
@@ -543,13 +560,13 @@ def show_recommendations():
                         <div style="flex: 1; margin-right: 20px;">
                             <strong style="color: #81c784;">Pontos Fortes:</strong>
                             <ul style="margin-top: 5px; color: white;">
-                                {''.join(f'<li>{pf}</li>' for pf in pontos_fortes)}
+                                {''.join(f'<li>{strength}</li>' for strength in sport['strengths'])}
                             </ul>
                         </div>
                         <div style="flex: 1;">
-                            <strong style="color: #64b5f6;">Desenvolver:</strong>
+                            <strong style="color: #64b5f6;">Áreas para Desenvolver:</strong>
                             <ul style="margin-top: 5px; color: white;">
-                                {''.join(f'<li>{dev}</li>' for dev in desenvolver)}
+                                {''.join(f'<li>{dev}</li>' for dev in sport['development'])}
                             </ul>
                         </div>
                     </div>
@@ -557,7 +574,6 @@ def show_recommendations():
                 """,
                 unsafe_allow_html=True
             )
-
 def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
