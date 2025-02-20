@@ -133,6 +133,9 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             # Calcular compatibilidades
             biotype_score = calculate_biotype_compatibility(user_data, sport)
             physical_score = calculate_physical_compatibility(user_data, sport_name)
+
+            st.write(f"{sport_name}: Biotipo {biotype_score:.1f}, Físico {physical_score:.1f}")
+
             
             # Calcular técnica e tática baseado nos testes
             technical_score = 50  # Score base
@@ -170,12 +173,18 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 })
         
         # Ordenar por compatibilidade e retornar top 5
-        recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        return recommendations[:5]
+if not recommendations:
+    st.warning("Nenhum esporte foi recomendado. Exibindo sugestões padrão.")
+    return get_recommendations_without_api()
+
+recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+st.write(f"Esportes recomendados: {len(recommendations)}")
+return recommendations[:10]  # Só pra exibir mais
         
     except Exception as e:
         print(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api()
+
 
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
     """
