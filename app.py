@@ -498,33 +498,31 @@ def show_recommendations():
         return
 
     # Processar scores e gerar recomendações
-    try:
-        with st.spinner("Analisando seus resultados..."):
-            user_data = {
-                'altura': st.session_state.personal_info.get('altura'),
-                'peso': st.session_state.personal_info.get('peso'),
-                'envergadura': st.session_state.personal_info.get('envergadura'),
-                'dados_fisicos': st.session_state.test_results['dados_fisicos'],
-                'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
-                'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
-                'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
-            }
-# Exibir os dados do usuário para debug
+try:
+    with st.spinner("Analisando seus resultados..."):
+        user_data = {
+            'altura': st.session_state.personal_info.get('altura'),
+            'peso': st.session_state.personal_info.get('peso'),
+            'envergadura': st.session_state.personal_info.get('envergadura'),
+            'dados_fisicos': st.session_state.test_results['dados_fisicos'],
+            'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
+            'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
+            'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
+        }
+
+        # Exibir os dados do usuário para debug
         st.write("DEBUG: user_data", user_data)
 
+        # Processar scores para o gráfico radar
         processed_scores = process_test_results(st.session_state.test_results)
         st.session_state.processed_scores = processed_scores
 
+        # Gerar recomendações
         st.session_state.recommendations = get_sport_recommendations(user_data)
-        
-            processed_scores = process_test_results(st.session_state.test_results)
-            st.session_state.processed_scores = processed_scores
 
-            st.session_state.recommendations = get_sport_recommendations(user_data)
-
-    except Exception as e:
-        st.error(f"Erro ao processar recomendações: {str(e)}")
-        return
+except Exception as e:
+    st.error(f"Erro ao processar recomendações: {str(e)}")
+    return
 
     # Exibir Radar Chart (Perfil do usuário)
     st.subheader("📊 Seu Perfil")
