@@ -152,9 +152,6 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 tactical_score * 0.2
             ])
 
-            # Debug de compatibilidades
-            st.write(f"{sport_name}: Biotipo {biotype_score:.1f}, Físico {physical_score:.1f}, Técnico {technical_score:.1f}, Tático {tactical_score:.1f}, Final {final_score:.1f}")
-
             # Adicionar independente do valor final, tratando NaN
             recommendations.append({
                 "name": sport_name,
