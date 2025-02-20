@@ -500,7 +500,6 @@ def show_recommendations():
     # Processar scores e gerar recomendações
     try:
         with st.spinner("Analisando seus resultados..."):
-            # Criar dicionário com todos os dados do usuário
             user_data = {
                 'altura': st.session_state.personal_info.get('altura'),
                 'peso': st.session_state.personal_info.get('peso'),
@@ -511,74 +510,33 @@ def show_recommendations():
                 'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
             }
 
-            # Processar scores para o gráfico radar
             processed_scores = process_test_results(st.session_state.test_results)
             st.session_state.processed_scores = processed_scores
 
-            # Gerar recomendações usando IA ou outra lógica
             st.session_state.recommendations = get_sport_recommendations(user_data)
-
-            # Analisar pontos fortes e a desenvolver (se você ainda usa essa lógica)
-            pontos_fortes, desenvolver = analyze_user_attributes(
-                st.session_state.test_results,
-                st.session_state.personal_info
-            )
 
     except Exception as e:
         st.error(f"Erro ao processar recomendações: {str(e)}")
         return
 
-    # Exibir Radar Chart (Perfil do usuário)
-    st.subheader("📊 Seu Perfil")
+    # Exibir Radar Chart (Perfil)
+    st.subheader("Seu Perfil")
     fig = create_radar_chart(st.session_state.processed_scores)
     st.plotly_chart(fig, use_container_width=True)
 
-    # Exibir contagem de esportes recomendados
-    total_recomendacoes = len(st.session_state.recommendations)
-    st.write(f"**Esportes recomendados: {total_recomendacoes}**")
+    # Exibir Recomendações
+    st.subheader("Top 5 Esportes Recomendados")
+    top_5 = st.session_state.recommendations[:5]
 
-    # Exibir Top 5 recomendações em cartões
-    st.subheader("🏆 Top 5 Esportes Recomendados")
+    for index, sport in enumerate(top_5, start=1):
+        pontos_fortes = sport['strengths'] or ["Não informado"]
+        areas_para_desenvolver = sport['development'] or ["Não informado"]
 
-    # Pegar apenas os 5 primeiros esportes da lista
-    top_5_recomendacoes = st.session_state.recommendations[:5]
-
-    for index, sport in enumerate(top_5_recomendacoes, start=1):
-        with st.container():
-            st.markdown(
-                f"""
-                <div style="
-                    background-color: #1e1e1e;
-                    padding: 15px;
-                    border-radius: 12px;
-                    margin-bottom: 10px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                    color: white;
-                ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <h3 style="margin: 0; color: white;">{index}. {sport['name']}</h3>
-                        <span style="color: #4caf50; font-weight: bold; font-size: 18px;">
-                            {sport['compatibility']}% compatível
-                        </span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <div style="flex: 1; margin-right: 20px;">
-                            <strong style="color: #81c784;">Pontos Fortes:</strong>
-                            <ul style="margin-top: 5px; color: white;">
-                                {''.join(f'<li>{strength}</li>' for strength in sport['strengths'])}
-                            </ul>
-                        </div>
-                        <div style="flex: 1;">
-                            <strong style="color: #64b5f6;">Áreas para Desenvolver:</strong>
-                            <ul style="margin-top: 5px; color: white;">
-                                {''.join(f'<li>{dev}</li>' for dev in sport['development'])}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        st.markdown(f"### {index}. {sport['name']}")
+        st.write(f"**Compatibilidade:** {sport['compatibility']}%")
+        st.write(f"**Pontos Fortes:** {', '.join(pontos_fortes)}")
+        st.write(f"**Áreas para Desenvolver:** {', '.join(areas_para_desenvolver)}")
+        st.write("---")
 def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
