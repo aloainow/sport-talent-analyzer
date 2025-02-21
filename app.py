@@ -475,6 +475,9 @@ def show_aspectos_taticos():
     
     st.info("Complete os testes táticos abaixo. Realize cada teste conforme as instruções.")
     
+    # Pegar o gênero do usuário do session state
+    genero = st.session_state.personal_info.get('genero', 'Masculino')
+    
     # Tomada de Decisão
     with st.expander("Tomada de Decisão - Jogo de Reação", expanded=True):
         st.write("**Material necessário:** Cartões coloridos")
@@ -484,7 +487,20 @@ def show_aspectos_taticos():
         2. Executar movimentos específicos
         3. 10 tentativas em 30 segundos
         """)
-        decisao = st.number_input("Número de acertos", min_value=0, max_value=10)
+        st.write("**Classificação:**")
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: 3-4 acertos
+            - Intermediário: 5-7 acertos
+            - Avançado: 8-10 acertos
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: 4-5 acertos
+            - Intermediário: 6-8 acertos
+            - Avançado: 9-10 acertos
+            """)
+        decisao = st.number_input("Número de acertos", min_value=0, max_value=10, key="decisao")
     
     # Visão de Jogo
     with st.expander("Visão de Jogo - Memorização", expanded=True):
@@ -495,7 +511,20 @@ def show_aspectos_taticos():
         2. Reposicionar objetos
         3. Contar acertos
         """)
-        visao = st.number_input("Posições corretas", min_value=0, max_value=10)
+        st.write("**Classificação:**")
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: 3-4 posições
+            - Intermediário: 5-7 posições
+            - Avançado: 8-10 posições
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: 4-5 posições
+            - Intermediário: 6-8 posições
+            - Avançado: 9-10 posições
+            """)
+        visao = st.number_input("Posições corretas", min_value=0, max_value=10, key="visao")
     
     # Posicionamento
     with st.expander("Posicionamento - Reação Sonora", expanded=True):
@@ -506,13 +535,27 @@ def show_aspectos_taticos():
         2. Mover para posições marcadas
         3. Avaliar precisão
         """)
-        posicionamento = st.slider("Precisão de movimento", min_value=1, max_value=10)
+        st.write("**Classificação:**")
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: 1-3 pontos
+            - Intermediário: 4-7 pontos
+            - Avançado: 8-10 pontos
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: 2-4 pontos
+            - Intermediário: 5-8 pontos
+            - Avançado: 9-10 pontos
+            """)
+        posicionamento = st.slider("Precisão de movimento", min_value=1, max_value=10, key="posic")
     
     if st.button("Salvar Aspectos Táticos"):
         st.session_state.test_results['aspectos_taticos'] = {
             'tomada_decisao': decisao,
             'visao_jogo': visao,
-            'posicionamento': posicionamento
+            'posicionamento': posicionamento,
+            'genero': genero  # Adicionando o gênero aos dados salvos
         }
         st.success("Resultados salvos com sucesso!")
 
@@ -521,26 +564,68 @@ def show_fatores_psicologicos():
     
     st.info("Complete a auto-avaliação abaixo. Avalie cada aspecto em uma escala de 1 a 10.")
     
+    # Pegar o gênero do usuário do session state
+    genero = st.session_state.personal_info.get('genero', 'Masculino')
+    
     # Motivação
     with st.expander("Motivação", expanded=True):
         st.write("**Auto-avaliação de Motivação**")
-        dedicacao = st.slider("Quanto você se dedica aos treinos?", 1, 10)
-        frequencia = st.slider("Com que frequência pratica atividades físicas?", 1, 10)
-        comprometimento = st.slider("Qual seu nível de comprometimento com objetivos?", 1, 10)
+        st.write("**Classificação geral:**")
+        if genero == "Masculino":
+            st.write("""
+            - Baixa: 1-4 pontos
+            - Média: 5-7 pontos
+            - Alta: 8-10 pontos
+            """)
+        else:  # Feminino
+            st.write("""
+            - Baixa: 1-4 pontos
+            - Média: 5-7 pontos
+            - Alta: 8-10 pontos
+            """)
+        dedicacao = st.slider("Quanto você se dedica aos treinos?", 1, 10, key="ded")
+        frequencia = st.slider("Com que frequência pratica atividades físicas?", 1, 10, key="freq")
+        comprometimento = st.slider("Qual seu nível de comprometimento com objetivos?", 1, 10, key="comp")
     
     # Resiliência
     with st.expander("Resiliência", expanded=True):
         st.write("**Auto-avaliação de Resiliência**")
-        derrotas = st.slider("Como lida com derrotas?", 1, 10)
-        criticas = st.slider("Como reage a críticas?", 1, 10)
-        erros = st.slider("Como se recupera de erros?", 1, 10)
+        st.write("**Classificação geral:**")
+        if genero == "Masculino":
+            st.write("""
+            - Baixa: 1-4 pontos
+            - Média: 5-7 pontos
+            - Alta: 8-10 pontos
+            """)
+        else:  # Feminino
+            st.write("""
+            - Baixa: 1-4 pontos
+            - Média: 5-7 pontos
+            - Alta: 8-10 pontos
+            """)
+        derrotas = st.slider("Como lida com derrotas?", 1, 10, key="derr")
+        criticas = st.slider("Como reage a críticas?", 1, 10, key="crit")
+        erros = st.slider("Como se recupera de erros?", 1, 10, key="err")
     
     # Trabalho em Equipe
     with st.expander("Trabalho em Equipe", expanded=True):
         st.write("**Auto-avaliação de Trabalho em Equipe**")
-        comunicacao = st.slider("Como se comunica em grupo?", 1, 10)
-        opinioes = st.slider("Como lida com diferentes opiniões?", 1, 10)
-        contribuicao = st.slider("Como contribui para objetivos coletivos?", 1, 10)
+        st.write("**Classificação geral:**")
+        if genero == "Masculino":
+            st.write("""
+            - Baixa: 1-4 pontos
+            - Média: 5-7 pontos
+            - Alta: 8-10 pontos
+            """)
+        else:  # Feminino
+            st.write("""
+            - Baixa: 1-4 pontos
+            - Média: 5-7 pontos
+            - Alta: 8-10 pontos
+            """)
+        comunicacao = st.slider("Como se comunica em grupo?", 1, 10, key="com")
+        opinioes = st.slider("Como lida com diferentes opiniões?", 1, 10, key="opin")
+        contribuicao = st.slider("Como contribui para objetivos coletivos?", 1, 10, key="cont")
     
     if st.button("Salvar Fatores Psicológicos"):
         st.session_state.test_results['fatores_psicologicos'] = {
@@ -558,10 +643,10 @@ def show_fatores_psicologicos():
                 'comunicacao': comunicacao,
                 'opinioes': opinioes,
                 'contribuicao': contribuicao
-            }
+            },
+            'genero': genero  # Adicionando o gênero aos dados salvos
         }
         st.success("Resultados salvos com sucesso!")
-
 def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
 
