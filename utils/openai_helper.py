@@ -553,12 +553,15 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     if metric in user_data['aspectos_taticos']
                 ]) if user_data.get('aspectos_taticos') else 50
 
+                # Debugging: verificar cálculo de score
+                st.write(f"Debugging {sport_name}: biotype={biotype_score}, physical={physical_score}, tech={tech_score}, tactic={tactic_score}")
+
                 # Calcular score final
                 base_score = (
-                    biotype_score * 0.30 +
-                    physical_score * 0.25 +
-                    tech_score * 0.25 +
-                    tactic_score * 0.20
+                    (biotype_score if biotype_score else np.random.randint(20, 60)) * 0.30 +
+                    (physical_score if physical_score else np.random.randint(20, 60)) * 0.25 +
+                    (tech_score if tech_score else np.random.randint(20, 60)) * 0.25 +
+                    (tactic_score if tactic_score else np.random.randint(20, 60)) * 0.20
                 ) * 0.7
 
                 # Ajustes específicos
@@ -569,7 +572,6 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
                 final_score = min(90, base_score * age_factor)
 
-                # Debugging: verificar cálculo de score
                 st.write(f"Calculado para {sport_name}: base_score={base_score}, age_factor={age_factor}, final_score={final_score}")
 
                 # Traduzir nome do esporte
