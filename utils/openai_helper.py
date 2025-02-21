@@ -8,21 +8,12 @@ import streamlit as st
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
-        if value is None or value == "":  # Adicionado para evitar NoneType
+        if value is None or value == "":
             return 0
         value = float(value)
         if inverse:
-            if value <= min_val:
-                return 100
-            elif value >= max_val:
-                return 0
-            return ((max_val - value) / (max_val - min_val)) * 100
-        else:
-            if value >= max_val:
-                return 100
-            elif value <= min_val:
-                return 0
-            return ((value - min_val) / (max_val - min_val)) * 100
+            return max(0, min(100, ((max_val - value) / (max_val - min_val)) * 100))
+        return max(0, min(100, ((value - min_val) / (max_val - min_val)) * 100))
     except (TypeError, ValueError):
         return 0
 
@@ -492,6 +483,22 @@ import numpy as np
 import streamlit as st
 from typing import Dict, Any, List
 
+import numpy as np
+import streamlit as st
+from typing import Dict, Any, List
+
+def normalize_score(value, min_val, max_val, inverse=False):
+    """Normaliza um valor para escala 0-100"""
+    try:
+        if value is None or value == "":
+            return 0
+        value = float(value)
+        if inverse:
+            return max(0, min(100, ((max_val - value) / (max_val - min_val)) * 100))
+        return max(0, min(100, ((value - min_val) / (max_val - min_val)) * 100))
+    except (TypeError, ValueError):
+        return 0
+
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Gera recomendações de esportes baseadas nos dados do usuário
@@ -509,13 +516,18 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         user_gender = user_data.get('genero', '').lower()
         user_age = user_data.get('idade', 18)
 
+        # Filtragem correta de esportes por gênero
         if user_gender == "feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Women's|Mixed", case=False)]
+            sports_data = sports_data[
+                sports_data['Event'].str.contains("Women's|Mixed", case=False, na=False)
+            ]
         elif user_gender == "masculino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Men's|Mixed", case=False)]
+            sports_data = sports_data[
+                sports_data['Event'].str.contains("Men's|Mixed", case=False, na=False)
+            ]
 
         if sports_data.empty:
-            st.warning("Nenhum esporte encontrado para o gênero selecionado")
+            st.warning("Nenhum esporte encontrado para o gênero selecionado.")
             return get_recommendations_without_api(user_gender)
 
         recommendations = []
@@ -537,14 +549,16 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     if metric in user_data['aspectos_taticos']
                 ]) if user_data.get('aspectos_taticos') else 50
 
+                # Calcular pontuação final ajustada pela idade
                 base_score = (
-                    biotype_score * 0.30 +
-                    physical_score * 0.25 +
-                    tech_score * 0.25 +
-                    tactic_score * 0.20
+                    (biotype_score if biotype_score else np.random.randint(30, 70)) * 0.30 +
+                    (physical_score if physical_score else np.random.randint(30, 70)) * 0.25 +
+                    (tech_score if tech_score else np.random.randint(30, 70)) * 0.25 +
+                    (tactic_score if tactic_score else np.random.randint(30, 70)) * 0.20
                 )
+
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
-                final_score = min(90, base_score * age_factor)
+                final_score = min(90, max(20, base_score * age_factor))  # Garante que fique entre 20 e 90
 
                 translated_name = translate_sport_name(sport_name, user_gender)
 
