@@ -295,7 +295,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             sports_data = sports_data[sports_data['Event'].str.contains("Women's", case=False, na=False)]
         else:
             sports_data = sports_data[sports_data['Event'].str.contains("Men's", case=False, na=False)]
-
+        
         if sports_data.empty:
             st.error(f"Não foram encontrados esportes para o gênero {user_data['genero']}")
             return []
@@ -315,37 +315,32 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 tactic_score = calculate_tactical_score(user_data)
                 psych_score = calculate_psychological_score(user_data)
 
-                try:
-    # Calcular score base
-    base_score = calculate_base_score(
-        biotype_score, physical_score, tech_score, 
-        tactic_score, psych_score, sport_name, user_data
-    )
-    recommendations.append({
-        "name": sport_name,
-        "compatibility": round(base_score),
-        "strengths": get_sport_strengths(sport_name, user_data),
-        "development": get_development_areas(sport_name, user_data)
-    })
-    processed_sports += 1
-except Exception as e:
-    # Tratamento de exceção
-    errors += 1
-    st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
-    continue
+                # Calcular score base
+                base_score = calculate_base_score(
+                    biotype_score, physical_score, tech_score, 
+                    tactic_score, psych_score, sport_name, user_data
+                )
+                
+                recommendations.append({
+                    "name": sport_name,
+                    "compatibility": round(base_score),
+                    "strengths": get_sport_strengths(sport_name, user_data),
+                    "development": get_development_areas(sport_name, user_data)
+                })
+                processed_sports += 1
 
-    # Seu código anterior
-    except Exception as sport_e:
-        errors += 1
-        st.warning(f"Erro ao processar esporte {sport_name}: {str(sport_e)}")
-        continue
-    
-    if not recommendations:
-        st.error("Não foi possível gerar recomendações. Por favor, verifique seus dados e tente novamente.")
-        return []
-    
-    if errors > 0:
-        st.warning(f"Alguns esportes ({errors}) não puderam ser processados, mas encontramos {processed_sports} recomendações para você.")
+            except Exception as sport_e:
+                errors += 1
+                st.warning(f"Erro ao processar esporte {sport_name}: {str(sport_e)}")
+                continue
+
+        # Verificações finais após processamento
+        if not recommendations:
+            st.error("Não foi possível gerar recomendações. Por favor, verifique seus dados e tente novamente.")
+            return []
+        
+        if errors > 0:
+            st.warning(f"Alguns esportes ({errors}) não puderam ser processados, mas encontramos {processed_sports} recomendações para você.")
         
         # Ordenar recomendações
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
