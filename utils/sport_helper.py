@@ -93,41 +93,49 @@ SPORTS_TRANSLATIONS = {
 EVENT_TRANSLATIONS = {
     # Será substituído pelo conteúdo gerado pelo script de tradução
 }
-def load_and_process_data() -> pd.DataFrame:
+def load_and_process_data():
     """
-    Carrega e processa os dados dos esportes olímpicos do CSV
+    Carrega e processa os dados dos esportes do JSON
     """
     try:
-        # Lista de possíveis caminhos para o arquivo CSV
+        # Lista de possíveis caminhos para o arquivo JSON
         possible_paths = [
-            'data/perfil_eventos_olimpicos_verao.csv',  # Caminho padrão no Streamlit Cloud
-            './data/perfil_eventos_olimpicos_verao.csv',
-            os.path.join('data', 'perfil_eventos_olimpicos_verao.csv'),
-            './perfil_eventos_olimpicos_verao.csv',
-            'perfil_eventos_olimpicos_verao.csv'
+            'data/sport_profiles.json',
+            './data/sport_profiles.json',
+            os.path.join('data', 'sport_profiles.json'),
+            'sport_profiles.json'
         ]
         
         # Tenta carregar o arquivo de diferentes locais
         for path in possible_paths:
-            try:
-                if os.path.exists(path):
-                    print(f"📁 Carregando arquivo CSV de: {path}")
-                    df = pd.read_csv(path)
-                    
-                    # Verifica se o DataFrame não está vazio
-                    if not df.empty:
-                        return df
-            except Exception as inner_e:
-                print(f"Erro ao tentar carregar {path}: {inner_e}")
-        
-        # Se nenhum arquivo for encontrado, usa dados padrão
-        st.warning("⚠️ CSV não encontrado. Usando dados padrão.")
-        return pd.DataFrame(data_sports_default())
+            if os.path.exists(path):
+                st.write(f"📁 Carregando arquivo JSON de: {path}")
+                with open(path, 'r', encoding='utf-8') as f:
+                    sports_data = json.load(f)
+                
+                # Converter para DataFrame
+                sports_list = []
+                for sport in sports_data['sports']:
+                    sports_list.append({
+                        'Event': sport['name'],
+                        'Category': sport['category'],
+                        'Physical_Requirements': sport['requirements']['physical'],
+                        'Technical_Requirements': sport['requirements']['technical'],
+                        'Tactical_Requirements': sport['requirements']['tactical'],
+                        'Psychological_Requirements': sport['requirements']['psychological'],
+                        'Key_Attributes': sport['key_attributes']
+                    })
+                
+                return pd.DataFrame(sports_list)
+                
+        # Se nenhum arquivo for encontrado, mostra erro
+        st.error("❌ Arquivo sport_profiles.json não encontrado")
+        return None
     
     except Exception as e:
         st.error(f"Erro ao carregar dados dos esportes: {str(e)}")
-        return pd.DataFrame(data_sports_default())
-
+        return None
+        
 def data_sports_default():
     """
     Dados padrão de esportes caso o CSV não seja encontrado
