@@ -1,9 +1,13 @@
+import streamlit as st
 import pandas as pd
 import json
+import os
 import numpy as np
 from typing import Dict, List, Any
-import os
-import streamlit as st
+
+# Importações locais
+from .test_processor import normalize_score, calculate_average
+from .age_adjusted_calculations import get_age_group
 
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
