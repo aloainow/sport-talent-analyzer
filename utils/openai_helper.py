@@ -343,11 +343,25 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         # Obter o gênero do usuário
         user_gender = user_data.get('genero', '')
 
-        # Filtrar eventos por gênero
+        # Filtrar eventos por gênero de forma mais rigorosa
         if user_gender == "Masculino":
-            sports_data = sports_data[~sports_data['Event'].str.contains("Women", case=False)]
+            # Exclui eventos femininos e mantém apenas masculinos ou neutros
+            sports_data = sports_data[
+                (~sports_data['Event'].str.contains("Women", case=False)) &
+                (sports_data['Event'].str.contains("Men", case=False) | 
+                 ~sports_data['Event'].str.contains("Women|Men", case=False))
+            ]
         elif user_gender == "Feminino":
+            # Mantém apenas eventos femininos
             sports_data = sports_data[sports_data['Event'].str.contains("Women", case=False)]
+        else:
+            # Para "Prefiro não informar", remove a indicação de gênero do nome do evento
+            sports_data['Event'] = sports_data['Event'].apply(
+                lambda x: x.replace("Men's", "").replace("Women's", "").strip()
+            )
+
+        # Remove duplicatas após a filtragem
+        sports_data = sports_data.drop_duplicates(subset=['Event'])
 
         recommendations = []
 
@@ -355,39 +369,70 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         for _, sport in sports_data.iterrows():
             sport_name = sport['Event']
             
-            # Calcular compatibilidades
+            # Calcular compatibilidade biométrica
             biotype_score = calculate_biotype_compatibility(user_data, sport)
+            
+            # Calcular compatibilidade física
             physical_score = calculate_physical_compatibility(user_data, sport_name)
 
-            # Calcular técnica e tática baseado nos testes
+            # Calcular habilidades técnicas
             technical_score = 50  # Score base
             if user_data.get('habilidades_tecnicas'):
+                tech_data = user_data['habilidades_tecnicas']
                 tech_scores = [
-                    normalize_score(user_data['habilidades_tecnicas'].get('coordenacao', 0), 0, 50),
-                    normalize_score(user_data['habilidades_tecnicas'].get('precisao', 0), 0, 10),
-                    normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60)
+                    normalize_score(tech_data.get('coordenacao', 0), 0, 50),
+                    normalize_score(tech_data.get('precisao', 0), 0, 10),
+                    normalize_score(tech_data.get('agilidade', 0), 5, 15, inverse=True),
+                    normalize_score(tech_data.get('equilibrio', 0), 0, 60)
                 ]
-                technical_score = np.mean(tech_scores)
+                technical_score = np.mean([score for score in tech_scores if score is not None])
 
+            # Calcular aspectos táticos
             tactical_score = 50  # Score base
             if user_data.get('aspectos_taticos'):
+                tactic_data = user_data['aspectos_taticos']
                 tactic_scores = [
-                    normalize_score(user_data['aspectos_taticos'].get('tomada_decisao', 0), 0, 10),
-                    normalize_score(user_data['aspectos_taticos'].get('visao_jogo', 0), 0, 10),
-                    normalize_score(user_data['aspectos_taticos'].get('posicionamento', 0), 0, 10)
+                    normalize_score(tactic_data.get('tomada_decisao', 0), 0, 10),
+                    normalize_score(tactic_data.get('visao_jogo', 0), 0, 10),
+                    normalize_score(tactic_data.get('posicionamento', 0), 0, 10)
                 ]
-                tactical_score = np.mean(tactic_scores)
+                tactical_score = np.mean([score for score in tactic_scores if score is not None])
 
-            # Calcular score final
-            final_score = np.nanmean([
-                biotype_score * 0.3,
-                physical_score * 0.3,
-                technical_score * 0.2,
-                tactical_score * 0.2
-            ])
+            # Calcular aspectos psicológicos
+            psychological_score = 50  # Score base
+            if user_data.get('fatores_psicologicos'):
+                psico_data = user_data['fatores_psicologicos']
+                motivacao_scores = [
+                    normalize_score(psico_data.get('motivacao', {}).get('dedicacao', 0), 0, 10),
+                    normalize_score(psico_data.get('motivacao', {}).get('frequencia', 0), 0, 10),
+                    normalize_score(psico_data.get('motivacao', {}).get('comprometimento', 0), 0, 10)
+                ]
+                psychological_score = np.mean(motivacao_scores)
 
-            # Traduzir o nome do esporte antes de adicionar à recomendação
+            # Calcular score final com pesos
+            scores = [
+                biotype_score * 0.30,      # Biotipo (30%)
+                physical_score * 0.25,      # Físico (25%)
+                technical_score * 0.20,     # Técnico (20%)
+                tactical_score * 0.15,      # Tático (15%)
+                psychological_score * 0.10   # Psicológico (10%)
+            ]
+            
+            final_score = np.mean([score for score in scores if score is not None])
+
+            # Ajustar o score final baseado em características específicas
+            if user_data.get('altura', 0) >= 200:  # Para atletas muito altos
+                if any(sport in sport_name.lower() for sport in ['basketball', 'volleyball']):
+                    final_score *= 1.2  # Bônus de 20% para esportes que valorizam altura
+
+            # Traduzir o nome do esporte
             translated_name = translate_sport_name(sport_name)
+            
+            # Verificação adicional para garantir que o gênero está correto
+            if user_gender == "Masculino" and "Feminino" in translated_name:
+                continue
+            if user_gender == "Feminino" and "Masculino" in translated_name:
+                continue
             
             recommendations.append({
                 "name": translated_name,
@@ -407,8 +452,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-        
+        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
