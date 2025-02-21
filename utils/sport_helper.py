@@ -601,8 +601,8 @@ def calculate_base_score(biotype_score: float, physical_score: float, tech_score
         base_score *= age_factor
         
         # Limitar score final
-        return min(100, max(20, base_score))
-        
+return min(100, max(20, base_score))
+
     except Exception as e:
         st.warning(f"Erro no cálculo do score base: {str(e)}")
         return 50.0
