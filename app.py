@@ -10,7 +10,7 @@ st.set_page_config(
 from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
 from utils.test_processor import normalize_score, calculate_average, process_test_results
-from utils.openai_helper import get_sport_recommendations, get_recommendations_without_api
+from utils.openai_helper import get_sport_recommendations
 
 def reset_session_state():
     """Reseta completamente o estado da sessão"""
