@@ -5,13 +5,6 @@ from typing import Dict, List, Any
 import os
 import streamlit as st
 
-import pandas as pd
-import json
-import numpy as np
-from typing import Dict, List, Any
-import os
-import streamlit as st
-
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
