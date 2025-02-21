@@ -65,10 +65,8 @@ def calculate_biotype_compatibility(user_data: Dict, sport_data: pd.Series) -> f
                     height_score += 20
                 scores.append(height_score)
             except (ValueError, TypeError):
-                # Se houver erro na conversão, usa score padrão
                 scores.append(50)
         else:
-            # Se algum valor é None, usa score padrão
             scores.append(50)
     
     # Peso
@@ -77,7 +75,6 @@ def calculate_biotype_compatibility(user_data: Dict, sport_data: pd.Series) -> f
         peso_min = sport_data.get('peso_min')
         peso_max = sport_data.get('peso_max')
         
-        # Verificar se os valores são válidos antes de calcular
         if peso_min is not None and peso_max is not None and weight is not None:
             try:
                 peso_min = float(peso_min)
@@ -89,13 +86,12 @@ def calculate_biotype_compatibility(user_data: Dict, sport_data: pd.Series) -> f
                     weight_score += 20
                 scores.append(weight_score)
             except (ValueError, TypeError):
-                # Se houver erro na conversão, usa score padrão
                 scores.append(50)
         else:
-            # Se algum valor é None, usa score padrão
             scores.append(50)
     
     return np.mean(scores) if scores else 50
+
 def calculate_physical_compatibility(user_data: Dict, sport_name: str) -> float:
     """
     Calcula compatibilidade física baseada nos testes
@@ -112,7 +108,7 @@ def calculate_physical_compatibility(user_data: Dict, sport_name: str) -> float:
             user_data['dados_fisicos'].get('velocidade', 5),
             2.5, 5.0, inverse=True
         )
-        scores.append(velocity_score * 1.5)  # Peso maior para esportes de velocidade
+        scores.append(velocity_score * 1.5)
     
     # Força (esportes que valorizam força)
     strength_sports = ['Weightlifting', 'Wrestling', 'Judo', 'Boxing']
@@ -134,6 +130,7 @@ SPORTS_TRANSLATIONS = {
     # Atletismo
     "Athletics": "Atletismo",
     "metres": "metros",
+    "Hurdles": "com Barreiras",
     "Women's": "Feminino",
     "Men's": "Masculino",
     
@@ -173,6 +170,8 @@ SPORTS_TRANSLATIONS = {
     "Archery": "Tiro com Arco",
     "Fencing": "Esgrima",
     "Diving": "Saltos Ornamentais",
+    "Road Race": "Corrida de Estrada",
+    "Individual": "Individual"
 }
 
 def translate_sport_name(sport_name: str, user_gender: str) -> str:
@@ -204,6 +203,7 @@ def translate_sport_name(sport_name: str, user_gender: str) -> str:
     translated_name = " ".join(translated_name.split())
     
     return translated_name
+
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
     """
     Determina pontos fortes para o esporte baseado nos dados do usuário
@@ -216,7 +216,7 @@ def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
     
     # Altura acima de 200cm é uma vantagem significativa
     if altura >= 200:
-        strengths.insert(0, "Altura Excepcional")  # Insere no início da lista como principal ponto forte
+        strengths.insert(0, "Altura Excepcional")
     elif altura >= 190:
         strengths.append("Altura Acima da Média")
         
@@ -255,21 +255,7 @@ def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
         if agilidade is not None and agilidade <= 12:
             strengths.append("Agilidade")
     
-    # Análise tática
-    if user_data.get('aspectos_taticos'):
-        taticos = user_data['aspectos_taticos']
-        decisao = taticos.get('tomada_decisao')
-        visao = taticos.get('visao_jogo')
-        posicionamento = taticos.get('posicionamento')
-        
-        if decisao is not None and decisao >= 7:
-            strengths.append("Tomada de Decisão")
-        if visao is not None and visao >= 6:
-            strengths.append("Visão de Jogo")
-        if posicionamento is not None and posicionamento >= 8:
-            strengths.append("Posicionamento")
-    
-    return strengths[:3]  # Retorna os 3 principais pontos fortes
+    return strengths[:3]
 
 def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
     """
@@ -307,7 +293,7 @@ def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
             areas.append("Equilíbrio")
         if agilidade is not None and agilidade > 12:
             areas.append("Agilidade")
-            
+    
     # Análise tática
     if user_data.get('aspectos_taticos'):
         taticos = user_data['aspectos_taticos']
@@ -316,7 +302,7 @@ def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
         posicionamento = taticos.get('posicionamento')
         
         if decisao is not None and decisao < 7:
-            areas.append("Tomada de Decisão")
+            areas.append("Posicionamento")
         if visao is not None and visao < 6:
             areas.append("Visão de Jogo")
         if posicionamento is not None and posicionamento < 8:
@@ -330,7 +316,7 @@ def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
         if psico.get('trabalho_equipe', {}).get('opinioes', 0) < 5:
             areas.append("Trabalho em Equipe")
     
-    return areas[:3]  # Retorna as 3 principais áreas para desenvolvimento
+    return areas[:3]
 
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
@@ -450,8 +436,8 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-        
-    def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
+
+def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
     
