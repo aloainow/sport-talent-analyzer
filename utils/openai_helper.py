@@ -491,9 +491,6 @@ def normalize_score(value, min_val, max_val, inverse=False):
         return 0
 
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """
-    Gera recomendações de esportes baseadas nos dados do usuário
-    """
     try:
         if not user_data or not all(user_data.get(key) for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
             st.error("Por favor, complete todos os testes antes de gerar recomendações.")
