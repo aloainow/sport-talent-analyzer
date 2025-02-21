@@ -1,22 +1,28 @@
 import streamlit as st
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Any
+import os
+from streamlit_option_menu import option_menu
+import plotly.graph_objects as go
+from utils.test_processor import normalize_score, calculate_average, process_test_results
 
-st.set_page_config(
+    st.set_page_config(
     page_title="Analisador de Talentos Esportivos",
     page_icon="🏃‍♂️",
     layout="wide"
 )
 
-# Agora os outros imports podem vir abaixo
-from streamlit_option_menu import option_menu
-import plotly.graph_objects as go
-from utils.test_processor import normalize_score, calculate_average, process_test_results
-from utils.openai_helper import get_sport_recommendations, get_recommendations_without_api
-
 def reset_session_state():
     """Reseta completamente o estado da sessão"""
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    
+
+    st.set_page_config(
+    page_title="Analisador de Talentos Esportivos",
+    page_icon="🏃‍♂️",
+    layout="wide"
+)
     # Reinicializa com valores padrão
     st.session_state.test_results = {
         'dados_fisicos': None,  # Mudado de {} para None
