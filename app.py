@@ -5,21 +5,24 @@ import numpy as np
 import pandas as pd
 import json
 import os
+import sys
 from typing import Dict, List, Any
 
-# Importações diretas dos módulos
+# Configuração da página antes de qualquer coisa
+st.set_page_config(
+    page_title="Analisador de Talentos Esportivos",
+    page_icon="🏃‍♂️",
+    layout="wide"
+)
+
+# Importações dos módulos utils
 try:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from utils.sport_helper import get_sport_recommendations
     from utils.test_processor import process_test_results
     from utils.age_adjusted_calculations import get_age_group
 except Exception as e:
-    
-    st.error(f"Erro ao importar módulos: {str(e)}")st.set_page_config(
-    page_title="Analisador de Talentos Esportivos",
-    page_icon="🏃‍♂️",
-    layout="wide"
-)
+    st.error(f"Erro ao importar módulos: {str(e)}")
 
 def reset_session_state():
     """Reseta completamente o estado da sessão"""
