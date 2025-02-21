@@ -164,6 +164,103 @@ EVENT_TRANSLATIONS = {
     "Archery Men's Individual": "Tiro com Arco Individual"
 }
 
+def load_and_process_data() -> pd.DataFrame:
+    """
+    Carrega e processa os dados dos esportes olímpicos
+    """
+    try:
+        # Dados base dos esportes olímpicos
+        sports_data = {
+            'Event': [
+                "Athletics Men's 100 metres",
+                "Athletics Men's 200 metres",
+                "Athletics Men's 400 metres",
+                "Athletics Men's 800 metres",
+                "Athletics Men's 1,500 metres",
+                "Athletics Men's 5,000 metres",
+                "Athletics Men's 10,000 metres",
+                "Athletics Men's Marathon",
+                "Athletics Men's High Jump",
+                "Athletics Men's Long Jump",
+                "Athletics Men's Triple Jump",
+                "Athletics Men's Pole Vault",
+                "Athletics Men's Shot Put",
+                "Athletics Men's Discus Throw",
+                "Athletics Men's Hammer Throw",
+                "Athletics Men's Javelin Throw",
+                "Swimming Men's 100 metres Freestyle",
+                "Swimming Men's 200 metres Freestyle",
+                "Swimming Men's 400 metres Freestyle",
+                "Swimming Men's 1,500 metres Freestyle",
+                "Swimming Men's 100 metres Backstroke",
+                "Swimming Men's 200 metres Backstroke",
+                "Swimming Men's 100 metres Breaststroke",
+                "Swimming Men's 200 metres Breaststroke",
+                "Swimming Men's 100 metres Butterfly",
+                "Swimming Men's 200 metres Butterfly",
+                "Gymnastics Men's Floor Exercise",
+                "Gymnastics Men's Horizontal Bar",
+                "Gymnastics Men's Parallel Bars",
+                "Gymnastics Men's Rings",
+                "Basketball Men's Basketball",
+                "Volleyball Men's Volleyball",
+                "Football Men's Football",
+                "Boxing Men's Flyweight",
+                "Boxing Men's Bantamweight",
+                "Boxing Men's Featherweight",
+                "Boxing Men's Lightweight",
+                "Boxing Men's Welterweight",
+                "Boxing Men's Middleweight",
+                "Boxing Men's Light-Heavyweight",
+                "Boxing Men's Heavyweight",
+                "Athletics Women's 100 metres",
+                "Athletics Women's 200 metres",
+                "Athletics Women's 400 metres",
+                "Athletics Women's 800 metres",
+                "Athletics Women's 1,500 metres",
+                "Athletics Women's 5,000 metres",
+                "Athletics Women's 10,000 metres",
+                "Athletics Women's Marathon",
+                "Athletics Women's High Jump",
+                "Athletics Women's Long Jump",
+                "Athletics Women's Triple Jump",
+                "Athletics Women's Pole Vault",
+                "Athletics Women's Shot Put",
+                "Athletics Women's Discus Throw",
+                "Athletics Women's Hammer Throw",
+                "Athletics Women's Javelin Throw",
+                "Swimming Women's 100 metres Freestyle",
+                "Swimming Women's 200 metres Freestyle",
+                "Swimming Women's 400 metres Freestyle",
+                "Swimming Women's 800 metres Freestyle",
+                "Swimming Women's 100 metres Backstroke",
+                "Swimming Women's 200 metres Backstroke",
+                "Swimming Women's 100 metres Breaststroke",
+                "Swimming Women's 200 metres Breaststroke",
+                "Swimming Women's 100 metres Butterfly",
+                "Swimming Women's 200 metres Butterfly",
+                "Gymnastics Women's Balance Beam",
+                "Gymnastics Women's Uneven Bars",
+                "Gymnastics Women's Floor Exercise",
+                "Basketball Women's Basketball",
+                "Volleyball Women's Volleyball",
+                "Football Women's Football"
+            ]
+        }
+        
+        # Converter para DataFrame
+        df = pd.DataFrame(sports_data)
+        
+        # Adicionar colunas extras se necessário
+        df['Sport'] = df['Event'].apply(lambda x: x.split()[0])
+        df['Gender'] = df['Event'].apply(lambda x: 'Women' if "Women's" in x else 'Men')
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"Erro ao carregar dados dos esportes: {str(e)}")
+        return None
+
 def translate_sport_name(sport_name: str, user_gender: str) -> str:
     """
     Traduz o nome completo do evento esportivo de inglês para português
