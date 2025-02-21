@@ -334,12 +334,6 @@ def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Gera recomendações de esportes baseadas nos dados do usuário e estatísticas olímpicas
-    
-    Args:
-        user_data (Dict[str, Any]): Dados do usuário incluindo medidas físicas e resultados dos testes
-        
-    Returns:
-        List[Dict[str, Any]]: Lista de recomendações de esportes com compatibilidade
     """
     try:
         # Carregar dados
@@ -348,23 +342,26 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
             return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
-        # Obter o gênero do usuário
+        # Obter dados básicos do usuário
         user_gender = user_data.get('genero', '')
+        user_age = user_data.get('idade', 18)  # Adicionado idade
 
-        # Filtrar eventos por gênero de forma mais rigorosa
+        # Carregar parâmetros ajustados por idade
+        from utils.age_adjusted_calculations import (
+            calculate_age_adjusted_score,
+            calculate_final_score,
+            get_age_group
+        )
+
+        # Filtrar eventos por gênero
         if user_gender == "Masculino":
-            # Exclui eventos femininos e mantém apenas masculinos ou neutros
             sports_data = sports_data[
                 (~sports_data['Event'].str.contains("Women", case=False)) &
                 (sports_data['Event'].str.contains("Men", case=False) | 
                  ~sports_data['Event'].str.contains("Women|Men", case=False))
             ]
         elif user_gender == "Feminino":
-            # Mantém apenas eventos femininos
             sports_data = sports_data[sports_data['Event'].str.contains("Women", case=False)]
-
-        # Remove duplicatas após a filtragem
-        sports_data = sports_data.drop_duplicates(subset=['Event'])
 
         recommendations = []
 
@@ -372,9 +369,9 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         for _, sport in sports_data.iterrows():
             sport_name = sport['Event']
             
-            # Calcular scores individuais
+            # Calcular scores individuais ajustados por idade
             biotype_score = calculate_biotype_compatibility(user_data, sport)
-            physical_score = calculate_physical_compatibility(user_data, sport_name)
+            physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
             
             # Calcular habilidades técnicas
             tech_score = 50
@@ -382,21 +379,33 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 tech_data = user_data['habilidades_tecnicas']
                 tech_scores = []
                 
-                # Coordenação (0-50)
-                coord_score = normalize_score(tech_data.get('coordenacao', 0), 0, 50)
+                # Scores ajustados por idade para cada habilidade técnica
+                coord_score = calculate_age_adjusted_score(
+                    tech_data.get('coordenacao', 0),
+                    'habilidades_tecnicas',
+                    'coordenacao',
+                    user_age,
+                    user_gender
+                )
                 tech_scores.append(coord_score)
                 
-                # Precisão (0-10)
-                prec_score = normalize_score(tech_data.get('precisao', 0), 0, 10)
+                prec_score = calculate_age_adjusted_score(
+                    tech_data.get('precisao', 0),
+                    'habilidades_tecnicas',
+                    'precisao',
+                    user_age,
+                    user_gender
+                )
                 tech_scores.append(prec_score)
                 
-                # Agilidade (5-15, inverso)
-                agil_score = normalize_score(tech_data.get('agilidade', 0), 5, 15, inverse=True)
+                agil_score = calculate_age_adjusted_score(
+                    tech_data.get('agilidade', 0),
+                    'habilidades_tecnicas',
+                    'agilidade',
+                    user_age,
+                    user_gender
+                )
                 tech_scores.append(agil_score)
-                
-                # Equilíbrio (0-60)
-                equil_score = normalize_score(tech_data.get('equilibrio', 0), 0, 60)
-                tech_scores.append(equil_score)
                 
                 tech_score = np.mean(tech_scores)
 
@@ -406,37 +415,29 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 tactic_data = user_data['aspectos_taticos']
                 tactic_scores = []
                 
-                # Tomada de decisão (0-10)
-                dec_score = normalize_score(tactic_data.get('tomada_decisao', 0), 0, 10)
-                tactic_scores.append(dec_score)
-                
-                # Visão de jogo (0-10)
-                vis_score = normalize_score(tactic_data.get('visao_jogo', 0), 0, 10)
-                tactic_scores.append(vis_score)
-                
-                # Posicionamento (0-10)
-                pos_score = normalize_score(tactic_data.get('posicionamento', 0), 0, 10)
-                tactic_scores.append(pos_score)
+                # Scores ajustados para aspectos táticos
+                for aspect in ['tomada_decisao', 'visao_jogo', 'posicionamento']:
+                    score = normalize_score(tactic_data.get(aspect, 0), 0, 10)
+                    tactic_scores.append(score)
                 
                 tactic_score = np.mean(tactic_scores)
 
-            # Calcular score final ponderado com ajuste de escala
-            final_score = (
-                (biotype_score * 0.30) +    # Biotipo (30%)
-                (physical_score * 0.25) +    # Físico (25%)
-                (tech_score * 0.25) +        # Técnico (25%)
-                (tactic_score * 0.20)        # Tático (20%)
-            ) * 0.8  # Ajuste para escala mais realista (máximo de 80% base)
-
-            # Ajustes específicos para esportes
-            if user_data.get('altura', 0) >= 200:  # Para atletas muito altos
-                if any(sport in sport_name.lower() for sport in ['basketball', 'volleyball']):
-                    final_score *= 1.15  # Bônus de 15% para esportes que valorizam altura
-                elif any(sport in sport_name.lower() for sport in ['athletics', 'swimming']):
-                    final_score *= 1.1   # Bônus de 10% para outros esportes onde altura ajuda
-
-            # Garantir que o score final não ultrapasse 100%
-            final_score = min(100, final_score)
+            # Preparar dados para cálculo final
+            current_scores = {
+                'biotype': biotype_score,
+                'physical': physical_score,
+                'technical': tech_score,
+                'tactical': tactic_score
+            }
+            
+            # Calcular score final considerando idade e potencial
+            final_score = calculate_final_score(
+                user_data={**user_data, **current_scores},
+                sport_compatibility=(biotype_score * 0.3 + 
+                                  physical_score * 0.25 + 
+                                  tech_score * 0.25 + 
+                                  tactic_score * 0.2)
+            )
 
             # Traduzir o nome do esporte incluindo o gênero
             translated_name = translate_sport_name(sport_name, user_gender)
@@ -450,16 +451,12 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
         # Ordenar e retornar até 10 recomendações
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        
-        if not recommendations:
-            st.warning("Nenhum esporte foi recomendado. Exibindo sugestões padrão.")
-            return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-
         return recommendations[:10]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
+        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
