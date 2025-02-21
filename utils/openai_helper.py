@@ -5,25 +5,46 @@ from typing import Dict, List, Any
 import os
 import streamlit as st
 
-def normalize_score(value, min_val, max_val, gender="masculino", inverse=False):
-    """Normaliza um valor para escala 0-100 com faixas específicas para cada gênero."""
+def normalize_score(value, min_val, max_val, inverse=False):
+    """Normaliza um valor para escala 0-100"""
     try:
-        if value is None or value == "":
+        if value is None or value == "":  # Adicionado para evitar NoneType
             return 0
         value = float(value)
-
-        # Ajustando os parâmetros de normalização para homens e mulheres
-        if gender == "feminino":
-            min_val *= 0.9  # Ajuste para considerar faixas menores para mulheres
-            max_val *= 0.9
-
         if inverse:
-            return max(0, min(100, ((max_val - value) / (max_val - min_val)) * 100))
-        return max(0, min(100, ((value - min_val) / (max_val - min_val)) * 100))
-    
+            if value <= min_val:
+                return 100
+            elif value >= max_val:
+                return 0
+            return ((max_val - value) / (max_val - min_val)) * 100
+        else:
+            if value >= max_val:
+                return 100
+            elif value <= min_val:
+                return 0
+            return ((value - min_val) / (max_val - min_val)) * 100
     except (TypeError, ValueError):
         return 0
 
+def classify_test_results(test_name: str, value: float, gender: str) -> str:
+    """Classifica o resultado do teste com base no gênero"""
+    classification_criteria = {
+        "push_ups": {
+            "Masculino": [(0, 20, "Iniciante"), (21, 40, "Intermediário"), (41, float('inf'), "Avançado")],
+            "Feminino": [(0, 10, "Iniciante"), (11, 30, "Intermediário"), (31, float('inf'), "Avançado")]
+        },
+        "sit_ups": {
+            "Masculino": [(0, 25, "Iniciante"), (26, 50, "Intermediário"), (51, float('inf'), "Avançado")],
+            "Feminino": [(0, 15, "Iniciante"), (16, 40, "Intermediário"), (41, float('inf'), "Avançado")]
+        }
+    }
+    
+    if test_name in classification_criteria and gender in classification_criteria[test_name]:
+        for lower, upper, label in classification_criteria[test_name][gender]:
+            if lower <= value <= upper:
+                return label
+    return "Não classificado"
+    
 # Dicionário de traduções de termos gerais
 SPORTS_TRANSLATIONS = {
     # Esportes Principais
@@ -471,7 +492,7 @@ def normalize_score(value, min_val, max_val, inverse=False):
 
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Gera recomendações de esportes baseadas nos dados do usuário, diferenciando parâmetros por gênero.
+    Gera recomendações de esportes baseadas nos dados do usuário
     """
     try:
         if not user_data or not all(user_data.get(key) for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
@@ -486,53 +507,50 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         user_gender = user_data.get('genero', '').lower()
         user_age = user_data.get('idade', 18)
 
-        # Filtrar esportes por gênero corretamente
         if user_gender == "feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Women's|Mixed", case=False, na=False)]
+            sports_data = sports_data[sports_data['Event'].str.contains("Women's|Mixed", case=False)]
         elif user_gender == "masculino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Men's|Mixed", case=False, na=False)]
+            sports_data = sports_data[sports_data['Event'].str.contains("Men's|Mixed", case=False)]
 
         if sports_data.empty:
-            st.warning("Nenhum esporte encontrado para o gênero selecionado.")
+            st.warning("Nenhum esporte encontrado para o gênero selecionado")
             return get_recommendations_without_api(user_gender)
 
         recommendations = []
         for _, sport in sports_data.iterrows():
             try:
                 sport_name = sport['Event']
-                biotype_score = calculate_biotype_compatibility(user_data, sport, user_gender)
-                physical_score = calculate_physical_compatibility(user_data, sport_name, user_age, user_gender)
+                biotype_score = calculate_biotype_compatibility(user_data, sport)
+                physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
 
                 tech_score = np.mean([
-                    normalize_score(user_data['habilidades_tecnicas'].get(metric, 0), 0, 50, user_gender)
+                    normalize_score(user_data['habilidades_tecnicas'].get(metric, 0), 0, 50)
                     for metric in ['coordenacao', 'precisao', 'agilidade', 'equilibrio']
                     if metric in user_data['habilidades_tecnicas']
                 ]) if user_data.get('habilidades_tecnicas') else 50
 
                 tactic_score = np.mean([
-                    normalize_score(user_data['aspectos_taticos'].get(metric, 0), 0, 10, user_gender)
+                    normalize_score(user_data['aspectos_taticos'].get(metric, 0), 0, 10)
                     for metric in ['tomada_decisao', 'visao_jogo', 'posicionamento']
                     if metric in user_data['aspectos_taticos']
                 ]) if user_data.get('aspectos_taticos') else 50
 
-                # Cálculo de score ajustado para cada gênero
                 base_score = (
                     biotype_score * 0.30 +
                     physical_score * 0.25 +
                     tech_score * 0.25 +
                     tactic_score * 0.20
                 )
-
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
-                final_score = min(90, max(20, base_score * age_factor))
+                final_score = min(90, base_score * age_factor)
 
                 translated_name = translate_sport_name(sport_name, user_gender)
 
                 recommendations.append({
                     "name": translated_name,
                     "compatibility": round(final_score) if not np.isnan(final_score) else 0,
-                    "strengths": get_sport_strengths(sport_name, user_data, user_gender),
-                    "development": get_development_areas(sport_name, user_data, user_gender)
+                    "strengths": get_sport_strengths(sport_name, user_data),
+                    "development": get_development_areas(sport_name, user_data)
                 })
             except Exception as e:
                 st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
