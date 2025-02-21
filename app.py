@@ -510,8 +510,6 @@ def show_recommendations():
                 'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
             }
 
-            # Exibir os dados do usuário para debug
-            st.write("DEBUG: user_data", user_data)
 
             # Processar scores para o gráfico radar
             processed_scores = process_test_results(st.session_state.test_results)
