@@ -30,29 +30,57 @@ def normalize_score(value, min_val, max_val, inverse=False):
 
 def load_and_process_data() -> pd.DataFrame:
     """
-    Carrega e processa os dados dos esportes olímpicos
+    Carrega e processa os dados dos esportes olímpicos do CSV
     """
     try:
-        # Use o caminho completo para o arquivo
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        csv_path = os.path.join(os.path.dirname(current_dir), 'perfil_eventos_olimpicos_verao.csv')
+        # Caminhos possíveis para o arquivo CSV no Streamlit Cloud
+        possible_paths = [
+            'data/perfil_eventos_olimpicos_verao.csv',  # Caminho padrão no Streamlit Cloud
+            './data/perfil_eventos_olimpicos_verao.csv',
+            os.path.join('data', 'perfil_eventos_olimpicos_verao.csv'),
+            './perfil_eventos_olimpicos_verao.csv',
+            'perfil_eventos_olimpicos_verao.csv'
+        ]
         
-        # Adicione um print para debug
-        print(f"Tentando carregar arquivo de: {csv_path}")
+        # Tenta carregar o arquivo de diferentes locais
+        for path in possible_paths:
+            try:
+                if os.path.exists(path):
+                    print(f"📁 Carregando arquivo CSV de: {path}")
+                    df = pd.read_csv(path)
+                    
+                    # Verifica se o DataFrame não está vazio
+                    if not df.empty:
+                        return df
+            except Exception as inner_e:
+                print(f"Erro ao tentar carregar {path}: {inner_e}")
         
-        # Leitura do CSV
-        df = pd.read_csv(csv_path, encoding='utf-8')
-        
-        # Se não existir coluna Event, crie uma
-        if 'Event' not in df.columns:
-            df['Event'] = df['Sport'] + " " + df['Gender'] + "'s Event"
-        
-        return df
-        
+        # Se nenhum arquivo for encontrado, usa dados padrão
+        st.warning("⚠️ CSV não encontrado. Usando dados padrão.")
+        return pd.DataFrame(data_sports_default())
+    
     except Exception as e:
         st.error(f"Erro ao carregar dados dos esportes: {str(e)}")
-        return None
-        
+        return pd.DataFrame(data_sports_default())
+
+def data_sports_default():
+    """
+    Dados padrão de esportes caso o CSV não seja encontrado
+    """
+    return {
+        'Event': [
+            "Athletics Men's 100 metres",
+            "Swimming Men's 100 metres Freestyle",
+            "Gymnastics Men's Floor Exercise",
+            "Basketball Men's Basketball",
+            "Volleyball Men's Volleyball"
+        ]
+    }
+
+# Exemplo de uso
+if __name__ == '__main__':
+    df = load_and_process_data()
+    print(df)
 def translate_sport_name(sport_name: str, user_gender: str) -> str:
     """
     Traduz o nome completo do evento esportivo de inglês para português
