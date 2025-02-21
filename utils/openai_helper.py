@@ -33,16 +33,19 @@ def load_and_process_data() -> pd.DataFrame:
     Carrega e processa os dados dos esportes olímpicos
     """
     try:
-        # Read the Olympic events CSV file
-        df = pd.read_csv('perfil_eventos_olimpicos_verao.csv', encoding='utf-8')
+        # Use o caminho completo para o arquivo
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        csv_path = os.path.join(os.path.dirname(current_dir), 'perfil_eventos_olimpicos_verao.csv')
         
-        # Create a full Event column if it doesn't exist
+        # Adicione um print para debug
+        print(f"Tentando carregar arquivo de: {csv_path}")
+        
+        # Leitura do CSV
+        df = pd.read_csv(csv_path, encoding='utf-8')
+        
+        # Se não existir coluna Event, crie uma
         if 'Event' not in df.columns:
-            df['Event'] = df['Sport'] + " " + df['Gender'] + "'s " + df['Distance/Category']
-        
-        # Ensure consistent naming convention
-        df['Sport'] = df['Sport'].str.title()
-        df['Gender'] = df['Gender'].apply(lambda x: "Women's" if x.lower() == 'female' else "Men's")
+            df['Event'] = df['Sport'] + " " + df['Gender'] + "'s Event"
         
         return df
         
@@ -67,6 +70,10 @@ def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series) -> float:
     Calcula a compatibilidade do biotipo do usuário com o esporte
     """
     try:
+        # Adicione prints de debug
+        print(f"Calculando compatibilidade para: {sport['Event']}")
+        print(f"Dados do usuário: {user_data}")
+
         if not user_data or 'biotipo' not in user_data:
             return 50  # Valor padrão se não houver dados de biotipo
             
@@ -147,12 +154,14 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
         user_gender = user_data.get('genero', '')
         user_age = user_data.get('idade', 18)
+        user_height = user_data.get('altura', 0)
+        user_weight = user_data.get('peso', 0)
 
         # Filtrar esportes por gênero
         if user_gender == "Feminino":
-            sports_data = sports_data[sports_data['Gender'] == "Women's"]
+            sports_data = sports_data[sports_data['Event'].str.contains("Women's", case=False)]
         elif user_gender == "Masculino":
-            sports_data = sports_data[sports_data['Gender'] == "Men's"]
+            sports_data = sports_data[sports_data['Event'].str.contains("Men's", case=False)]
 
         if sports_data.empty:
             st.warning("Nenhum esporte encontrado para o gênero selecionado")
@@ -160,11 +169,21 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
         recommendations = []
 
+        # Lista expandida de esportes para considerar
+        sports_to_consider = [
+            'Basketball', 'Volleyball', 'Judo', 'Wrestling', 'Boxing', 
+            'Athletics', 'Swimming', 'Gymnastics', 'Handball', 'Rugby'
+        ]
+
         for _, sport in sports_data.iterrows():
             try:
                 sport_name = sport['Event']
                 
-                # Calcular compatibilidade
+                # Filtrar apenas esportes de interesse
+                if not any(s.lower() in sport_name.lower() for s in sports_to_consider):
+                    continue
+
+                # Cálculos de compatibilidade mais detalhados
                 biotype_score = calculate_biotype_compatibility(user_data, sport)
                 physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
 
@@ -180,16 +199,21 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     if metric in user_data['aspectos_taticos']
                 ]) if user_data.get('aspectos_taticos') else 50
 
+                # Ajuste para altura e peso
+                height_weight_bonus = 0
+                if user_height >= 190 and 'Basketball' in sport_name:
+                    height_weight_bonus += 15
+                if user_height >= 190 and 'Volleyball' in sport_name:
+                    height_weight_bonus += 15
+                if user_weight >= 80 and ('Wrestling' in sport_name or 'Boxing' in sport_name):
+                    height_weight_bonus += 15
+
                 base_score = (
                     biotype_score * 0.30 +
                     physical_score * 0.25 +
                     tech_score * 0.25 +
                     tactic_score * 0.20
-                ) * 0.7
-
-                # Ajustes adicionais
-                if user_data.get('altura', 0) >= 180 and any(s in sport_name.lower() for s in ['basketball', 'volleyball']):
-                    base_score *= 1.1
+                ) * 0.7 + height_weight_bonus
 
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
                 random_factor = np.random.uniform(0.9, 1.1)
@@ -208,13 +232,13 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
                 continue
 
+        # Ordena e pega os 5 melhores
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        return recommendations[:10]
+        return recommendations[:5]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-        
+        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
