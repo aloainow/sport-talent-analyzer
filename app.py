@@ -3,7 +3,7 @@ from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
 
 from utils.test_processor import normalize_score, calculate_average, process_test_results
-from utils.openai_helper import get_sport_recommendations, get_recommendations_without_api
+from utils.openai_helper import get_sport_recommendations
 
 # Configuração da página
 st.set_page_config(
