@@ -66,8 +66,7 @@ def show_home():
             idade = st.number_input("Idade", 
                                   min_value=10, 
                                   max_value=18, 
-                                  value=st.session_state.personal_info.get('idade', 15),
-                                  help="Idade entre 10 e 18 anos")
+                                  value=st.session_state.personal_info.get('idade', 15))
             
             altura = st.number_input("Altura (cm)", 
                                    min_value=100, 
@@ -93,8 +92,8 @@ def show_home():
 
             ano_nascimento = st.number_input(
                 "Ano de Nascimento",
-                min_value=2006,  # Para idade máxima de 18 anos em 2024
-                max_value=2014,  # Para idade mínima de 10 anos em 2024
+                min_value=2006,
+                max_value=2014,
                 value=st.session_state.personal_info.get('ano_nascimento', 2009)
             )
 
@@ -112,6 +111,7 @@ def show_home():
         submitted = st.form_submit_button("Salvar Informações")
 
         if submitted:
+            # Atualizar informações pessoais
             st.session_state.personal_info = {
                 'idade': idade,
                 'altura': altura,
@@ -121,7 +121,13 @@ def show_home():
                 'ano_nascimento': ano_nascimento,
                 'cidade': cidade,
                 'estado': estado,
-                'pais': pais
+                'pais': pais,
+                # Adicionar biotipo estruturado
+                'biotipo': {
+                    'altura': altura,
+                    'peso': peso,
+                    'envergadura': envergadura
+                }
             }
             st.session_state.form_key += 1
             st.success("Informações pessoais salvas com sucesso!")
@@ -138,8 +144,8 @@ def show_home():
 
     for label, category in test_categories.items():
         progress = 1.0 if category in st.session_state.test_results and st.session_state.test_results[category] else 0.0
-        st.progress(progress, text=f"{label}: {int(progress * 100)}%")        
-
+        st.progress(progress, text=f"{label}: {int(progress * 100)}%")
+        
 def create_radar_chart(scores):
     """Cria um gráfico radar com os scores processados."""
     categories = [
