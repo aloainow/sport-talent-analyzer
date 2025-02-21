@@ -177,6 +177,13 @@ SPORTS_TRANSLATIONS = {
 def translate_sport_name(sport_name: str, user_gender: str) -> str:
     """
     Traduz o nome do esporte de inglês para português e adiciona o gênero apropriado
+    
+    Args:
+        sport_name (str): Nome do esporte em inglês
+        user_gender (str): Gênero do usuário ("Masculino" ou "Feminino")
+    
+    Returns:
+        str: Nome do esporte traduzido com gênero apropriado
     """
     translated_name = sport_name
     
@@ -185,24 +192,30 @@ def translate_sport_name(sport_name: str, user_gender: str) -> str:
         translated_name = translated_name.replace(en, pt)
     
     # Ajustar a formatação para ficar mais natural em português
-    parts = translated_name.split()
+    parts = translated_name.split(', ')  # Divide por vírgula para preservar a estrutura
     
-    # Remove termos de gênero existentes
-    parts = [p for p in parts if p not in ["Masculino", "Feminino"]]
+    # Para cada parte do nome
+    for i, part in enumerate(parts):
+        subparts = part.split()
+        # Remove termos de gênero existentes
+        subparts = [p for p in subparts if p not in ["Masculino", "Feminino"]]
+        # Reconstrói a parte
+        parts[i] = " ".join(subparts)
     
-    # Adiciona o gênero apropriado
+    # Junta as partes novamente com vírgula
+    translated_name = ", ".join(parts)
+    
+    # Adiciona o gênero como sufixo
     if user_gender == "Masculino":
-        parts.append("Masculino")
+        translated_name += " Masculino"
     elif user_gender == "Feminino":
-        parts.append("Feminino")
-    
-    # Reconstrói o nome do esporte
-    translated_name = " ".join(parts)
+        translated_name += " Feminino"
     
     # Remove espaços duplos que possam ter sido criados
     translated_name = " ".join(translated_name.split())
     
     return translated_name
+
 
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
     """
@@ -321,6 +334,12 @@ def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Gera recomendações de esportes baseadas nos dados do usuário e estatísticas olímpicas
+    
+    Args:
+        user_data (Dict[str, Any]): Dados do usuário incluindo medidas físicas e resultados dos testes
+        
+    Returns:
+        List[Dict[str, Any]]: Lista de recomendações de esportes com compatibilidade
     """
     try:
         # Carregar dados
@@ -401,18 +420,23 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 
                 tactic_score = np.mean(tactic_scores)
 
-            # Calcular score final ponderado
+            # Calcular score final ponderado com ajuste de escala
             final_score = (
-                biotype_score * 0.30 +    # Biotipo (30%)
-                physical_score * 0.25 +    # Físico (25%)
-                tech_score * 0.25 +        # Técnico (25%)
-                tactic_score * 0.20        # Tático (20%)
-            )
+                (biotype_score * 0.30) +    # Biotipo (30%)
+                (physical_score * 0.25) +    # Físico (25%)
+                (tech_score * 0.25) +        # Técnico (25%)
+                (tactic_score * 0.20)        # Tático (20%)
+            ) * 0.8  # Ajuste para escala mais realista (máximo de 80% base)
 
             # Ajustes específicos para esportes
             if user_data.get('altura', 0) >= 200:  # Para atletas muito altos
                 if any(sport in sport_name.lower() for sport in ['basketball', 'volleyball']):
-                    final_score *= 1.2  # Bônus de 20% para esportes que valorizam altura
+                    final_score *= 1.15  # Bônus de 15% para esportes que valorizam altura
+                elif any(sport in sport_name.lower() for sport in ['athletics', 'swimming']):
+                    final_score *= 1.1   # Bônus de 10% para outros esportes onde altura ajuda
+
+            # Garantir que o score final não ultrapasse 100%
+            final_score = min(100, final_score)
 
             # Traduzir o nome do esporte incluindo o gênero
             translated_name = translate_sport_name(sport_name, user_gender)
@@ -436,7 +460,6 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
