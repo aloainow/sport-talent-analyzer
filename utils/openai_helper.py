@@ -323,209 +323,236 @@ def translate_sport_name(sport_name: str, user_gender: str) -> str:
         st.warning(f"Erro na tradução do evento: {str(e)}")
         return sport_name  # Retorna o nome original em caso de erro
 
-def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age: int = 18) -> float:
-    """
-    Calcula compatibilidade física baseada nos testes, ajustada pela idade
-    """
+def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series, user_gender: str) -> float:
+    """Cálculo melhorado de compatibilidade biotipo"""
+    try:
+        # Pegar dados do CSV de perfil olímpico
+        sport_name = sport['Event'].lower()
+        altura = st.session_state.personal_info.get('altura', 170)
+        peso = st.session_state.personal_info.get('peso', 60)
+        
+        scores = []
+        
+        # Comparar com médias olímpicas (usando os dados do CSV)
+        if 'basketball' in sport_name:
+            altura_score = normalize_score(altura, 170, 200)
+            scores.append(altura_score * 1.5)  # Peso maior para altura no basquete
+        elif 'volleyball' in sport_name:
+            altura_score = normalize_score(altura, 165, 195)
+            scores.append(altura_score * 1.3)
+        elif 'gymnastics' in sport_name:
+            altura_score = normalize_score(altura, 145, 170)
+            peso_score = normalize_score(peso, 40, 65)
+            scores.extend([altura_score, peso_score])
+        
+        # Score padrão se não houver regras específicas
+        if not scores:
+            scores.append(70)  # Score base razoável
+            
+        return np.mean(scores)
+    except Exception as e:
+        print(f"Erro no cálculo de biotipo: {str(e)}")
+        return 50
+
+def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age: int) -> float:
+    """Cálculo melhorado de compatibilidade física"""
     try:
         if not user_data.get('dados_fisicos'):
             return 50
             
+        sport_name = sport_name.lower()
+        dados_fisicos = user_data['dados_fisicos']
+        
         scores = []
         
-        # Velocidade (esportes que valorizam velocidade)
-        velocity_sports = ['Athletics', 'Swimming', 'Cycling', 'Sprint']
-        if any(sport in sport_name for sport in velocity_sports):
-            velocity_score = normalize_score(
-                user_data['dados_fisicos'].get('velocidade', 5),
-                2.5, 5.0, inverse=True
-            )
-            scores.append(velocity_score * 1.5)
+        # Velocidade
+        if any(s in sport_name for s in ['athletics', 'swimming', 'basketball']):
+            vel_score = normalize_score(dados_fisicos.get('velocidade', 5), 2.5, 5.0, inverse=True)
+            scores.append(vel_score * 1.3)
         
-        # Força (esportes que valorizam força)
-        strength_sports = ['Weightlifting', 'Wrestling', 'Judo', 'Boxing']
-        if any(sport in sport_name for sport in strength_sports):
-            strength_upper = normalize_score(
-                user_data['dados_fisicos'].get('forca_superior', 0),
-                0, 50
-            )
-            strength_lower = normalize_score(
-                user_data['dados_fisicos'].get('forca_inferior', 0),
-                0, 60
-            )
-            scores.extend([strength_upper * 1.5, strength_lower * 1.5])
+        # Força Superior
+        if any(s in sport_name for s in ['gymnastics', 'wrestling', 'volleyball']):
+            forca_sup = normalize_score(dados_fisicos.get('forca_superior', 0), 0, 50)
+            scores.append(forca_sup * 1.2)
         
-        # Calcular média dos scores disponíveis
+        # Força Inferior
+        if any(s in sport_name for s in ['athletics', 'football', 'basketball']):
+            forca_inf = normalize_score(dados_fisicos.get('forca_inferior', 0), 0, 60)
+            scores.append(forca_inf * 1.2)
+        
         if not scores:
-            return 50
+            return 60  # Score base para esportes sem requisitos específicos
             
         base_score = np.mean(scores)
         
-        # Ajuste baseado na idade
-        age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
+        # Ajuste por idade mais suave
+        age_factor = min(1.0, max(0.8, (user_age - 10) / 8))
+        
         return base_score * age_factor
-            
     except Exception as e:
-        st.error(f"Erro no cálculo de compatibilidade física: {str(e)}")
+        print(f"Erro no cálculo físico: {str(e)}")
         return 50
 
-def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series, gender: str = "Masculino") -> float:
-    """
-    Calcula a compatibilidade do biotipo do usuário com o esporte
-    """
-    try:
-        if not user_data.get('biotipo'):
-            return 50  # Valor padrão se não houver dados de biotipo
-            
-        biotype_data = user_data['biotipo']
-        sport_name = sport['Event'].lower()
-        scores = []
-        
-        # Altura (valores ajustados por gênero)
-        if 'altura' in biotype_data:
-            height = biotype_data['altura']
-            
-            # Ajusta ranges baseado no gênero
-            if gender == "Feminino":
-                height_ranges = {
-                    'basketball': (170, 195),
-                    'volleyball': (170, 190),
-                    'gymnastics': (150, 165),
-                    'default': (155, 180)
-                }
-            else:  # Masculino
-                height_ranges = {
-                    'basketball': (185, 210),
-                    'volleyball': (185, 205),
-                    'gymnastics': (165, 175),
-                    'default': (170, 190)
-                }
-            
-            # Esportes que valorizam altura
-            if any(s in sport_name for s in ['basketball', 'volleyball']):
-                min_h, max_h = height_ranges['basketball' if 'basketball' in sport_name else 'volleyball']
-                height_score = normalize_score(height, min_h, max_h)
-                scores.append(height_score * 1.5)  # Peso maior para altura
-            
-            # Esportes que valorizam altura média/baixa
-            elif any(s in sport_name for s in ['gymnastics', 'wrestling']):
-                min_h, max_h = height_ranges['gymnastics']
-                height_score = normalize_score(height, min_h, max_h)
-                scores.append(height_score)
-            
-            # Outros esportes
-            else:
-                min_h, max_h = height_ranges['default']
-                height_score = normalize_score(height, min_h, max_h)
-                scores.append(height_score)
-        
-        # Peso (ajustado por gênero)
-        if 'peso' in biotype_data:
-            weight = biotype_data['peso']
-            
-            # Ajusta ranges baseado no gênero
-            if gender == "Feminino":
-                weight_ranges = {
-                    'lightweight': (45, 60),
-                    'middleweight': (55, 70),
-                    'heavyweight': (65, 85)
-                }
-            else:  # Masculino
-                weight_ranges = {
-                    'lightweight': (60, 75),
-                    'middleweight': (70, 85),
-                    'heavyweight': (80, 100)
-                }
-            
-            # Categorias de peso para esportes de combate
-            if any(s in sport_name for s in ['boxing', 'wrestling', 'judo']):
-                if 'heavyweight' in sport_name:
-                    weight_score = normalize_score(weight, *weight_ranges['heavyweight'])
-                elif 'middleweight' in sport_name:
-                    weight_score = normalize_score(weight, *weight_ranges['middleweight'])
-                else:  # lightweight
-                    weight_score = normalize_score(weight, *weight_ranges['lightweight'])
-                scores.append(weight_score * 1.3)
-        
-        # Envergadura (ajustada por gênero)
-        if 'envergadura' in biotype_data:
-            wingspan = biotype_data['envergadura']
-            
-            # Ajusta ranges baseado no gênero
-            if gender == "Feminino":
-                wing_ranges = {
-                    'swimming': (170, 190),
-                    'boxing': (165, 185),
-                    'basketball': (170, 195)
-                }
-            else:  # Masculino
-                wing_ranges = {
-                    'swimming': (180, 200),
-                    'boxing': (175, 195),
-                    'basketball': (185, 215)
-                }
-            
-            # Esportes que valorizam envergadura
-            if any(s in sport_name for s in ['swimming', 'boxing', 'basketball']):
-                sport_key = next(k for k in wing_ranges.keys() if k in sport_name) or 'basketball'
-                min_w, max_w = wing_ranges[sport_key]
-                wingspan_score = normalize_score(wingspan, min_w, max_w)
-                scores.append(wingspan_score * 1.2)
-        
-        # Se não houver scores, retorna valor padrão
-        if not scores:
-            return 50
-            
-        # Retorna média dos scores
-        return np.mean(scores)
-        
-    except Exception as e:
-        st.warning(f"Erro no cálculo de compatibilidade de biotipo: {str(e)}")
-        return 50
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
-    """
-    Identifica os pontos fortes do usuário para um determinado esporte
-    """
+    """Identificação melhorada de pontos fortes"""
     strengths = []
     sport_name = sport_name.lower()
     
     try:
-        # Avaliação de biotipo
-        if user_data.get('biotipo'):
-            if user_data['biotipo'].get('altura', 0) >= 180 and any(s in sport_name for s in ['basketball', 'volleyball']):
-                strengths.append("Altura favorável")
-            
-            if user_data['biotipo'].get('envergadura', 0) >= 190 and any(s in sport_name for s in ['swimming', 'boxing']):
-                strengths.append("Boa envergadura")
-        
-        # Avaliação física
+        # Dados Físicos
         if user_data.get('dados_fisicos'):
-            if user_data['dados_fisicos'].get('velocidade', 0) <= 3.0 and 'athletics' in sport_name:
-                strengths.append("Velocidade")
+            dados_fisicos = user_data['dados_fisicos']
+            
+            if dados_fisicos.get('velocidade', 6) < 4.0:
+                strengths.append("Velocidade excepcional")
+            elif dados_fisicos.get('velocidade', 6) < 4.5:
+                strengths.append("Boa velocidade")
                 
-            if user_data['dados_fisicos'].get('forca_superior', 0) >= 40:
-                strengths.append("Força superior")
+            if dados_fisicos.get('forca_superior', 0) > 35:
+                strengths.append("Força superior excepcional")
+            elif dados_fisicos.get('forca_superior', 0) > 25:
+                strengths.append("Boa força superior")
                 
-            if user_data['dados_fisicos'].get('forca_inferior', 0) >= 50:
-                strengths.append("Força inferior")
+            if dados_fisicos.get('forca_inferior', 0) > 45:
+                strengths.append("Força inferior excepcional")
+            elif dados_fisicos.get('forca_inferior', 0) > 35:
+                strengths.append("Boa força inferior")
         
-        # Avaliação técnica
+        # Habilidades Técnicas
         if user_data.get('habilidades_tecnicas'):
-            if user_data['habilidades_tecnicas'].get('coordenacao', 0) >= 40:
-                strengths.append("Coordenação")
+            hab_tec = user_data['habilidades_tecnicas']
+            
+            if hab_tec.get('coordenacao', 0) > 35:
+                strengths.append("Coordenação motora excepcional")
+            elif hab_tec.get('coordenacao', 0) > 25:
+                strengths.append("Boa coordenação motora")
                 
-            if user_data['habilidades_tecnicas'].get('precisao', 0) >= 8:
-                strengths.append("Precisão")
-                
-            if user_data['habilidades_tecnicas'].get('equilibrio', 0) >= 50:
-                strengths.append("Equilíbrio")
+            if hab_tec.get('precisao', 0) > 7:
+                strengths.append("Alta precisão")
+            if hab_tec.get('equilibrio', 0) > 45:
+                strengths.append("Equilíbrio excepcional")
+            if hab_tec.get('agilidade', 0) < 11:
+                strengths.append("Agilidade destacada")
         
-        # Limitar a 3 pontos fortes principais
-            return strengths[:3] if strengths else ["Avaliação pendente"]
+        # Aspectos Táticos
+        if user_data.get('aspectos_taticos'):
+            taticos = user_data['aspectos_taticos']
+            
+            if taticos.get('tomada_decisao', 0) > 7:
+                strengths.append("Excelente tomada de decisão")
+            if taticos.get('visao_jogo', 0) > 7:
+                strengths.append("Ótima visão de jogo")
+            if taticos.get('posicionamento', 0) > 7:
+                strengths.append("Posicionamento inteligente")
+        
+        # Retorna apenas os pontos fortes mais relevantes para o esporte
+        relevant_strengths = []
+        if 'basketball' in sport_name:
+            keywords = ['altura', 'agilidade', 'coordenação', 'visão']
+        elif 'volleyball' in sport_name:
+            keywords = ['altura', 'força', 'precisão', 'posicionamento']
+        elif 'athletics' in sport_name:
+            keywords = ['velocidade', 'força', 'agilidade']
+        else:
+            keywords = []
+            
+        for strength in strengths:
+            if any(keyword.lower() in strength.lower() for keyword in keywords):
+                relevant_strengths.append(strength)
+                
+        # Se não encontrou pontos fortes específicos, usa os melhores gerais
+        if not relevant_strengths:
+            relevant_strengths = sorted(strengths, key=len)[:3]
+            
+        return relevant_strengths[:3] if relevant_strengths else ["Avaliação pendente"]
         
     except Exception as e:
-        st.warning(f"Erro ao identificar pontos fortes: {str(e)}")
+        print(f"Erro ao identificar pontos fortes: {str(e)}")
         return ["Avaliação pendente"]
+def calculate_sport_compatibility(user_data: Dict, sport: Dict) -> float:
+    """
+    Calcula a compatibilidade específica para cada esporte
+    """
+    scores = []
+    
+    # Dados físicos (peso 30%)
+    if user_data.get('dados_fisicos'):
+        velocidade_score = normalize_score(
+            user_data['dados_fisicos'].get('velocidade', 5),
+            2.5, 5.0, inverse=True
+        )
+        forca_sup_score = normalize_score(
+            user_data['dados_fisicos'].get('forca_superior', 0),
+            0, 50
+        )
+        forca_inf_score = normalize_score(
+            user_data['dados_fisicos'].get('forca_inferior', 0),
+            0, 60
+        )
+        scores.append(np.mean([velocidade_score, forca_sup_score, forca_inf_score]) * 0.3)
+    
+    # Habilidades técnicas (peso 30%)
+    if user_data.get('habilidades_tecnicas'):
+        coord_score = normalize_score(
+            user_data['habilidades_tecnicas'].get('coordenacao', 0),
+            0, 50
+        )
+        prec_score = normalize_score(
+            user_data['habilidades_tecnicas'].get('precisao', 0),
+            0, 10
+        )
+        agil_score = normalize_score(
+            user_data['habilidades_tecnicas'].get('agilidade', 15),
+            5, 15, inverse=True
+        )
+        equil_score = normalize_score(
+            user_data['habilidades_tecnicas'].get('equilibrio', 0),
+            0, 60
+        )
+        scores.append(np.mean([coord_score, prec_score, agil_score, equil_score]) * 0.3)
+    
+    # Aspectos táticos (peso 20%)
+    if user_data.get('aspectos_taticos'):
+        taticos = user_data['aspectos_taticos']
+        decisao_score = normalize_score(taticos.get('tomada_decisao', 0), 0, 10)
+        visao_score = normalize_score(taticos.get('visao_jogo', 0), 0, 10)
+        posic_score = normalize_score(taticos.get('posicionamento', 0), 0, 10)
+        scores.append(np.mean([decisao_score, visao_score, posic_score]) * 0.2)
+    
+    # Fatores psicológicos (peso 20%)
+    if user_data.get('fatores_psicologicos'):
+        psic = user_data['fatores_psicologicos']
+        mot_scores = [
+            psic.get('motivacao', {}).get(k, 0)
+            for k in ['dedicacao', 'frequencia', 'comprometimento']
+        ]
+        res_scores = [
+            psic.get('resiliencia', {}).get(k, 0)
+            for k in ['derrotas', 'criticas', 'erros']
+        ]
+        team_scores = [
+            psic.get('trabalho_equipe', {}).get(k, 0)
+            for k in ['comunicacao', 'opinioes', 'contribuicao']
+        ]
+        
+        psic_score = np.mean([
+            np.mean(mot_scores),
+            np.mean(res_scores),
+            np.mean(team_scores)
+        ])
+        scores.append(normalize_score(psic_score, 0, 10) * 0.2)
+    
+    # Calcula score final
+    if not scores:
+        return 50.0
+        
+    base_score = sum(scores)
+    
+    # Adiciona variação aleatória de ±5%
+    variation = np.random.uniform(-5, 5)
+    final_score = max(20, min(100, base_score + variation))
+    
+    return final_score
 
 def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
     """
