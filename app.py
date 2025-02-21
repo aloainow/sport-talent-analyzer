@@ -1,17 +1,16 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
-import plotly.graph_objects as go
 
-# Importações locais
-from utils.test_processor import normalize_score, calculate_average, process_test_results
-from utils.openai_helper import get_sport_recommendations
-
-# Configuração da página
 st.set_page_config(
     page_title="Analisador de Talentos Esportivos",
     page_icon="🏃‍♂️",
     layout="wide"
 )
+
+# Agora os outros imports podem vir abaixo
+from streamlit_option_menu import option_menu
+import plotly.graph_objects as go
+from utils.test_processor import normalize_score, calculate_average, process_test_results
+from utils.openai_helper import get_sport_recommendations, get_recommendations_without_api
 
 def reset_session_state():
     """Reseta completamente o estado da sessão"""
