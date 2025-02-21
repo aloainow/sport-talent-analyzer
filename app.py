@@ -273,6 +273,9 @@ def show_dados_fisicos():
     
     st.info("Complete os testes físicos abaixo. Realize cada teste conforme as instruções.")
     
+    # Pegar o gênero do usuário do session state
+    genero = st.session_state.personal_info.get('genero', 'Masculino')
+    
     # Teste de Velocidade
     with st.expander("Corrida de 20 metros", expanded=True):
         st.write("**Material necessário:** Fita métrica/trena, cronômetro, 2 marcadores")
@@ -284,11 +287,18 @@ def show_dados_fisicos():
         4. Registre o tempo
         """)
         st.write("**Classificação:**")
-        st.write("""
-        - Iniciante: >4.0s
-        - Intermediário: 3.5-4.0s
-        - Avançado: <3.5s
-        """)
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: >4.0s
+            - Intermediário: 3.5-4.0s
+            - Avançado: <3.5s
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: >4.5s
+            - Intermediário: 4.0-4.5s
+            - Avançado: <4.0s
+            """)
         velocidade = st.number_input("Tempo (segundos)", min_value=0.0, max_value=10.0, step=0.1)
     
     # Força Superior
@@ -301,11 +311,18 @@ def show_dados_fisicos():
         3. Conte o número máximo de repetições
         """)
         st.write("**Classificação:**")
-        st.write("""
-        - Iniciante: 10-15 repetições
-        - Intermediário: 16-25 repetições
-        - Avançado: 26+ repetições
-        """)
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: 10-15 repetições
+            - Intermediário: 16-25 repetições
+            - Avançado: 26+ repetições
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: 5-10 repetições
+            - Intermediário: 11-20 repetições
+            - Avançado: 21+ repetições
+            """)
         forca_superior = st.number_input("Número de flexões", min_value=0, max_value=100)
 
     # Força Inferior
@@ -318,21 +335,28 @@ def show_dados_fisicos():
         3. Conte o número máximo de repetições
         """)
         st.write("**Classificação:**")
-        st.write("""
-        - Iniciante: 20-30 repetições
-        - Intermediário: 31-40 repetições
-        - Avançado: 41+ repetições
-        """)
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: 20-30 repetições
+            - Intermediário: 31-40 repetições
+            - Avançado: 41+ repetições
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: 15-25 repetições
+            - Intermediário: 26-35 repetições
+            - Avançado: 36+ repetições
+            """)
         forca_inferior = st.number_input("Número de agachamentos", min_value=0, max_value=100)
     
     if st.button("Salvar Dados Físicos"):
         st.session_state.test_results['dados_fisicos'] = {
             'velocidade': velocidade,
             'forca_superior': forca_superior,
-            'forca_inferior': forca_inferior
+            'forca_inferior': forca_inferior,
+            'genero': genero  # Adicionando o gênero aos dados salvos
         }
-        st.success("Resultados salvos com sucesso!")
-        
+        st.success("Resultados salvos com sucesso!")        
 def show_habilidades_tecnicas():
     st.title("🎯 Habilidades Técnicas")
     
