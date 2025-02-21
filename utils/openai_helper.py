@@ -359,7 +359,7 @@ def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age:
         st.error(f"Erro no cálculo de compatibilidade física: {str(e)}")
         return 50
 
-def calculate_biotype_compatibility(user_data: Dict, sport: Dict, gender: str) -> float:
+def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series, gender: str) -> float:
     """
     Calcula a compatibilidade do biotipo do usuário com o esporte, ajustando faixas para cada gênero.
     """
@@ -520,7 +520,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         for _, sport in sports_data.iterrows():
             try:
                 sport_name = sport['Event']
-                biotype_score = calculate_biotype_compatibility(user_data, sport)
+                biotype_score = calculate_biotype_compatibility(user_data, sport, user_gender)
                 physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
 
                 tech_score = np.mean([
