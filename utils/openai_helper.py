@@ -92,39 +92,63 @@ def calculate_biotype_compatibility(user_data: Dict, sport_data: pd.Series) -> f
     
     return np.mean(scores) if scores else 50
 
-def calculate_physical_compatibility(user_data: Dict, sport_name: str) -> float:
+def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age: int = 18) -> float:
     """
-    Calcula compatibilidade física baseada nos testes
+    Calcula compatibilidade física baseada nos testes, ajustada pela idade
+    
+    Args:
+        user_data (Dict): Dados do usuário
+        sport_name (str): Nome do esporte
+        user_age (int): Idade do usuário (default: 18)
+        
+    Returns:
+        float: Score de compatibilidade física (0-100)
     """
     if not user_data.get('dados_fisicos'):
         return 50
         
     scores = []
+    gender = user_data.get('genero', 'Masculino')
     
     # Velocidade (esportes que valorizam velocidade)
     velocity_sports = ['Athletics', 'Swimming', 'Cycling', 'Sprint']
     if any(sport in sport_name for sport in velocity_sports):
-        velocity_score = normalize_score(
-            user_data['dados_fisicos'].get('velocidade', 5),
-            2.5, 5.0, inverse=True
+        velocity_score = calculate_age_adjusted_score(
+            value=user_data['dados_fisicos'].get('velocidade', 5),
+            test_type='dados_fisicos',
+            test_name='velocidade',
+            age=user_age,
+            gender=gender
         )
-        scores.append(velocity_score * 1.5)
+        scores.append(velocity_score * 1.5)  # Peso maior para esportes de velocidade
     
     # Força (esportes que valorizam força)
     strength_sports = ['Weightlifting', 'Wrestling', 'Judo', 'Boxing']
     if any(sport in sport_name for sport in strength_sports):
-        strength_upper = normalize_score(
-            user_data['dados_fisicos'].get('forca_superior', 0),
-            0, 50
+        strength_upper = calculate_age_adjusted_score(
+            value=user_data['dados_fisicos'].get('forca_superior', 0),
+            test_type='dados_fisicos',
+            test_name='forca_superior',
+            age=user_age,
+            gender=gender
         )
-        strength_lower = normalize_score(
-            user_data['dados_fisicos'].get('forca_inferior', 0),
-            0, 60
+        
+        strength_lower = calculate_age_adjusted_score(
+            value=user_data['dados_fisicos'].get('forca_inferior', 0),
+            test_type='dados_fisicos',
+            test_name='forca_inferior',
+            age=user_age,
+            gender=gender
         )
+        
         scores.extend([strength_upper * 1.5, strength_lower * 1.5])
     
-    return np.mean(scores) if scores else 50
-
+    # Ajuste baseado na idade
+    age_factor = min(1.0, max(0.6, (user_age - 10) / 8))  # Fator cresce com a idade (0.6 a 1.0)
+    final_score = np.mean(scores) if scores else 50
+    
+    # Score final ajustado pela idade
+    return final_score * age_factor
 # Dicionário de traduções de esportes
 SPORTS_TRANSLATIONS = {
     # Atletismo
