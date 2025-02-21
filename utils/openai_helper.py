@@ -8,7 +8,7 @@ import streamlit as st
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
-        if value is None:
+        if value is None or value == "":  # Adicionado para evitar NoneType
             return 0
         value = float(value)
         if inverse:
@@ -511,9 +511,17 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         # Filtrar eventos por gênero
         try:
             if user_gender == "Feminino":
-                sports_data = sports_data[sports_data['Event'].str.contains("Women|Mixed", case=False, regex=True)]
+                sports_data = sports_data[
+                    (~sports_data['Event'].str.contains("Men's", case=False)) | 
+                    (sports_data['Event'].str.contains("Women's", case=False)) |
+                    (sports_data['Event'].str.contains("Mixed", case=False))
+                ]
             elif user_gender == "Masculino":
-                sports_data = sports_data[sports_data['Event'].str.contains("Men|Mixed", case=False, regex=True)]
+                sports_data = sports_data[
+                    (~sports_data['Event'].str.contains("Women's", case=False)) | 
+                    (sports_data['Event'].str.contains("Men's", case=False)) |
+                    (sports_data['Event'].str.contains("Mixed", case=False))
+                ]
 
             if sports_data.empty:
                 st.warning("Nenhum esporte encontrado para o gênero selecionado")
@@ -560,6 +568,9 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 # Ajuste baseado na idade
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
                 final_score = min(90, base_score * age_factor)
+
+                # Debugging: verificar cálculo de score
+                st.write(f"Calculado para {sport_name}: base_score={base_score}, age_factor={age_factor}, final_score={final_score}")
 
                 # Traduzir nome do esporte
                 translated_name = translate_sport_name(sport_name, user_gender)
