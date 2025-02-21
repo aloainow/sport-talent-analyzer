@@ -417,15 +417,21 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         }
 
         # Verificar se todos os testes foram completados
-        if not all(user_data[key] for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
-            st.error("Por favor, complete todos os testes antes de gerar recomendações.")
+        missing_tests = [
+            key.replace('_', ' ').title() 
+            for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos'] 
+            if not user_data[key]
+        ]
+        
+        if missing_tests:
+            st.error(f"Por favor, complete os seguintes testes: {', '.join(missing_tests)}")
             return []
 
         # Carregar dados dos esportes
         sports_data = load_and_process_data()
         if sports_data is None or sports_data.empty:
-            st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
-            return get_recommendations_without_api(user_data['genero'])
+            st.error("Erro ao carregar dados dos esportes. Por favor, tente novamente mais tarde.")
+            return []
 
         # Filtrar esportes por gênero
         if user_data['genero'] == "Feminino":
@@ -433,7 +439,13 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         else:
             sports_data = sports_data[sports_data['Event'].str.contains("Men's", case=False, na=False)]
 
+        if sports_data.empty:
+            st.error(f"Não foram encontrados esportes para o gênero {user_data['genero']}")
+            return []
+
         recommendations = []
+        processed_sports = 0
+        errors = 0
 
         for _, sport in sports_data.iterrows():
             try:
@@ -447,7 +459,10 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 psych_score = calculate_psychological_score(user_data)
 
                 # Calcular score base
-                base_score = calculate_base_score(biotype_score, physical_score, tech_score, tactic_score, psych_score, sport_name, user_data)
+                base_score = calculate_base_score(
+                    biotype_score, physical_score, tech_score, 
+                    tactic_score, psych_score, sport_name, user_data
+                )
 
                 # Traduzir nome do esporte
                 translated_name = translate_sport_name(sport_name, user_data['genero'])
@@ -462,19 +477,27 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     "strengths": strengths,
                     "development": development
                 })
+                processed_sports += 1
 
             except Exception as sport_e:
+                errors += 1
                 st.warning(f"Erro ao processar esporte {sport_name}: {str(sport_e)}")
                 continue
+
+        if not recommendations:
+            st.error("Não foi possível gerar recomendações. Por favor, verifique seus dados e tente novamente.")
+            return []
+
+        if errors > 0:
+            st.warning(f"Alguns esportes ({errors}) não puderam ser processados, mas encontramos {processed_sports} recomendações para você.")
 
         # Ordenar recomendações
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
         return recommendations[:10]
 
     except Exception as e:
-        st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api(user_data['genero'])
-
+        st.error(f"Erro inesperado ao gerar recomendações: {str(e)}")
+        return []
 def calculate_technical_score(user_data: Dict) -> float:
     """Calcula score técnico do usuário"""
     if not user_data.get('habilidades_tecnicas'):
@@ -606,124 +629,7 @@ return min(100, max(20, base_score))
     except Exception as e:
         st.warning(f"Erro no cálculo do score base: {str(e)}")
         return 50.0
-        
-        def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
-    """
-    Retorna recomendações padrão caso haja problema com os dados
-    """
-    if gender == "Masculino":
-        return [
-            {
-                "name": "Basquete Masculino",
-                "compatibility": 75,
-                "strengths": ["Altura", "Coordenação"],
-                "development": ["Agilidade", "Resistência"]
-            },
-            {
-                "name": "Vôlei Masculino",
-                "compatibility": 70,
-                "strengths": ["Altura", "Força Superior"],
-                "development": ["Velocidade", "Resistência"]
-            },
-            {
-                "name": "Atletismo Lançamento de Dardo Masculino",
-                "compatibility": 65,
-                "strengths": ["Força Superior", "Coordenação"],
-                "development": ["Técnica específica", "Equilíbrio"]
-            }
-        ]
-    elif gender == "Feminino":
-        return [
-            {
-                "name": "Basquete Feminino",
-                "compatibility": 75,
-                "strengths": ["Altura", "Coordenação"],
-                "development": ["Agilidade", "Resistência"]
-            },
-            {
-                "name": "Vôlei Feminino",
-                "compatibility": 70,
-                "strengths": ["Altura", "Força Superior"],
-                "development": ["Velocidade", "Resistência"]
-            },
-            {
-                "name": "Ginástica Rítmica",
-                "compatibility": 65,
-                "strengths": ["Flexibilidade", "Coordenação"],
-                "development": ["Força", "Equilíbrio"]
-            }
-        ]
-    else:
-        return [
-            {
-                "name": "Basquete",
-                "compatibility": 75,
-                "strengths": ["Altura", "Coordenação"],
-                "development": ["Agilidade", "Resistência"]
-            },
-            {
-                "name": "Vôlei",
-                "compatibility": 70,
-                "strengths": ["Altura", "Força Superior"],
-                "development": ["Velocidade", "Resistência"]
-            },
-            {
-                "name": "Atletismo",
-                "compatibility": 65,
-                "strengths": ["Força", "Coordenação"],
-                "development": ["Técnica", "Resistência"]
-            }
-        ]
-
-# Código de exemplo para teste/verificação
-if __name__ == '__main__':
-    # Exemplo de dados de usuário para teste
-    exemplo_dados_usuario = {
-        'genero': 'Masculino',
-        'idade': 16,
-        'biotipo': {
-            'altura': 175,
-            'peso': 70,
-            'envergadura': 180
-        },
-        'dados_fisicos': {
-            'velocidade': 4.0,
-            'forca_superior': 35,
-            'forca_inferior': 45
-        },
-        'habilidades_tecnicas': {
-            'coordenacao': 40,
-            'precisao': 7,
-            'agilidade': 8,
-            'equilibrio': 45
-        },
-        'aspectos_taticos': {
-            'tomada_decisao': 7,
-            'visao_jogo': 6,
-            'posicionamento': 7
-        },
-        'fatores_psicologicos': {
-            'motivacao': {
-                'dedicacao': 8,
-                'frequencia': 7,
-                'comprometimento': 8
-            },
-            'resiliencia': {
-                'derrotas': 7,
-                'criticas': 6,
-                'erros': 7
-            },
-            'trabalho_equipe': {
-                'comunicacao': 8,
-                'opinioes': 7,
-                'contribuicao': 8
-            }
-        }
-    }
-    
-    # Gerar recomendações
-    recomendacoes = get_sport_recommendations(exemplo_dados_usuario)
-    
+            
     # Imprimir recomendações
     print("Recomendações de Esportes:")
     for rec in recomendacoes:
