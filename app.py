@@ -5,7 +5,12 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Any
 import os
+import json
 
+# Importar funções dos módulos utils
+from utils.sport_helper import get_sport_recommendations
+from utils.test_processor import process_test_results
+from utils.age_adjusted_calculations import get_age_group
 try:
     from utils.sport_helper import (
         get_sport_recommendations,
