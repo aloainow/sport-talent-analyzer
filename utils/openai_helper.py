@@ -33,23 +33,23 @@ def load_and_process_data() -> pd.DataFrame:
     Carrega e processa os dados dos esportes olímpicos
     """
     try:
-        # Your existing implementation of load_and_process_data
-        sports_data = {
-            'Event': [
-                # Your list of events
-            ]
-        }
+        # Read the Olympic events CSV file
+        df = pd.read_csv('perfil_eventos_olimpicos_verao.csv', encoding='utf-8')
         
-        df = pd.DataFrame(sports_data)
-        df['Sport'] = df['Event'].apply(lambda x: x.split()[0])
-        df['Gender'] = df['Event'].apply(lambda x: 'Women' if "Women's" in x else 'Men')
+        # Create a full Event column if it doesn't exist
+        if 'Event' not in df.columns:
+            df['Event'] = df['Sport'] + " " + df['Gender'] + "'s " + df['Distance/Category']
+        
+        # Ensure consistent naming convention
+        df['Sport'] = df['Sport'].str.title()
+        df['Gender'] = df['Gender'].apply(lambda x: "Women's" if x.lower() == 'female' else "Men's")
         
         return df
         
     except Exception as e:
         st.error(f"Erro ao carregar dados dos esportes: {str(e)}")
         return None
-
+        
 def translate_sport_name(sport_name: str, user_gender: str) -> str:
     """
     Traduz o nome completo do evento esportivo de inglês para português
@@ -150,9 +150,9 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
         # Filtrar esportes por gênero
         if user_gender == "Feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Women's", case=False)]
+            sports_data = sports_data[sports_data['Gender'] == "Women's"]
         elif user_gender == "Masculino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Men's", case=False)]
+            sports_data = sports_data[sports_data['Gender'] == "Men's"]
 
         if sports_data.empty:
             st.warning("Nenhum esporte encontrado para o gênero selecionado")
@@ -214,7 +214,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-
+        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
