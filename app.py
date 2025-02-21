@@ -3,39 +3,19 @@ from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Any
-import os
 import json
+import os
+from typing import Dict, List, Any
 
-# Importar funções dos módulos utils
-from utils.sport_helper import get_sport_recommendations
-from utils.test_processor import process_test_results
-from utils.age_adjusted_calculations import get_age_group
+# Importações diretas dos módulos
 try:
-    from utils.sport_helper import (
-        get_sport_recommendations,
-        calculate_biotype_compatibility,
-        calculate_physical_compatibility,
-        get_sport_strengths,
-        get_development_areas,
-        translate_sport_name,
-        load_and_process_data
-    )
-    from utils.test_processor import (
-        normalize_score,
-        calculate_average,
-        process_test_results
-    )
-    from utils.age_adjusted_calculations import (
-        get_age_group,
-        calculate_age_adjusted_score,
-        get_development_potential,
-        calculate_final_score
-    )
-except ImportError as e:
-    st.error(f"Erro ao importar módulos: {str(e)}")
-    st.error("Verifique se a estrutura do projeto está correta e se todos os arquivos necessários estão presentes.")
-st.set_page_config(
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from utils.sport_helper import get_sport_recommendations
+    from utils.test_processor import process_test_results
+    from utils.age_adjusted_calculations import get_age_group
+except Exception as e:
+    
+    st.error(f"Erro ao importar módulos: {str(e)}")st.set_page_config(
     page_title="Analisador de Talentos Esportivos",
     page_icon="🏃‍♂️",
     layout="wide"
