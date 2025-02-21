@@ -63,18 +63,39 @@ def show_home():
         col1, col2 = st.columns(2)
 
         with col1:
-            altura = st.number_input("Altura (cm)", min_value=0, max_value=300, value=st.session_state.personal_info.get('altura', 170), key=f"altura_{st.session_state.form_key}")
-            peso = st.number_input("Peso (kg)", min_value=0, max_value=300, value=st.session_state.personal_info.get('peso', 70), key=f"peso_{st.session_state.form_key}")
-            envergadura = st.number_input("Envergadura (cm)", min_value=0, max_value=300, value=st.session_state.personal_info.get('envergadura', 170), key=f"envergadura_{st.session_state.form_key}")
+            idade = st.number_input("Idade", 
+                                  min_value=10, 
+                                  max_value=18, 
+                                  value=st.session_state.personal_info.get('idade', 15),
+                                  help="Idade entre 10 e 18 anos")
+            
+            altura = st.number_input("Altura (cm)", 
+                                   min_value=100, 
+                                   max_value=220, 
+                                   value=st.session_state.personal_info.get('altura', 170))
+            
+            peso = st.number_input("Peso (kg)", 
+                                 min_value=30, 
+                                 max_value=150, 
+                                 value=st.session_state.personal_info.get('peso', 60))
 
         with col2:
-            idade = st.number_input("Idade", min_value=0, max_value=150, value=st.session_state.personal_info.get('idade', 25), key=f"idade_{st.session_state.form_key}")
-            ano_nascimento = st.number_input("Ano de Nascimento", min_value=1900, max_value=2024, value=st.session_state.personal_info.get('ano_nascimento', 2000), key=f"ano_nascimento_{st.session_state.form_key}")
+            envergadura = st.number_input("Envergadura (cm)", 
+                                        min_value=100, 
+                                        max_value=230, 
+                                        value=st.session_state.personal_info.get('envergadura', 170))
+            
             genero = st.selectbox(
                 "Gênero",
-                ["Masculino", "Feminino", "Prefiro não informar"],
-                index=0,
-                key=f"genero_{st.session_state.form_key}"
+                ["Masculino", "Feminino"],
+                index=0 if st.session_state.personal_info.get('genero') == "Masculino" else 1
+            )
+
+            ano_nascimento = st.number_input(
+                "Ano de Nascimento",
+                min_value=2006,  # Para idade máxima de 18 anos em 2024
+                max_value=2014,  # Para idade mínima de 10 anos em 2024
+                value=st.session_state.personal_info.get('ano_nascimento', 2009)
             )
 
         # Localização
@@ -82,32 +103,32 @@ def show_home():
         col3, col4, col5 = st.columns(3)
 
         with col3:
-            cidade = st.text_input("Cidade", value=st.session_state.personal_info.get('cidade', ''), key=f"cidade_{st.session_state.form_key}")
+            cidade = st.text_input("Cidade", value=st.session_state.personal_info.get('cidade', ''))
         with col4:
-            estado = st.text_input("Estado", value=st.session_state.personal_info.get('estado', ''), key=f"estado_{st.session_state.form_key}")
+            estado = st.text_input("Estado", value=st.session_state.personal_info.get('estado', ''))
         with col5:
-            pais = st.text_input("País", value=st.session_state.personal_info.get('pais', ''), key=f"pais_{st.session_state.form_key}")
+            pais = st.text_input("País", value=st.session_state.personal_info.get('pais', ''))
 
         submitted = st.form_submit_button("Salvar Informações")
 
         if submitted:
             st.session_state.personal_info = {
+                'idade': idade,
                 'altura': altura,
                 'peso': peso,
                 'envergadura': envergadura,
-                'idade': idade,
+                'genero': genero,
                 'ano_nascimento': ano_nascimento,
                 'cidade': cidade,
                 'estado': estado,
-                'pais': pais,
-                'genero': genero
+                'pais': pais
             }
             st.session_state.form_key += 1
             st.success("Informações pessoais salvas com sucesso!")
 
     # Progresso dos Testes
     st.subheader("Seu Progresso")
-
+    
     test_categories = {
         "Dados Físicos": 'dados_fisicos',
         "Habilidades Técnicas": 'habilidades_tecnicas',
@@ -117,8 +138,7 @@ def show_home():
 
     for label, category in test_categories.items():
         progress = 1.0 if category in st.session_state.test_results and st.session_state.test_results[category] else 0.0
-        st.progress(progress, text=f"{label}: {int(progress * 100)}%")
-        
+        st.progress(progress, text=f"{label}: {int(progress * 100)}%")        
 
 def create_radar_chart(scores):
     """Cria um gráfico radar com os scores processados."""
