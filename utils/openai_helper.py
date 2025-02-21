@@ -26,21 +26,73 @@ def normalize_score(value, min_val, max_val, inverse=False):
     except (TypeError, ValueError):
         return 50.0
 
-# Dicionário de traduções de termos gerais (mantido do código original)
 SPORTS_TRANSLATIONS = {
-    # ... (manter o dicionário original de SPORTS_TRANSLATIONS)
+    # Esportes Principais
     "Athletics": "Atletismo",
     "Swimming": "Natação",
-    # ... outros esportes
+    "Gymnastics": "Ginástica",
+    "Wrestling": "Luta Livre",
+    "Boxing": "Boxe",
+    "Weightlifting": "Levantamento de Peso",
+    "Cycling": "Ciclismo",
+    "Fencing": "Esgrima",
+    "Shooting": "Tiro",
+    "Diving": "Saltos Ornamentais",
+    "Basketball": "Basquete",
+    "Volleyball": "Vôlei",
+    "Football": "Futebol",
+    "Handball": "Handebol",
+    "Water Polo": "Polo Aquático",
+    "Baseball": "Beisebol",
+    "Tennis": "Tênis",
+    "Table Tennis": "Tênis de Mesa",
+    "Badminton": "Badminton",
+    "Hockey": "Hóquei",
+    "Rugby": "Rúgbi",
+    "Judo": "Judô",
+    "Taekwondo": "Taekwondo",
+    "Sailing": "Vela",
+    "Rowing": "Remo",
+    "Canoeing": "Canoagem",
+    "Archery": "Tiro com Arco",
+    
+    # Categorias de Peso
+    "Flyweight": "Peso Mosca",
+    "Light-Flyweight": "Peso Mosca Ligeiro",
+    "Bantamweight": "Peso Galo",
+    "Featherweight": "Peso Pena",
+    "Lightweight": "Peso Leve",
+    "Welterweight": "Peso Meio-Médio",
+    "Middleweight": "Peso Médio",
+    "Light-Heavyweight": "Peso Meio-Pesado",
+    "Heavyweight": "Peso Pesado",
+    "Super-Heavyweight": "Peso Super-Pesado",
+    
+    # Tipos de Prova
+    "Individual": "Individual",
+    "Team": "Equipe",
+    "Singles": "Individual",
+    "Doubles": "Duplas",
+    "Mixed": "Misto",
+    "Freestyle": "Estilo Livre",
+    "All-Around": "Individual Geral",
+    
+    # Distâncias e Medidas
+    "metres": "metros",
+    "Relay": "Revezamento",
+    "Marathon": "Maratona",
+    "Road Race": "Corrida de Estrada",
+    
+    # Direção e Gênero
+    "Men's": "Masculino",
+    "Women's": "Feminino"
 }
+
 
 # Dicionário de traduções de eventos completos (mantido do código original)
 EVENT_TRANSLATIONS = {
-    # ... (manter o dicionário original de EVENT_TRANSLATIONS)
-    "Athletics Men's 100 metres": "Atletismo 100 metros Masculino",
-    # ... outros eventos
+    # Será substituído pelo conteúdo gerado pelo script de tradução
 }
-
 def load_and_process_data() -> pd.DataFrame:
     """
     Carrega e processa os dados dos esportes olímpicos do CSV
