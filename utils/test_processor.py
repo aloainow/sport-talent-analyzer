@@ -4,7 +4,7 @@ import numpy as np
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
-        if value is None:
+        if value is None or value == "":  # Adicionado para evitar NoneType
             return 0
         value = float(value)
         if inverse:
