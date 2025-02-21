@@ -50,21 +50,52 @@ def calculate_biotype_compatibility(user_data: Dict, sport_data: pd.Series) -> f
     # Altura
     if 'altura' in user_data:
         height = user_data['altura']
-        height_score = normalize_score(height, sport_data['altura_min'], sport_data['altura_max'])
-        if sport_data['altura_min'] <= height <= sport_data['altura_max']:
-            height_score += 20
-        scores.append(height_score)
+        altura_min = sport_data.get('altura_min')
+        altura_max = sport_data.get('altura_max')
+        
+        # Verificar se os valores são válidos antes de calcular
+        if altura_min is not None and altura_max is not None and height is not None:
+            try:
+                altura_min = float(altura_min)
+                altura_max = float(altura_max)
+                height = float(height)
+                
+                height_score = normalize_score(height, altura_min, altura_max)
+                if altura_min <= height <= altura_max:
+                    height_score += 20
+                scores.append(height_score)
+            except (ValueError, TypeError):
+                # Se houver erro na conversão, usa score padrão
+                scores.append(50)
+        else:
+            # Se algum valor é None, usa score padrão
+            scores.append(50)
     
     # Peso
     if 'peso' in user_data:
         weight = user_data['peso']
-        weight_score = normalize_score(weight, sport_data['peso_min'], sport_data['peso_max'])
-        if sport_data['peso_min'] <= weight <= sport_data['peso_max']:
-            weight_score += 20
-        scores.append(weight_score)
+        peso_min = sport_data.get('peso_min')
+        peso_max = sport_data.get('peso_max')
+        
+        # Verificar se os valores são válidos antes de calcular
+        if peso_min is not None and peso_max is not None and weight is not None:
+            try:
+                peso_min = float(peso_min)
+                peso_max = float(peso_max)
+                weight = float(weight)
+                
+                weight_score = normalize_score(weight, peso_min, peso_max)
+                if peso_min <= weight <= peso_max:
+                    weight_score += 20
+                scores.append(weight_score)
+            except (ValueError, TypeError):
+                # Se houver erro na conversão, usa score padrão
+                scores.append(50)
+        else:
+            # Se algum valor é None, usa score padrão
+            scores.append(50)
     
     return np.mean(scores) if scores else 50
-
 def calculate_physical_compatibility(user_data: Dict, sport_name: str) -> float:
     """
     Calcula compatibilidade física baseada nos testes
