@@ -290,11 +290,17 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.error("Erro ao carregar dados dos esportes. Por favor, tente novamente mais tarde.")
             return []
 
-        # Filtrar esportes por gênero
+        # Filtrar esportes por gênero (modificado)
         if user_data['genero'] == "Feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Women's", case=False, na=False)]
+            sports_data = sports_data[
+                sports_data['Event'].str.contains('Women', case=False, na=False) | 
+                ~sports_data['Event'].str.contains("Men's", case=False, na=False)
+            ]
         else:
-            sports_data = sports_data[sports_data['Event'].str.contains("Men's", case=False, na=False)]
+            sports_data = sports_data[
+                sports_data['Event'].str.contains("Men's", case=False, na=False) | 
+                ~sports_data['Event'].str.contains('Women', case=False, na=False)
+            ]
         
         if sports_data.empty:
             st.error(f"Não foram encontrados esportes para o gênero {user_data['genero']}")
