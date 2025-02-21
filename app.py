@@ -1,14 +1,28 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
-from utils.test_processor import normalize_score, calculate_average, process_test_results
-from utils.sport_helper import (
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Any
+import os
+
+# Importar todas as funções necessárias do módulo utils
+from utils import (
     get_sport_recommendations,
     get_recommendations_without_api,
     calculate_biotype_compatibility,
     calculate_physical_compatibility,
     get_sport_strengths,
-    get_development_areas
+    get_development_areas,
+    translate_sport_name,
+    load_and_process_data,
+    normalize_score,
+    calculate_average,
+    process_test_results,
+    get_age_group,
+    calculate_age_adjusted_score,
+    get_development_potential,
+    calculate_final_score
 )
 
 st.set_page_config(
