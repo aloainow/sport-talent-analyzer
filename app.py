@@ -695,14 +695,18 @@ def show_recommendations():
     try:
         with st.spinner("Analisando seus resultados..."):
             user_data = {
-                'altura': st.session_state.personal_info.get('altura'),
-                'peso': st.session_state.personal_info.get('peso'),
-                'envergadura': st.session_state.personal_info.get('envergadura'),
-                'dados_fisicos': st.session_state.test_results['dados_fisicos'],
-                'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
-                'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
-                'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
-            }
+    'genero': st.session_state.personal_info.get('genero', 'Masculino'),  # Adicionei este campo
+    'idade': st.session_state.personal_info.get('idade'),
+    'biotipo': {
+        'altura': st.session_state.personal_info.get('altura'),
+        'peso': st.session_state.personal_info.get('peso'),
+        'envergadura': st.session_state.personal_info.get('envergadura')
+    },
+    'dados_fisicos': st.session_state.test_results['dados_fisicos'],
+    'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
+    'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
+    'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
+}
 
             # Processar scores para o gráfico radar
             processed_scores = process_test_results(st.session_state.test_results)
