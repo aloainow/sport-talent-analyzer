@@ -25,15 +25,23 @@ def load_and_process_data():
                 
                 sports_list = []
                 for sport in sports_data['sports']:
-                    sports_list.append({
-                        'Event': sport['name'],
-                        'Category': sport['category'],
-                        'Physical_Requirements': sport['requirements']['physical'],
-                        'Technical_Requirements': sport['requirements']['technical'],
-                        'Tactical_Requirements': sport['requirements']['tactical'],
-                        'Psychological_Requirements': sport['requirements']['psychological'],
-                        'Key_Attributes': sport['key_attributes']
-                    })
+                    # Adicione variações de eventos
+                    events = [
+                        f"{sport['name']} Masculino",
+                        f"{sport['name']} Feminino",
+                        sport['name']
+                    ]
+                    
+                    for event in events:
+                        sports_list.append({
+                            'Event': event,
+                            'Category': sport['category'],
+                            'Physical_Requirements': sport['requirements']['physical'],
+                            'Technical_Requirements': sport['requirements']['technical'],
+                            'Tactical_Requirements': sport['requirements']['tactical'],
+                            'Psychological_Requirements': sport['requirements']['psychological'],
+                            'Key_Attributes': sport['key_attributes']
+                        })
                 
                 return pd.DataFrame(sports_list)
                 
@@ -43,7 +51,6 @@ def load_and_process_data():
     except Exception as e:
         st.error(f"Erro ao carregar dados dos esportes: {str(e)}")
         return None
-
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
@@ -225,12 +232,13 @@ def calculate_base_score(biotype_score: float, physical_score: float, tech_score
                         user_data: Dict) -> float:
     """Calcula o score base considerando todos os fatores"""
     try:
+        # Pesos ajustados para maior variação
         weights = {
-            'biotype': 0.25,
+            'biotype': 0.3,
             'physical': 0.25,
-            'technical': 0.20,
+            'technical': 0.2,
             'tactical': 0.15,
-            'psychological': 0.15
+            'psychological': 0.1
         }
         
         base_score = (
@@ -243,25 +251,27 @@ def calculate_base_score(biotype_score: float, physical_score: float, tech_score
         
         sport_name_lower = sport_name.lower()
         
+        # Fatores de ajuste específicos
         if user_data['biotipo']['altura'] >= 180 and any(s in sport_name_lower for s in ['basketball', 'volleyball']):
-            base_score *= 1.15
+            base_score *= 1.2
             
         if any(s in sport_name_lower for s in ['weightlifting', 'wrestling', 'boxing']):
             strength = user_data['dados_fisicos'].get('forca_superior', 0)
             if strength >= 40:
-                base_score *= 1.1
+                base_score *= 1.15
                 
         if any(s in sport_name_lower for s in ['athletics', 'swimming', 'cycling']):
             speed = user_data['dados_fisicos'].get('velocidade', 5.0)
             if speed <= 3.5:
-                base_score *= 1.1
+                base_score *= 1.15
                 
         if 'gymnastics' in sport_name_lower:
             balance = user_data['habilidades_tecnicas'].get('equilibrio', 0)
             if balance >= 50:
-                base_score *= 1.1
+                base_score *= 1.15
         
-        age_factor = min(1.0, max(0.6, (user_data['idade'] - 10) / 8))
+        # Ajuste por idade com mais impacto
+        age_factor = min(1.2, max(0.7, (user_data['idade'] - 10) / 6))
         base_score *= age_factor
         
         return min(100, max(20, base_score))
@@ -269,7 +279,6 @@ def calculate_base_score(biotype_score: float, physical_score: float, tech_score
     except Exception as e:
         st.warning(f"Erro no cálculo do score base: {str(e)}")
         return 50.0
-
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Gera recomendações de esportes baseadas nos dados do usuário"""
     try:
@@ -369,9 +378,11 @@ def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
             envergadura = user_data['biotipo'].get('envergadura', 0)
             
             if altura >= 180 and any(s in sport_name for s in ['basketball', 'volleyball']):
-                strengths.append("Altura favorável")
+                strengths.append("Altura favorável para esportes de altura")
             if envergadura >= 190 and any(s in sport_name for s in ['swimming', 'boxing']):
-                strengths.append("Boa envergadura")
+                strengths.append("Envergadura excelente")
+            if peso >= 80 and any(s in sport_name for s in ['rugby', 'wrestling']):
+                strengths.append("Biotipo favorável para esportes de força")
         
         # Dados físicos
         if user_data.get('dados_fisicos'):
@@ -379,13 +390,13 @@ def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
             forca_superior = user_data['dados_fisicos'].get('forca_superior', 0)
             forca_inferior = user_data['dados_fisicos'].get('forca_inferior', 0)
             
-            if velocidade <= 3.5 and any(s in sport_name for s in ['athletics', 'swimming']):
-                strengths.append("Velocidade")
+            if velocidade <= 3.5:
+                strengths.append("Velocidade excepcional")
             if forca_superior >= 40:
-                strengths.append("Força superior")
+                strengths.append("Força superior desenvolvida")
             if forca_inferior >= 50:
-                strengths.append("Força inferior")
-        
+                strengths.append("Força inferior potente")
+            
         # Habilidades técnicas
         if user_data.get('habilidades_tecnicas'):
             coordenacao = user_data['habilidades_tecnicas'].get('coordenacao', 0)
@@ -393,11 +404,31 @@ def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
             equilibrio = user_data['habilidades_tecnicas'].get('equilibrio', 0)
             
             if coordenacao >= 40:
-                strengths.append("Coordenação")
+                strengths.append("Coordenação motora avançada")
             if precisao >= 8:
-                strengths.append("Precisão")
+                strengths.append("Alta precisão técnica")
             if equilibrio >= 50:
-                strengths.append("Equilíbrio")
+                strengths.append("Equilíbrio corporal excecional")
+        
+        # Aspectos táticos
+        if user_data.get('aspectos_taticos'):
+            tomada_decisao = user_data['aspectos_taticos'].get('tomada_decisao', 0)
+            visao_jogo = user_data['aspectos_taticos'].get('visao_jogo', 0)
+            
+            if tomada_decisao >= 8:
+                strengths.append("Tomada de decisão rápida")
+            if visao_jogo >= 8:
+                strengths.append("Excelente visão estratégica")
+        
+        # Fatores psicológicos
+        if user_data.get('fatores_psicologicos'):
+            motivacao = user_data['fatores_psicologicos'].get('motivacao', {})
+            resiliencia = user_data['fatores_psicologicos'].get('resiliencia', {})
+            
+            if motivacao.get('comprometimento', 0) >= 8:
+                strengths.append("Alto comprometimento")
+            if resiliencia.get('erros', 0) >= 8:
+                strengths.append("Resiliência em situações de pressão")
         
         # Retorna os 3 principais pontos fortes
         return strengths[:3] if strengths else ["Necessita avaliação completa"]
@@ -405,7 +436,6 @@ def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
     except Exception as e:
         st.warning(f"Erro ao identificar pontos fortes: {str(e)}")
         return ["Necessita avaliação completa"]
-
 def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
     """Identifica áreas de desenvolvimento para um determinado esporte"""
     try:
