@@ -1,9 +1,15 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import streamlit as st
 import pandas as pd
 import json
-import os
 import numpy as np
 from typing import Dict, List, Any
+
+from utils.test_processor import normalize_score, calculate_average
+from utils.age_adjusted_calculations import get_age_group
 
 # Importações locais
 from .test_processor import normalize_score, calculate_average
