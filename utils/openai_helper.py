@@ -1,14 +1,13 @@
-import pandas as pd
-import json
-import numpy as np
-from typing import Dict, List, Any
-import os
 import streamlit as st
+import numpy as np
+import pandas as pd
+from typing import Dict, Any, List
 
+# Reimport or redefine any functions that might be causing issues
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
-        if value is None or value == "":  # Adicionado para evitar NoneType
+        if value is None or value == "":
             return 0
         value = float(value)
         if inverse:
@@ -18,12 +17,12 @@ def normalize_score(value, min_val, max_val, inverse=False):
                 return 0
             return ((max_val - value) / (max_val - min_val)) * 100
         else:
-            if value <= min_val:
-                return 0
-            elif value >= max_val:
+            if value >= max_val:
                 return 100
+            elif value <= min_val:
+                return 0
             return ((value - min_val) / (max_val - min_val)) * 100
-    except Exception as e:
+    except (TypeError, ValueError):
         return 0
 
 
@@ -338,6 +337,13 @@ def translate_sport_name(sport_name: str, user_gender: str) -> str:
 
 def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series, user_gender: str) -> float:
     """Cálculo melhorado de compatibilidade biotipo"""
+     try:
+        # Adicione um print de debug para verificar o conteúdo do user_data
+        st.write("Debug - User Data:", user_data)
+        
+        if not user_data:
+            st.warning("Dados do usuário não fornecidos")
+            return 50  # Valor padrão se não houver dados de biotipo
     try:
         # Pegar dados do CSV de perfil olímpico
         sport_name = sport['Event'].lower()
@@ -345,6 +351,22 @@ def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series, user_gend
         peso = st.session_state.personal_info.get('peso', 60)
         
         scores = []
+
+    try:
+        # Adicione verificações explícitas
+        if not isinstance(user_data, dict):
+            st.error(f"Tipo de dados inválido: {type(user_data)}")
+            return 50
+        
+        # Verifica se os dados de biotipo existem
+        if 'biotipo' not in user_data or not user_data['biotipo']:
+            st.warning("Dados de biotipo não encontrados")
+            return 50  # Valor padrão se não houver dados de biotipo
+        
+        biotype_data = user_data['biotipo']
+        sport_name = sport['Event'].lower()
+        scores = []
+       
         
         # Comparar com médias olímpicas (usando os dados do CSV)
         if 'basketball' in sport_name:
@@ -361,12 +383,28 @@ def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series, user_gend
         # Score padrão se não houver regras específicas
         if not scores:
             scores.append(70)  # Score base razoável
-            
-        return np.mean(scores)
-    except Exception as e:
-        print(f"Erro no cálculo de biotipo: {str(e)}")
-        return 50
 
+
+        # Altura (150-220 cm)
+        if 'altura' in biotype_data:
+            height = biotype_data['altura']
+            
+            # Esportes que valorizam altura
+            if any(s in sport_name for s in ['basketball', 'volleyball']):
+                height_score = normalize_score(height, 170, 210)
+                scores.append(height_score * 1.5)  # Peso maior para altura
+        
+        # Se não houver scores, retorna valor padrão
+        if not scores:
+            return 50
+            
+        # Retorna média dos scores
+        return np.mean(scores)
+        except Exception as e:
+        st.error(f"Erro no cálculo de compatibilidade de biotipo: {str(e)}")
+        return 50
+        
+    
 def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age: int) -> float:
     """Cálculo melhorado de compatibilidade física"""
     try:
@@ -721,4 +759,19 @@ def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
     elif 'volleyball' in sport_name:
         return {'biotype': 0.3, 'physical': 0.2, 'technical': 0.25, 'tactical': 0.25}
     return default_weights
-    
+
+
+def safe_get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    try:
+        if not user_data:
+            st.error("Nenhum dado de usuário fornecido")
+            return []
+        
+        # Chame a função original de recomendações
+        return get_sport_recommendations(user_data)
+    except Exception as e:
+        st.error(f"Erro geral na geração de recomendações: {str(e)}")
+        return []
+
+# Atualize suas importações e funções exportadas
+__all__ = ['get_sport_recommendations', 'get_recommendations_without_api', 'safe_get_sport_recommendations']
