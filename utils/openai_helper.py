@@ -359,7 +359,7 @@ def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age:
         st.error(f"Erro no cálculo de compatibilidade física: {str(e)}")
         return 50
 
-def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series, gender: str) -> float:
+def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series, gender: str):
     """
     Calcula a compatibilidade do biotipo do usuário com o esporte, ajustando faixas para cada gênero.
     """
@@ -424,7 +424,7 @@ def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
                 strengths.append("Equilíbrio")
         
         # Limitar a 3 pontos fortes principais
-        return strengths[:3] if strengths else ["Avaliação pendente"]
+            return strengths[:3] if strengths else ["Avaliação pendente"]
         
     except Exception as e:
         st.warning(f"Erro ao identificar pontos fortes: {str(e)}")
@@ -508,9 +508,16 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         user_age = user_data.get('idade', 18)
 
         if user_gender == "feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Women's|Mixed", case=False)]
-        elif user_gender == "masculino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Men's|Mixed", case=False)]
+    sports_data = sports_data[
+        (sports_data['Event'].str.contains("Women", case=False)) |
+        (sports_data['Event'].str.contains("Mixed", case=False))
+    ]
+elif user_gender == "masculino":
+    sports_data = sports_data[
+        (sports_data['Event'].str.contains("Men", case=False) & 
+         ~sports_data['Event'].str.contains("Women", case=False)) |
+        (sports_data['Event'].str.contains("Mixed", case=False))
+    ]
 
         if sports_data.empty:
             st.warning("Nenhum esporte encontrado para o gênero selecionado")
@@ -535,14 +542,18 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     if metric in user_data['aspectos_taticos']
                 ]) if user_data.get('aspectos_taticos') else 50
 
-                base_score = (
-                    biotype_score * 0.30 +
-                    physical_score * 0.25 +
-                    tech_score * 0.25 +
-                    tactic_score * 0.20
-                )
-                age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
-                final_score = min(90, base_score * age_factor)
+                    base_score = (
+                        biotype_score * 0.30 +   
+                        physical_score * 0.25 +   
+                        tech_score * 0.25 +       
+                        tactic_score * 0.20       
+                    ) * 0.7  
+                    
+                    age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
+                    final_score = base_score * age_factor
+                    
+                    # Evita que seja menor que 0 ou maior que 90
+                    final_score = max(0, min(90, final_score))
 
                 translated_name = translate_sport_name(sport_name, user_gender)
 
