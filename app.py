@@ -9,7 +9,6 @@ import os
 # Importar todas as funções necessárias do módulo utils
 from utils import (
     get_sport_recommendations,
-    get_recommendations_without_api,
     calculate_biotype_compatibility,
     calculate_physical_compatibility,
     get_sport_strengths,
@@ -676,10 +675,26 @@ def show_recommendations():
     st.title("⭐ Suas Recomendações de Esportes")
 
     # Verificar se todos os testes foram completados
-    all_tests_completed = all(st.session_state.test_results.values())
+    missing_tests = [
+        k.replace('_', ' ').title() 
+        for k, v in st.session_state.test_results.items() 
+        if not v
+    ]
 
-    if not all_tests_completed:
-        st.warning("Complete todos os testes para ver suas recomendações completas.")
+    if missing_tests:
+        st.error(f"Complete os seguintes testes para receber suas recomendações: {', '.join(missing_tests)}")
+        return
+
+    # Verificar informações pessoais necessárias
+    required_info = ['altura', 'peso', 'envergadura', 'idade', 'genero']
+    missing_info = [
+        info.replace('_', ' ').title()
+        for info in required_info
+        if not st.session_state.personal_info.get(info)
+    ]
+
+    if missing_info:
+        st.error(f"Complete as seguintes informações pessoais: {', '.join(missing_info)}")
         return
 
     # Processar scores e gerar recomendações
@@ -697,77 +712,81 @@ def show_recommendations():
 
             # Processar scores para o gráfico radar
             processed_scores = process_test_results(st.session_state.test_results)
+            if not processed_scores:
+                st.error("Erro ao processar resultados dos testes.")
+                return
+                
             st.session_state.processed_scores = processed_scores
 
             # Gerar recomendações
-            st.session_state.recommendations = get_sport_recommendations(user_data)
+            recommendations = get_sport_recommendations(user_data)
+            if not recommendations:
+                st.error("Não foi possível gerar recomendações com os dados fornecidos.")
+                return
+                
+            st.session_state.recommendations = recommendations
+
+            # Exibir Radar Chart (Perfil do usuário)
+            st.subheader("📊 Seu Perfil")
+            fig = create_radar_chart(st.session_state.processed_scores)
+            st.plotly_chart(fig, use_container_width=True)
+
+            # Exibir contagem de esportes recomendados
+            total_recomendacoes = len(st.session_state.recommendations)
+            st.write(f"**Esportes recomendados: {total_recomendacoes}**")
+
+            # Exibir Top 5 recomendações em cartões
+            st.subheader("🏆 Top 5 Esportes Recomendados")
+
+            # Pegar apenas os 5 primeiros esportes da lista
+            top_5_recomendacoes = st.session_state.recommendations[:5]
+
+            for index, sport in enumerate(top_5_recomendacoes, start=1):
+                strengths = sport.get('strengths', ["Não disponível"])
+                development = sport.get('development', ["Não disponível"])
+
+                strengths_html = "".join(f"<li>{s}</li>" for s in strengths)
+                development_html = "".join(f"<li>{d}</li>" for s in development)
+
+                with st.container():
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background-color: #1e1e1e;
+                            padding: 15px;
+                            border-radius: 12px;
+                            margin-bottom: 10px;
+                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                            color: white;
+                        ">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <h3 style="margin: 0; color: white;">{index}. {sport['name']}</h3>
+                                <span style="color: #4caf50; font-weight: bold; font-size: 18px;">
+                                    {sport['compatibility']}% compatível
+                                </span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <div style="flex: 1; margin-right: 20px;">
+                                    <strong style="color: #81c784;">Pontos Fortes:</strong>
+                                    <ul style="margin-top: 5px; color: white;">
+                                        {strengths_html}
+                                    </ul>
+                                </div>
+                                <div style="flex: 1;">
+                                    <strong style="color: #64b5f6;">Áreas para Desenvolver:</strong>
+                                    <ul style="margin-top: 5px; color: white;">
+                                        {development_html}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
     except Exception as e:
         st.error(f"Erro ao processar recomendações: {str(e)}")
-        return
-
-    # Exibir Radar Chart (Perfil do usuário)
-    st.subheader("📊 Seu Perfil")
-    fig = create_radar_chart(st.session_state.processed_scores)
-    st.plotly_chart(fig, use_container_width=True)
-
-    if not st.session_state.recommendations:
-        st.warning("Não foram encontradas recomendações compatíveis com seu perfil.")
-        return
-
-    # Exibir contagem de esportes recomendados
-    total_recomendacoes = len(st.session_state.recommendations)
-    st.write(f"**Esportes recomendados: {total_recomendacoes}**")
-
-    # Exibir Top 5 recomendações em cartões
-    st.subheader("🏆 Top 5 Esportes Recomendados")
-
-    # Pegar apenas os 5 primeiros esportes da lista
-    top_5_recomendacoes = st.session_state.recommendations[:5]
-
-    for index, sport in enumerate(top_5_recomendacoes, start=1):
-        strengths = sport['strengths'] or ["Não informado"]
-        development = sport['development'] or ["Não informado"]
-
-        strengths_html = "".join(f"<li>{s}</li>" for s in strengths)
-        development_html = "".join(f"<li>{d}</li>" for d in development)
-
-        with st.container():
-            st.markdown(
-                f"""
-                <div style="
-                    background-color: #1e1e1e;
-                    padding: 15px;
-                    border-radius: 12px;
-                    margin-bottom: 10px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                    color: white;
-                ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <h3 style="margin: 0; color: white;">{index}. {sport['name']}</h3>
-                        <span style="color: #4caf50; font-weight: bold; font-size: 18px;">
-                            {sport['compatibility']}% compatível
-                        </span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <div style="flex: 1; margin-right: 20px;">
-                            <strong style="color: #81c784;">Pontos Fortes:</strong>
-                            <ul style="margin-top: 5px; color: white;">
-                                {strengths_html}
-                            </ul>
-                        </div>
-                        <div style="flex: 1;">
-                            <strong style="color: #64b5f6;">Áreas para Desenvolver:</strong>
-                            <ul style="margin-top: 5px; color: white;">
-                                {development_html}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            
+        return            
 def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
