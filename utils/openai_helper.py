@@ -511,16 +511,17 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
             return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
-        user_gender = user_data.get('genero', '').lower()
-        user_age = user_data.get('idade', 18)
+        # Pegando gênero do usuário dos dados pessoais
+        user_gender = st.session_state.personal_info.get('genero', 'Masculino')
+        user_age = st.session_state.personal_info.get('idade', 18)
 
-        # Fixed indentation for gender filtering
-        if user_gender == "feminino":
+        # Filtragem correta por gênero
+        if user_gender == "Feminino":
             sports_data = sports_data[
                 (sports_data['Event'].str.contains("Women", case=False)) |
                 (sports_data['Event'].str.contains("Mixed", case=False))
             ]
-        elif user_gender == "masculino":
+        else:  # Masculino
             sports_data = sports_data[
                 (sports_data['Event'].str.contains("Men", case=False) & 
                 ~sports_data['Event'].str.contains("Women", case=False)) |
@@ -532,55 +533,79 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             return get_recommendations_without_api(user_gender)
 
         recommendations = []
+        
+        # Calcular scores dos aspectos
+        tech_score = np.mean([
+            normalize_score(user_data['habilidades_tecnicas'].get(metric, 0), 0, 50)
+            for metric in ['coordenacao', 'precisao', 'agilidade', 'equilibrio']
+            if metric in user_data['habilidades_tecnicas']
+        ]) if user_data.get('habilidades_tecnicas') else 50
+
+        tactic_score = np.mean([
+            normalize_score(user_data['aspectos_taticos'].get(metric, 0), 0, 10)
+            for metric in ['tomada_decisao', 'visao_jogo', 'posicionamento']
+            if metric in user_data['aspectos_taticos']
+        ]) if user_data.get('aspectos_taticos') else 50
+
+        # Lista de esportes com base no perfil tático
+        if tactic_score > 70:  # Se perfil tático for alto
+            tactical_sports = ['Basketball', 'Volleyball', 'Football', 'Handball']
+            sports_data = pd.concat([
+                sports_data[sports_data['Event'].str.contains(sport, case=False)]
+                for sport in tactical_sports
+            ])
+
+        # Processar cada esporte
         for _, sport in sports_data.iterrows():
             try:
                 sport_name = sport['Event']
-                biotype_score = calculate_biotype_compatibility(user_data, sport, user_gender)
+                biotype_score = calculate_biotype_compatibility(user_data, sport)
                 physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
 
-                tech_score = np.mean([
-                    normalize_score(user_data['habilidades_tecnicas'].get(metric, 0), 0, 50)
-                    for metric in ['coordenacao', 'precisao', 'agilidade', 'equilibrio']
-                    if metric in user_data['habilidades_tecnicas']
-                ]) if user_data.get('habilidades_tecnicas') else 50
-
-                tactic_score = np.mean([
-                    normalize_score(user_data['aspectos_taticos'].get(metric, 0), 0, 10)
-                    for metric in ['tomada_decisao', 'visao_jogo', 'posicionamento']
-                    if metric in user_data['aspectos_taticos']
-                ]) if user_data.get('aspectos_taticos') else 50
-
+                # Cálculo ponderado da compatibilidade
                 base_score = (
-                    biotype_score * 0.30 +   
-                    physical_score * 0.25 +   
-                    tech_score * 0.25 +       
-                    tactic_score * 0.20       
-                ) * 0.7  
-                
+                    biotype_score * 0.25 +
+                    physical_score * 0.25 +
+                    tech_score * 0.25 +
+                    tactic_score * 0.25
+                ) 
+
+                # Ajuste baseado na idade
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
                 final_score = base_score * age_factor
-                
-                final_score = max(0, min(90, final_score))
+
+                # Garantir que o score esteja entre 0 e 100
+                final_score = max(0, min(100, final_score))
 
                 translated_name = translate_sport_name(sport_name, user_gender)
 
+                # Pegar pontos fortes reais
+                strengths = get_sport_strengths(sport_name, user_data)
+                if strengths == ["Avaliação pendente"]:
+                    strengths = []  # Não mostrar "Avaliação pendente" se não houver pontos fortes
+
                 recommendations.append({
                     "name": translated_name,
-                    "compatibility": round(final_score) if not np.isnan(final_score) else 0,
-                    "strengths": get_sport_strengths(sport_name, user_data),
+                    "compatibility": round(final_score),
+                    "strengths": strengths,
                     "development": get_development_areas(sport_name, user_data)
                 })
+
             except Exception as e:
                 st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
                 continue
 
+        # Ordenar por compatibilidade
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+        
+        # Filtrar esportes com compatibilidade muito baixa
+        recommendations = [r for r in recommendations if r['compatibility'] > 30]
+        
         return recommendations[:10]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-        
+        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
