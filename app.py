@@ -743,7 +743,7 @@ def show_recommendations():
                 unsafe_allow_html=True
             )
             
-            def main():
+def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
         reset_session_state()
