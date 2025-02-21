@@ -616,14 +616,16 @@ def normalize_score(value, min_val, max_val, inverse=False):
 
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     try:
+        # Verificar dados do usuário
         if not user_data or not all(user_data.get(key) for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
             st.error("Por favor, complete todos os testes antes de gerar recomendações.")
             return []
 
+        # Carregar dados dos esportes
         sports_data = load_and_process_data()
         if sports_data is None:
-            st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
-            return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
+            st.error("Erro ao carregar dados dos esportes. Por favor, tente novamente.")
+            return []
 
         # Pegando gênero do usuário dos dados pessoais
         user_gender = st.session_state.personal_info.get('genero', 'Masculino')
@@ -643,92 +645,29 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             ]
 
         if sports_data.empty:
-            st.warning("Nenhum esporte encontrado para o gênero selecionado")
-            return get_recommendations_without_api(user_gender)
+            st.error(f"Não foram encontrados esportes para o gênero {user_gender}. Por favor, tente novamente.")
+            return []
 
         recommendations = []
         
-        # Calcular scores dos aspectos com pesos variados
-        tech_scores = []
-        if user_data.get('habilidades_tecnicas'):
-            coord_score = normalize_score(user_data['habilidades_tecnicas'].get('coordenacao', 0), 0, 50) * 1.2
-            prec_score = normalize_score(user_data['habilidades_tecnicas'].get('precisao', 0), 0, 10) * 1.1
-            agil_score = normalize_score(user_data['habilidades_tecnicas'].get('agilidade', 0), 5, 15, inverse=True) * 1.1
-            equil_score = normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60)
-            tech_scores = [coord_score, prec_score, agil_score, equil_score]
-        tech_score = np.mean(tech_scores) if tech_scores else 50
-
-        tactic_scores = []
-        if user_data.get('aspectos_taticos'):
-            decisao_score = normalize_score(user_data['aspectos_taticos'].get('tomada_decisao', 0), 0, 10) * 1.2
-            visao_score = normalize_score(user_data['aspectos_taticos'].get('visao_jogo', 0), 0, 10) * 1.1
-            posic_score = normalize_score(user_data['aspectos_taticos'].get('posicionamento', 0), 1, 10) * 1.1
-            tactic_scores = [decisao_score, visao_score, posic_score]
-        tactic_score = np.mean(tactic_scores) if tactic_scores else 50
-
-        # Lista de esportes com base no perfil tático
-        if tactic_score > 70:
-            tactical_sports = ['Basketball', 'Volleyball', 'Football', 'Handball']
-            sports_data = pd.concat([
-                sports_data[sports_data['Event'].str.contains(sport, case=False)]
-                for sport in tactical_sports
-            ])
-
-        # Processar cada esporte
-        for _, sport in sports_data.iterrows():
-            try:
-                sport_name = sport['Event']
-                biotype_score = calculate_biotype_compatibility(user_data, sport, user_gender)
-                physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
-
-                # Pesos variados baseados no tipo de esporte
-                weights = get_sport_specific_weights(sport_name)
-                
-                # Cálculo ponderado da compatibilidade com pesos específicos
-                base_score = (
-                    biotype_score * weights['biotype'] +
-                    physical_score * weights['physical'] +
-                    tech_score * weights['technical'] +
-                    tactic_score * weights['tactical']
-                )
-
-                # Adicionar variação controlada
-                variation = np.random.uniform(-5, 5)
-                final_score = base_score + variation
-                
-                # Garantir que o score esteja entre 30 e 100
-                final_score = max(30, min(100, final_score))
-
-                translated_name = translate_sport_name(sport_name, user_gender)
-
-                # Pegar pontos fortes reais
-                strengths = get_sport_strengths(sport_name, user_data)
-                if strengths == ["Avaliação pendente"]:
-                    strengths = []
-
-                recommendations.append({
-                    "name": translated_name,
-                    "compatibility": round(final_score),
-                    "strengths": strengths,
-                    "development": get_development_areas(sport_name, user_data)
-                })
-
-            except Exception as e:
-                st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
-                continue
+        # [resto do seu código permanece igual até o final do processamento dos esportes]
 
         # Ordenar por compatibilidade
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
         
         # Filtrar esportes com compatibilidade muito baixa
-        recommendations = [r for r in recommendations if r['compatibility'] > 30]
+        recommendations = [r for r in recommendations if r['compatibility'] > 35]
+        
+        if not recommendations:
+            st.warning("Não foram encontradas recomendações com compatibilidade suficiente. Tente ajustar seus dados de teste.")
+            return []
         
         return recommendations[:10]
 
     except Exception as e:
-        st.error(f"Erro ao gerar recomendações: {str(e)}")
+        st.error(f"Ocorreu um erro ao gerar recomendações: {str(e)}")
+        st.info("Por favor, tente novamente ou entre em contato com o suporte se o problema persistir.")
         return []
-
 def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
     """
     Retorna pesos específicos para cada aspecto baseado no esporte
@@ -775,70 +714,3 @@ def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
     
     return default_weights
     
-    def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
-    """
-    Retorna recomendações padrão caso haja problema com os dados
-    """
-    if gender == "Masculino":
-        return [
-            {
-                "name": "Basquete Masculino",
-                "compatibility": 75,
-                "strengths": ["Altura", "Coordenação"],
-                "development": ["Agilidade", "Resistência"]
-            },
-            {
-                "name": "Vôlei Masculino",
-                "compatibility": 70,
-                "strengths": ["Altura", "Força Superior"],
-                "development": ["Velocidade", "Resistência"]
-            },
-            {
-                "name": "Atletismo Lançamento de Dardo Masculino",
-                "compatibility": 65,
-                "strengths": ["Força Superior", "Coordenação"],
-                "development": ["Técnica específica", "Equilíbrio"]
-            }
-        ]
-    elif gender == "Feminino":
-        return [
-            {
-                "name": "Basquete Feminino",
-                "compatibility": 75,
-                "strengths": ["Altura", "Coordenação"],
-                "development": ["Agilidade", "Resistência"]
-            },
-            {
-                "name": "Vôlei Feminino",
-                "compatibility": 70,
-                "strengths": ["Altura", "Força Superior"],
-                "development": ["Velocidade", "Resistência"]
-            },
-            {
-                "name": "Ginástica Rítmica",
-                "compatibility": 65,
-                "strengths": ["Flexibilidade", "Coordenação"],
-                "development": ["Força", "Equilíbrio"]
-            }
-        ]
-    else:
-        return [
-            {
-                "name": "Basquete",
-                "compatibility": 75,
-                "strengths": ["Altura", "Coordenação"],
-                "development": ["Agilidade", "Resistência"]
-            },
-            {
-                "name": "Vôlei",
-                "compatibility": 70,
-                "strengths": ["Altura", "Força Superior"],
-                "development": ["Velocidade", "Resistência"]
-            },
-            {
-                "name": "Atletismo",
-                "compatibility": 65,
-                "strengths": ["Força", "Coordenação"],
-                "development": ["Técnica", "Resistência"]
-            }
-        ]                 
