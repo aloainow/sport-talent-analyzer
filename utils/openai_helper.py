@@ -199,46 +199,84 @@ SPORTS_TRANSLATIONS = {
 
 def translate_sport_name(sport_name: str, user_gender: str) -> str:
     """
-    Traduz o nome do esporte de inglês para português e adiciona o gênero apropriado
+    Traduz o nome completo do evento esportivo de inglês para português
     
     Args:
-        sport_name (str): Nome do esporte em inglês
+        sport_name (str): Nome do evento em inglês
         user_gender (str): Gênero do usuário ("Masculino" ou "Feminino")
     
     Returns:
-        str: Nome do esporte traduzido com gênero apropriado
+        str: Nome do evento traduzido para português
     """
+    # Primeiro, vamos substituir casos especiais e eventos completos
+    FULL_EVENT_TRANSLATIONS = {
+        "Art Competitions Mixed Sculpturing, Statues": "Competições de Arte Escultura Mista, Estátuas",
+        "Gymnastics Team All-Around, Free System": "Ginástica Equipe Geral, Sistema Livre",
+        "Athletics Men's 100 metres": "Atletismo 100 metros Masculino",
+        "Athletics Women's 100 metres": "Atletismo 100 metros Feminino",
+        "Swimming Men's 100 metres Freestyle": "Natação 100 metros Nado Livre Masculino",
+        "Swimming Women's 100 metres Freestyle": "Natação 100 metros Nado Livre Feminino",
+        "Basketball Men's Basketball": "Basquete Masculino",
+        "Basketball Women's Basketball": "Basquete Feminino",
+        "Volleyball Men's Volleyball": "Vôlei Masculino",
+        "Volleyball Women's Volleyball": "Vôlei Feminino",
+        # Adicione mais traduções completas conforme necessário
+    }
+
+    # Verifica se existe uma tradução completa para o evento
+    if sport_name in FULL_EVENT_TRANSLATIONS:
+        return FULL_EVENT_TRANSLATIONS[sport_name]
+
+    # Se não houver tradução completa, traduz parte por parte
     translated_name = sport_name
-    
-    # Substituir cada termo em inglês pelo seu equivalente em português
+
+    # Remove o gênero inicial (será adicionado no final)
+    translated_name = translated_name.replace("Men's ", "").replace("Women's ", "")
+
+    # Traduz cada parte usando o dicionário existente
     for en, pt in SPORTS_TRANSLATIONS.items():
         translated_name = translated_name.replace(en, pt)
+
+    # Organiza a estrutura do nome
+    parts = translated_name.split(',')
+    main_parts = []
     
-    # Ajustar a formatação para ficar mais natural em português
-    parts = translated_name.split(', ')  # Divide por vírgula para preservar a estrutura
-    
-    # Para cada parte do nome
-    for i, part in enumerate(parts):
+    for part in parts:
+        # Remove espaços extras
+        part = part.strip()
+        
+        # Trata a parte principal do nome
         subparts = part.split()
-        # Remove termos de gênero existentes
-        subparts = [p for p in subparts if p not in ["Masculino", "Feminino"]]
-        # Reconstrói a parte
-        parts[i] = " ".join(subparts)
-    
-    # Junta as partes novamente com vírgula
-    translated_name = ", ".join(parts)
-    
-    # Adiciona o gênero como sufixo
+        
+        # Remove palavras duplicadas
+        subparts = list(dict.fromkeys(subparts))
+        
+        # Reorganiza na ordem do português
+        if 'metros' in subparts:
+            idx = subparts.index('metros')
+            number = subparts[idx-1] if idx > 0 else ''
+            event_type = ' '.join(subparts[idx+1:]) if idx < len(subparts)-1 else ''
+            subparts = [number, 'metros', event_type]
+            subparts = [p for p in subparts if p]  # Remove elementos vazios
+            
+        main_parts.append(' '.join(subparts))
+
+    # Junta todas as partes
+    translated_name = ', '.join(main_parts)
+
+    # Adiciona o gênero no final
     if user_gender == "Masculino":
         translated_name += " Masculino"
     elif user_gender == "Feminino":
         translated_name += " Feminino"
-    
-    # Remove espaços duplos que possam ter sido criados
-    translated_name = " ".join(translated_name.split())
-    
-    return translated_name
 
+    # Limpa espaços extras e formatação
+    translated_name = ' '.join(translated_name.split())
+    
+    # Remove artigos desnecessários
+    translated_name = translated_name.replace(" o ", " ").replace(" a ", " ").replace(" os ", " ").replace(" as ", " ")
+
+    return translated_name
 
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
     """
@@ -372,17 +410,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
         # Obter dados básicos do usuário com validação
         user_gender = user_data.get('genero', '')
-        user_age = user_data.get('idade', 18)  
-
-        try:
-            # Carregar módulo de cálculos ajustados por idade
-            from utils.age_adjusted_calculations import (
-                calculate_age_adjusted_score,
-                get_age_group
-            )
-        except ImportError as e:
-            st.error(f"Erro ao importar módulo de cálculos: {str(e)}")
-            return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
+        user_age = user_data.get('idade', 18)
 
         # Filtrar eventos por gênero com validação
         try:
@@ -420,15 +448,25 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     tech_data = user_data['habilidades_tecnicas']
                     tech_scores = []
                     
-                    # Coordenação
+                    # Coordenação (0-50)
                     if 'coordenacao' in tech_data:
-                        tech_scores.append(normalize_score(tech_data['coordenacao'], 0, 50))
-                    # Precisão
+                        coord_score = normalize_score(tech_data['coordenacao'], 0, 50)
+                        tech_scores.append(coord_score)
+                    
+                    # Precisão (0-10)
                     if 'precisao' in tech_data:
-                        tech_scores.append(normalize_score(tech_data['precisao'], 0, 10))
-                    # Agilidade
+                        prec_score = normalize_score(tech_data['precisao'], 0, 10)
+                        tech_scores.append(prec_score)
+                    
+                    # Agilidade (5-15, inverso)
                     if 'agilidade' in tech_data:
-                        tech_scores.append(normalize_score(tech_data['agilidade'], 5, 15, inverse=True))
+                        agil_score = normalize_score(tech_data['agilidade'], 5, 15, inverse=True)
+                        tech_scores.append(agil_score)
+                    
+                    # Equilíbrio (0-60)
+                    if 'equilibrio' in tech_data:
+                        equil_score = normalize_score(tech_data['equilibrio'], 0, 60)
+                        tech_scores.append(equil_score)
                     
                     if tech_scores:
                         tech_score = np.mean(tech_scores)
@@ -447,20 +485,27 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     if tactic_scores:
                         tactic_score = np.mean(tactic_scores)
 
-                # Calcular score final
+                # Calcular score final com ajuste para idade
                 base_score = (
                     biotype_score * 0.30 +    # Biotipo (30%)
                     physical_score * 0.25 +    # Físico (25%)
                     tech_score * 0.25 +        # Técnico (25%)
                     tactic_score * 0.20        # Tático (20%)
-                ) * 0.8  # Ajuste para escala mais realista
+                ) * 0.7  # Score base máximo de 70%
 
                 # Ajustes específicos
-                if user_data.get('altura', 0) >= 200:
-                    if any(s in sport_name.lower() for s in ['basketball', 'volleyball']):
-                        base_score *= 1.15
+                if user_data.get('altura', 0) >= 200:  # Para atletas muito altos
+                    if any(sport in sport_name.lower() for sport in ['basketball', 'volleyball']):
+                        base_score *= 1.15  # Bônus de 15% para esportes que valorizam altura
+                    elif any(sport in sport_name.lower() for sport in ['athletics', 'swimming']):
+                        base_score *= 1.1   # Bônus de 10% para outros esportes onde altura ajuda
 
-                final_score = min(100, base_score)
+                # Ajuste baseado na idade
+                age_factor = min(1.0, max(0.6, (user_age - 10) / 8))  # Fator cresce com a idade
+                final_score = base_score * age_factor
+
+                # Garantir que o score não ultrapasse 95%
+                final_score = min(95, final_score)
 
                 # Traduzir nome do esporte
                 translated_name = translate_sport_name(sport_name, user_gender)
@@ -476,17 +521,19 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
                 continue
 
-        # Ordenar e retornar recomendações
+        # Se não houver recomendações, usar padrão
         if not recommendations:
             st.warning("Nenhuma recomendação gerada. Usando sugestões padrão.")
             return get_recommendations_without_api(user_gender)
 
+        # Ordenar por compatibilidade e retornar top 10
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
         return recommendations[:10]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))        
+        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
+
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
