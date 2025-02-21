@@ -1,13 +1,17 @@
 import streamlit as st
-import numpy as np
-import pandas as pd
-from typing import Dict, List, Any
-import os
 from streamlit_option_menu import option_menu
 import plotly.graph_objects as go
 from utils.test_processor import normalize_score, calculate_average, process_test_results
+from utils.sport_helper import (
+    get_sport_recommendations,
+    get_recommendations_without_api,
+    calculate_biotype_compatibility,
+    calculate_physical_compatibility,
+    get_sport_strengths,
+    get_development_areas
+)
 
-    st.set_page_config(
+st.set_page_config(
     page_title="Analisador de Talentos Esportivos",
     page_icon="🏃‍♂️",
     layout="wide"
@@ -17,25 +21,20 @@ def reset_session_state():
     """Reseta completamente o estado da sessão"""
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-
-    st.set_page_config(
-    page_title="Analisador de Talentos Esportivos",
-    page_icon="🏃‍♂️",
-    layout="wide"
-)
+    
     # Reinicializa com valores padrão
     st.session_state.test_results = {
-        'dados_fisicos': None,  # Mudado de {} para None
-        'habilidades_tecnicas': None,  # Mudado de {} para None
-        'aspectos_taticos': None,  # Mudado de {} para None
-        'fatores_psicologicos': None  # Mudado de {} para None
+        'dados_fisicos': None,
+        'habilidades_tecnicas': None,
+        'aspectos_taticos': None,
+        'fatores_psicologicos': None
     }
     st.session_state.recommendations = None
     st.session_state.personal_info = {}
     st.session_state.form_key = 0
     st.session_state.processed_scores = None
     st.session_state.initialized = True
-
+    
 # Inicialização do estado da sessão
 def init_session_state():
     if 'test_results' not in st.session_state:
