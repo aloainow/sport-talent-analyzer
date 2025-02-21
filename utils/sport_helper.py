@@ -25,11 +25,10 @@ def load_and_process_data():
                 
                 sports_list = []
                 for sport in sports_data['sports']:
-                    # Adicione variações de eventos
+                    # Adicionando variações de eventos com gênero explícito
                     events = [
                         f"{sport['name']} Masculino",
-                        f"{sport['name']} Feminino",
-                        sport['name']
+                        f"{sport['name']} Feminino"
                     ]
                     
                     for event in events:
@@ -51,6 +50,7 @@ def load_and_process_data():
     except Exception as e:
         st.error(f"Erro ao carregar dados dos esportes: {str(e)}")
         return None
+
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
@@ -232,48 +232,80 @@ def calculate_base_score(biotype_score: float, physical_score: float, tech_score
                         user_data: Dict) -> float:
     """Calcula o score base considerando todos os fatores"""
     try:
-        # Pesos ajustados para maior variação
-        weights = {
-            'biotype': 0.3,
-            'physical': 0.25,
-            'technical': 0.2,
-            'tactical': 0.15,
-            'psychological': 0.1
+        # Definir pesos baseados na relevância para cada tipo de esporte
+        sport_type_weights = {
+            'individual': {
+                'biotype': 0.3,
+                'physical': 0.25,
+                'technical': 0.2,
+                'tactical': 0.15,
+                'psychological': 0.1
+            },
+            'collective': {
+                'biotype': 0.2,
+                'physical': 0.25,
+                'technical': 0.2,
+                'tactical': 0.2,
+                'psychological': 0.15
+            }
         }
+
+        # Determinar o tipo de esporte
+        sport_category = 'individual' if 'Individual' in sport_name else 'collective'
+        weights = sport_type_weights[sport_category]
         
+        # Calcular score base
         base_score = (
             biotype_score * weights['biotype'] +
             physical_score * weights['physical'] +
             tech_score * weights['technical'] +
             tactic_score * weights['tactical'] +
             psych_score * weights['psychological']
-        )
-        
-        sport_name_lower = sport_name.lower()
+        ) * 2  # Multiplicar por 2 para dar mais amplitude
         
         # Fatores de ajuste específicos
-        if user_data['biotipo']['altura'] >= 180 and any(s in sport_name_lower for s in ['basketball', 'volleyball']):
-            base_score *= 1.2
-            
-        if any(s in sport_name_lower for s in ['weightlifting', 'wrestling', 'boxing']):
-            strength = user_data['dados_fisicos'].get('forca_superior', 0)
-            if strength >= 40:
-                base_score *= 1.15
-                
-        if any(s in sport_name_lower for s in ['athletics', 'swimming', 'cycling']):
-            speed = user_data['dados_fisicos'].get('velocidade', 5.0)
-            if speed <= 3.5:
-                base_score *= 1.15
-                
-        if 'gymnastics' in sport_name_lower:
-            balance = user_data['habilidades_tecnicas'].get('equilibrio', 0)
-            if balance >= 50:
-                base_score *= 1.15
+        sport_name_lower = sport_name.lower()
         
-        # Ajuste por idade com mais impacto
-        age_factor = min(1.2, max(0.7, (user_data['idade'] - 10) / 6))
-        base_score *= age_factor
+        # Ajustes de compatibilidade específicos
+        compatibilidade_ajustes = {
+            'altura': {
+                'esportes': ['basketball', 'volleyball'],
+                'min_altura': 180,
+                'fator_ajuste': 1.2
+            },
+            'forca': {
+                'esportes': ['weightlifting', 'wrestling', 'boxing'],
+                'min_forca': 40,
+                'fator_ajuste': 1.15
+            },
+            'velocidade': {
+                'esportes': ['athletics', 'swimming', 'cycling'],
+                'max_velocidade': 3.5,
+                'fator_ajuste': 1.15
+            },
+            'equilibrio': {
+                'esportes': ['gymnastics'],
+                'min_equilibrio': 50,
+                'fator_ajuste': 1.15
+            }
+        }
+
+        for ajuste, config in compatibilidade_ajustes.items():
+            if any(s in sport_name_lower for s in config['esportes']):
+                if ajuste == 'altura' and user_data['biotipo'].get('altura', 0) >= config['min_altura']:
+                    base_score *= config['fator_ajuste']
+                elif ajuste == 'forca' and user_data['dados_fisicos'].get('forca_superior', 0) >= config['min_forca']:
+                    base_score *= config['fator_ajuste']
+                elif ajuste == 'velocidade' and user_data['dados_fisicos'].get('velocidade', 5.0) <= config['max_velocidade']:
+                    base_score *= config['fator_ajuste']
+                elif ajuste == 'equilibrio' and user_data['habilidades_tecnicas'].get('equilibrio', 0) >= config['min_equilibrio']:
+                    base_score *= config['fator_ajuste']
         
+        # Ajuste por idade
+        idade_fator = min(1.2, max(0.7, (user_data['idade'] - 10) / 6))
+        base_score *= idade_fator
+        
+        # Normalizar entre 20 e 100
         return min(100, max(20, base_score))
         
     except Exception as e:
@@ -301,16 +333,10 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
         # Filtrar esportes por gênero (modificado)
         if user_data['genero'] == "Feminino":
-            sports_data = sports_data[
-                sports_data['Event'].str.contains('Women', case=False, na=False) | 
-                ~sports_data['Event'].str.contains("Men's", case=False, na=False)
-            ]
+            sports_data = sports_data[sports_data['Event'].str.contains('Feminino', case=False, na=False)]
         else:
-            sports_data = sports_data[
-                sports_data['Event'].str.contains("Men's", case=False, na=False) | 
-                ~sports_data['Event'].str.contains('Women', case=False, na=False)
-            ]
-        
+            sports_data = sports_data[sports_data['Event'].str.contains('Masculino', case=False, na=False)]
+                
         if sports_data.empty:
             st.error(f"Não foram encontrados esportes para o gênero {user_data['genero']}")
             return []
