@@ -329,18 +329,20 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 })
                 processed_sports += 1
 
-            except Exception as sport_e:
-                errors += 1
-                st.warning(f"Erro ao processar esporte {sport_name}: {str(sport_e)}")
-                continue
-
-        if not recommendations:
-st.error("Não foi possível gerar recomendações. Por favor, verifique seus dados e tente novamente.")
-            return []
-
-        if errors > 0:
-            st.warning(f"Alguns esportes ({errors}) não puderam ser processados, mas encontramos {processed_sports} recomendações para você.")
-
+           try:
+    # Seu código anterior
+    except Exception as sport_e:
+        errors += 1
+        st.warning(f"Erro ao processar esporte {sport_name}: {str(sport_e)}")
+        continue
+    
+    if not recommendations:
+        st.error("Não foi possível gerar recomendações. Por favor, verifique seus dados e tente novamente.")
+        return []
+    
+    if errors > 0:
+        st.warning(f"Alguns esportes ({errors}) não puderam ser processados, mas encontramos {processed_sports} recomendações para você.")
+        
         # Ordenar recomendações
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
         return recommendations[:10]
