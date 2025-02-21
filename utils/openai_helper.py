@@ -95,14 +95,6 @@ def calculate_biotype_compatibility(user_data: Dict, sport_data: pd.Series) -> f
 def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age: int = 18) -> float:
     """
     Calcula compatibilidade física baseada nos testes, ajustada pela idade
-    
-    Args:
-        user_data (Dict): Dados do usuário
-        sport_name (str): Nome do esporte
-        user_age (int): Idade do usuário (default: 18)
-        
-    Returns:
-        float: Score de compatibilidade física (0-100)
     """
     if not user_data.get('dados_fisicos'):
         return 50
@@ -120,7 +112,7 @@ def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age:
             age=user_age,
             gender=gender
         )
-        scores.append(velocity_score * 1.5)  # Peso maior para esportes de velocidade
+        scores.append(velocity_score * 1.5)
     
     # Força (esportes que valorizam força)
     strength_sports = ['Weightlifting', 'Wrestling', 'Judo', 'Boxing']
@@ -144,11 +136,11 @@ def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age:
         scores.extend([strength_upper * 1.5, strength_lower * 1.5])
     
     # Ajuste baseado na idade
-    age_factor = min(1.0, max(0.6, (user_age - 10) / 8))  # Fator cresce com a idade (0.6 a 1.0)
+    age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
     final_score = np.mean(scores) if scores else 50
     
-    # Score final ajustado pela idade
     return final_score * age_factor
+    
 # Dicionário de traduções de esportes
 SPORTS_TRANSLATIONS = {
     # Atletismo
