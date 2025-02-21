@@ -367,7 +367,6 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     normalize_score(user_data['habilidades_tecnicas'].get('precisao', 0), 0, 10),
                     normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60)
                 ]
-               
                 technical_score = np.mean(tech_scores)
 
             tactical_score = 50  # Score base
@@ -409,7 +408,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-
+        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
