@@ -512,13 +512,11 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         try:
             if user_gender == "Feminino":
                 sports_data = sports_data[
-                    (~sports_data['Event'].str.contains("Men's", case=False)) | 
                     (sports_data['Event'].str.contains("Women's", case=False)) |
                     (sports_data['Event'].str.contains("Mixed", case=False))
                 ]
             elif user_gender == "Masculino":
                 sports_data = sports_data[
-                    (~sports_data['Event'].str.contains("Women's", case=False)) | 
                     (sports_data['Event'].str.contains("Men's", case=False)) |
                     (sports_data['Event'].str.contains("Mixed", case=False))
                 ]
