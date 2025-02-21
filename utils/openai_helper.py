@@ -297,32 +297,32 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
                 
                 # Calcular habilidades técnicas
-                tech_scores = []
-                if user_data.get('habilidades_tecnicas
-                tech_data = user_data['habilidades_tecnicas']
-                tech_scores = []
-                
-                # Coordenação (0-50)
-                if 'coordenacao' in tech_data:
-                    coord_score = normalize_score(tech_data['coordenacao'], 0, 50)
-                    tech_scores.append(coord_score)
-                
-                # Precisão (0-10)
-                if 'precisao' in tech_data:
-                    prec_score = normalize_score(tech_data['precisao'], 0, 10)
-                    tech_scores.append(prec_score)
-                
-                # Agilidade (5-15, inverso)
-                if 'agilidade' in tech_data:
-                    agil_score = normalize_score(tech_data['agilidade'], 5, 15, inverse=True)
-                    tech_scores.append(agil_score)
-                
-                # Equilíbrio (0-60)
-                if 'equilibrio' in tech_data:
-                    equil_score = normalize_score(tech_data['equilibrio'], 0, 60)
-                    tech_scores.append(equil_score)
-                
-                tech_score = np.mean(tech_scores) if tech_scores else 50
+                tech_score = 50  # Default value
+                if user_data.get('habilidades_tecnicas'):
+                    tech_data = user_data['habilidades_tecnicas']
+                    tech_scores = []
+                    
+                    # Coordenação (0-50)
+                    if 'coordenacao' in tech_data:
+                        coord_score = normalize_score(tech_data['coordenacao'], 0, 50)
+                        tech_scores.append(coord_score)
+                    
+                    # Precisão (0-10)
+                    if 'precisao' in tech_data:
+                        prec_score = normalize_score(tech_data['precisao'], 0, 10)
+                        tech_scores.append(prec_score)
+                    
+                    # Agilidade (5-15, inverso)
+                    if 'agilidade' in tech_data:
+                        agil_score = normalize_score(tech_data['agilidade'], 5, 15, inverse=True)
+                        tech_scores.append(agil_score)
+                    
+                    # Equilíbrio (0-60)
+                    if 'equilibrio' in tech_data:
+                        equil_score = normalize_score(tech_data['equilibrio'], 0, 60)
+                        tech_scores.append(equil_score)
+                    
+                    tech_score = np.mean(tech_scores) if tech_scores else 50
 
                 # Calcular aspectos táticos
                 tactic_score = 50
@@ -379,7 +379,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-
+        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
