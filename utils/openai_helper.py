@@ -96,51 +96,58 @@ def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age:
     """
     Calcula compatibilidade física baseada nos testes, ajustada pela idade
     """
-    if not user_data.get('dados_fisicos'):
-        return 50
+    try:
+        if not user_data.get('dados_fisicos'):
+            return 50
+            
+        scores = []
+        gender = user_data.get('genero', 'Masculino')
         
-    scores = []
-    gender = user_data.get('genero', 'Masculino')
-    
-    # Velocidade (esportes que valorizam velocidade)
-    velocity_sports = ['Athletics', 'Swimming', 'Cycling', 'Sprint']
-    if any(sport in sport_name for sport in velocity_sports):
-        velocity_score = calculate_age_adjusted_score(
-            value=user_data['dados_fisicos'].get('velocidade', 5),
-            test_type='dados_fisicos',
-            test_name='velocidade',
-            age=user_age,
-            gender=gender
-        )
-        scores.append(velocity_score * 1.5)
-    
-    # Força (esportes que valorizam força)
-    strength_sports = ['Weightlifting', 'Wrestling', 'Judo', 'Boxing']
-    if any(sport in sport_name for sport in strength_sports):
-        strength_upper = calculate_age_adjusted_score(
-            value=user_data['dados_fisicos'].get('forca_superior', 0),
-            test_type='dados_fisicos',
-            test_name='forca_superior',
-            age=user_age,
-            gender=gender
-        )
+        # Velocidade (esportes que valorizam velocidade)
+        velocity_sports = ['Athletics', 'Swimming', 'Cycling', 'Sprint']
+        if any(sport in sport_name for sport in velocity_sports):
+            try:
+                velocity_score = normalize_score(
+                    user_data['dados_fisicos'].get('velocidade', 5),
+                    2.5, 5.0, inverse=True
+                )
+                scores.append(velocity_score * 1.5)
+            except Exception as e:
+                st.warning(f"Erro ao calcular score de velocidade: {str(e)}")
         
-        strength_lower = calculate_age_adjusted_score(
-            value=user_data['dados_fisicos'].get('forca_inferior', 0),
-            test_type='dados_fisicos',
-            test_name='forca_inferior',
-            age=user_age,
-            gender=gender
-        )
+        # Força (esportes que valorizam força)
+        strength_sports = ['Weightlifting', 'Wrestling', 'Judo', 'Boxing']
+        if any(sport in sport_name for sport in strength_sports):
+            try:
+                strength_upper = normalize_score(
+                    user_data['dados_fisicos'].get('forca_superior', 0),
+                    0, 50
+                )
+                strength_lower = normalize_score(
+                    user_data['dados_fisicos'].get('forca_inferior', 0),
+                    0, 60
+                )
+                scores.extend([strength_upper * 1.5, strength_lower * 1.5])
+            except Exception as e:
+                st.warning(f"Erro ao calcular scores de força: {str(e)}")
         
-        scores.extend([strength_upper * 1.5, strength_lower * 1.5])
-    
-    # Ajuste baseado na idade
-    age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
-    final_score = np.mean(scores) if scores else 50
-    
-    return final_score * age_factor
-    
+        # Calcular média dos scores disponíveis
+        if not scores:
+            return 50
+            
+        base_score = np.mean(scores)
+        
+        # Ajuste baseado na idade
+        try:
+            age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
+            return base_score * age_factor
+        except Exception as e:
+            st.warning(f"Erro ao ajustar score por idade: {str(e)}")
+            return base_score
+            
+    except Exception as e:
+        st.error(f"Erro no cálculo de compatibilidade física: {str(e)}")
+        return 50    
 # Dicionário de traduções de esportes
 SPORTS_TRANSLATIONS = {
     # Atletismo
@@ -352,127 +359,134 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     Gera recomendações de esportes baseadas nos dados do usuário e estatísticas olímpicas
     """
     try:
+        # Verificar dados do usuário
+        if not user_data:
+            st.error("Dados do usuário não fornecidos")
+            return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
+
         # Carregar dados
         sports_data = load_and_process_data()
         if sports_data is None:
             st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
             return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
-        # Obter dados básicos do usuário
+        # Obter dados básicos do usuário com validação
         user_gender = user_data.get('genero', '')
-        user_age = user_data.get('idade', 18)  # Adicionado idade
+        user_age = user_data.get('idade', 18)  
 
-        # Carregar parâmetros ajustados por idade
-        from utils.age_adjusted_calculations import (
-            calculate_age_adjusted_score,
-            calculate_final_score,
-            get_age_group
-        )
+        try:
+            # Carregar módulo de cálculos ajustados por idade
+            from utils.age_adjusted_calculations import (
+                calculate_age_adjusted_score,
+                get_age_group
+            )
+        except ImportError as e:
+            st.error(f"Erro ao importar módulo de cálculos: {str(e)}")
+            return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
-        # Filtrar eventos por gênero
-        if user_gender == "Masculino":
-            sports_data = sports_data[
-                (~sports_data['Event'].str.contains("Women", case=False)) &
-                (sports_data['Event'].str.contains("Men", case=False) | 
-                 ~sports_data['Event'].str.contains("Women|Men", case=False))
-            ]
-        elif user_gender == "Feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Women", case=False)]
+        # Filtrar eventos por gênero com validação
+        try:
+            if user_gender == "Masculino":
+                sports_data = sports_data[
+                    (~sports_data['Event'].str.contains("Women", case=False)) &
+                    (sports_data['Event'].str.contains("Men", case=False) | 
+                     ~sports_data['Event'].str.contains("Women|Men", case=False))
+                ]
+            elif user_gender == "Feminino":
+                sports_data = sports_data[sports_data['Event'].str.contains("Women", case=False)]
+
+            if len(sports_data) == 0:
+                st.warning("Nenhum esporte encontrado para o gênero selecionado")
+                return get_recommendations_without_api(user_gender)
+
+        except Exception as e:
+            st.error(f"Erro ao filtrar eventos por gênero: {str(e)}")
+            return get_recommendations_without_api(user_gender)
 
         recommendations = []
 
         # Avaliar cada esporte
         for _, sport in sports_data.iterrows():
-            sport_name = sport['Event']
-            
-            # Calcular scores individuais ajustados por idade
-            biotype_score = calculate_biotype_compatibility(user_data, sport)
-            physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
-            
-            # Calcular habilidades técnicas
-            tech_score = 50
-            if user_data.get('habilidades_tecnicas'):
-                tech_data = user_data['habilidades_tecnicas']
-                tech_scores = []
+            try:
+                sport_name = sport['Event']
                 
-                # Scores ajustados por idade para cada habilidade técnica
-                coord_score = calculate_age_adjusted_score(
-                    tech_data.get('coordenacao', 0),
-                    'habilidades_tecnicas',
-                    'coordenacao',
-                    user_age,
-                    user_gender
-                )
-                tech_scores.append(coord_score)
+                # Calcular scores individuais
+                biotype_score = calculate_biotype_compatibility(user_data, sport)
+                physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
                 
-                prec_score = calculate_age_adjusted_score(
-                    tech_data.get('precisao', 0),
-                    'habilidades_tecnicas',
-                    'precisao',
-                    user_age,
-                    user_gender
-                )
-                tech_scores.append(prec_score)
-                
-                agil_score = calculate_age_adjusted_score(
-                    tech_data.get('agilidade', 0),
-                    'habilidades_tecnicas',
-                    'agilidade',
-                    user_age,
-                    user_gender
-                )
-                tech_scores.append(agil_score)
-                
-                tech_score = np.mean(tech_scores)
+                # Calcular habilidades técnicas
+                tech_score = 50
+                if user_data.get('habilidades_tecnicas'):
+                    tech_data = user_data['habilidades_tecnicas']
+                    tech_scores = []
+                    
+                    # Coordenação
+                    if 'coordenacao' in tech_data:
+                        tech_scores.append(normalize_score(tech_data['coordenacao'], 0, 50))
+                    # Precisão
+                    if 'precisao' in tech_data:
+                        tech_scores.append(normalize_score(tech_data['precisao'], 0, 10))
+                    # Agilidade
+                    if 'agilidade' in tech_data:
+                        tech_scores.append(normalize_score(tech_data['agilidade'], 5, 15, inverse=True))
+                    
+                    if tech_scores:
+                        tech_score = np.mean(tech_scores)
 
-            # Calcular aspectos táticos
-            tactic_score = 50
-            if user_data.get('aspectos_taticos'):
-                tactic_data = user_data['aspectos_taticos']
-                tactic_scores = []
+                # Calcular aspectos táticos
+                tactic_score = 50
+                if user_data.get('aspectos_taticos'):
+                    tactic_data = user_data['aspectos_taticos']
+                    tactic_scores = []
+                    
+                    for aspect in ['tomada_decisao', 'visao_jogo', 'posicionamento']:
+                        if aspect in tactic_data:
+                            score = normalize_score(tactic_data[aspect], 0, 10)
+                            tactic_scores.append(score)
+                    
+                    if tactic_scores:
+                        tactic_score = np.mean(tactic_scores)
+
+                # Calcular score final
+                base_score = (
+                    biotype_score * 0.30 +    # Biotipo (30%)
+                    physical_score * 0.25 +    # Físico (25%)
+                    tech_score * 0.25 +        # Técnico (25%)
+                    tactic_score * 0.20        # Tático (20%)
+                ) * 0.8  # Ajuste para escala mais realista
+
+                # Ajustes específicos
+                if user_data.get('altura', 0) >= 200:
+                    if any(s in sport_name.lower() for s in ['basketball', 'volleyball']):
+                        base_score *= 1.15
+
+                final_score = min(100, base_score)
+
+                # Traduzir nome do esporte
+                translated_name = translate_sport_name(sport_name, user_gender)
                 
-                # Scores ajustados para aspectos táticos
-                for aspect in ['tomada_decisao', 'visao_jogo', 'posicionamento']:
-                    score = normalize_score(tactic_data.get(aspect, 0), 0, 10)
-                    tactic_scores.append(score)
-                
-                tactic_score = np.mean(tactic_scores)
+                recommendations.append({
+                    "name": translated_name,
+                    "compatibility": round(final_score) if not np.isnan(final_score) else 0,
+                    "strengths": get_sport_strengths(sport_name, user_data),
+                    "development": get_development_areas(sport_name, user_data)
+                })
 
-            # Preparar dados para cálculo final
-            current_scores = {
-                'biotype': biotype_score,
-                'physical': physical_score,
-                'technical': tech_score,
-                'tactical': tactic_score
-            }
-            
-            # Calcular score final considerando idade e potencial
-            final_score = calculate_final_score(
-                user_data={**user_data, **current_scores},
-                sport_compatibility=(biotype_score * 0.3 + 
-                                  physical_score * 0.25 + 
-                                  tech_score * 0.25 + 
-                                  tactic_score * 0.2)
-            )
+            except Exception as e:
+                st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
+                continue
 
-            # Traduzir o nome do esporte incluindo o gênero
-            translated_name = translate_sport_name(sport_name, user_gender)
-            
-            recommendations.append({
-                "name": translated_name,
-                "compatibility": round(final_score) if not np.isnan(final_score) else 0,
-                "strengths": get_sport_strengths(sport_name, user_data),
-                "development": get_development_areas(sport_name, user_data)
-            })
+        # Ordenar e retornar recomendações
+        if not recommendations:
+            st.warning("Nenhuma recomendação gerada. Usando sugestões padrão.")
+            return get_recommendations_without_api(user_gender)
 
-        # Ordenar e retornar até 10 recomendações
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
         return recommendations[:10]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-        
+        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
