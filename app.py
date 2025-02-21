@@ -789,7 +789,7 @@ def show_recommendations():
         st.error(f"Erro ao processar recomendações: {str(e)}")
         return
         
-        def main():
+def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
         reset_session_state()
