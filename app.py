@@ -6,24 +6,30 @@ import pandas as pd
 from typing import Dict, List, Any
 import os
 
-# Importar todas as funções necessárias do módulo utils
-from utils import (
-    get_sport_recommendations,
-    calculate_biotype_compatibility,
-    calculate_physical_compatibility,
-    get_sport_strengths,
-    get_development_areas,
-    translate_sport_name,
-    load_and_process_data,
-    normalize_score,
-    calculate_average,
-    process_test_results,
-    get_age_group,
-    calculate_age_adjusted_score,
-    get_development_potential,
-    calculate_final_score
-)
-
+try:
+    from utils.sport_helper import (
+        get_sport_recommendations,
+        calculate_biotype_compatibility,
+        calculate_physical_compatibility,
+        get_sport_strengths,
+        get_development_areas,
+        translate_sport_name,
+        load_and_process_data
+    )
+    from utils.test_processor import (
+        normalize_score,
+        calculate_average,
+        process_test_results
+    )
+    from utils.age_adjusted_calculations import (
+        get_age_group,
+        calculate_age_adjusted_score,
+        get_development_potential,
+        calculate_final_score
+    )
+except ImportError as e:
+    st.error(f"Erro ao importar módulos: {str(e)}")
+    st.error("Verifique se a estrutura do projeto está correta e se todos os arquivos necessários estão presentes.")
 st.set_page_config(
     page_title="Analisador de Talentos Esportivos",
     page_icon="🏃‍♂️",
