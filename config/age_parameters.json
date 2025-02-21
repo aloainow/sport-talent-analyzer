@@ -1,0 +1,351 @@
+{
+    "masculino": {
+        "10": {
+            "altura": {
+                "baixo": [0, 145],
+                "medio_baixo": [145, 157.5],
+                "medio_alto": [157.5, 164],
+                "alto": [164, 168.5],
+                "muito_alto": [168.5, 190]
+            },
+            "peso": {
+                "baixo": [0, 35],
+                "medio_baixo": [35, 45],
+                "medio_alto": [45, 52],
+                "alto": [52, 58],
+                "muito_alto": [58, 80]
+            },
+            "envergadura": {
+                "baixa": [0, 147],
+                "media_baixa": [147, 159.5],
+                "media_alta": [159.5, 166],
+                "alta": [166, 170.5],
+                "muito_alta": [170.5, 195]
+            }
+        },
+        "11": {
+            "altura": {
+                "baixo": [0, 147],
+                "medio_baixo": [147, 159.5],
+                "medio_alto": [159.5, 166],
+                "alto": [166, 170.5],
+                "muito_alto": [170.5, 195]
+            },
+            "peso": {
+                "baixo": [0, 37],
+                "medio_baixo": [37, 47],
+                "medio_alto": [47, 54],
+                "alto": [54, 60],
+                "muito_alto": [60, 85]
+            },
+            "envergadura": {
+                "baixa": [0, 149],
+                "media_baixa": [149, 161.5],
+                "media_alta": [161.5, 168],
+                "alta": [168, 172.5],
+                "muito_alta": [172.5, 197]
+            }
+        },
+        "12": {
+            "altura": {
+                "baixo": [0, 152],
+                "medio_baixo": [152, 164.5],
+                "medio_alto": [164.5, 171],
+                "alto": [171, 175.5],
+                "muito_alto": [175.5, 200]
+            },
+            "peso": {
+                "baixo": [0, 40],
+                "medio_baixo": [40, 50],
+                "medio_alto": [50, 57],
+                "alto": [57, 63],
+                "muito_alto": [63, 90]
+            },
+            "envergadura": {
+                "baixa": [0, 154],
+                "media_baixa": [154, 166.5],
+                "media_alta": [166.5, 173],
+                "alta": [173, 177.5],
+                "muito_alta": [177.5, 202]
+            }
+        },
+        "13": {
+            "altura": {
+                "baixo": [0, 157],
+                "medio_baixo": [157, 169.5],
+                "medio_alto": [169.5, 176],
+                "alto": [176, 180.5],
+                "muito_alto": [180.5, 205]
+            },
+            "peso": {
+                "baixo": [0, 45],
+                "medio_baixo": [45, 55],
+                "medio_alto": [55, 62],
+                "alto": [62, 68],
+                "muito_alto": [68, 95]
+            },
+            "envergadura": {
+                "baixa": [0, 159],
+                "media_baixa": [159, 171.5],
+                "media_alta": [171.5, 178],
+                "alta": [178, 182.5],
+                "muito_alta": [182.5, 207]
+            }
+        },
+        "14": {
+            "altura": {
+                "baixo": [0, 162],
+                "medio_baixo": [162, 174.5],
+                "medio_alto": [174.5, 181],
+                "alto": [181, 185.5],
+                "muito_alto": [185.5, 210]
+            },
+            "peso": {
+                "baixo": [0, 50],
+                "medio_baixo": [50, 60],
+                "medio_alto": [60, 67],
+                "alto": [67, 73],
+                "muito_alto": [73, 100]
+            },
+            "envergadura": {
+                "baixa": [0, 164],
+                "media_baixa": [164, 176.5],
+                "media_alta": [176.5, 183],
+                "alta": [183, 187.5],
+                "muito_alta": [187.5, 212]
+            }
+        },
+        "15": {
+            "altura": {
+                "baixo": [0, 162],
+                "medio_baixo": [162, 174.5],
+                "medio_alto": [174.5, 181],
+                "alto": [181, 185.5],
+                "muito_alto": [185.5, 210]
+            },
+            "peso": {
+                "baixo": [0, 43],
+                "medio_baixo": [43, 54.5],
+                "medio_alto": [54.5, 65],
+                "alto": [65, 74],
+                "muito_alto": [74, 120]
+            },
+            "envergadura": {
+                "baixa": [0, 164],
+                "media_baixa": [164, 176.5],
+                "media_alta": [176.5, 183],
+                "alta": [183, 187.5],
+                "muito_alta": [187.5, 215]
+            }
+        },
+        "16": {
+            "altura": {
+                "baixo": [0, 169],
+                "medio_baixo": [169, 181.5],
+                "medio_alto": [181.5, 188],
+                "alto": [188, 192.5],
+                "muito_alto": [192.5, 215]
+            },
+            "peso": {
+                "baixo": [0, 55],
+                "medio_baixo": [55, 65],
+                "medio_alto": [65, 72],
+                "alto": [72, 78],
+                "muito_alto": [78, 120]
+            },
+            "envergadura": {
+                "baixa": [0, 171],
+                "media_baixa": [171, 183.5],
+                "media_alta": [183.5, 190],
+                "alta": [190, 194.5],
+                "muito_alta": [194.5, 220]
+            }
+        },
+        "17-18": {
+            "altura": {
+                "baixo": [0, 172],
+                "medio_baixo": [172, 184.5],
+                "medio_alto": [184.5, 191],
+                "alto": [191, 195.5],
+                "muito_alto": [195.5, 220]
+            },
+            "peso": {
+                "baixo": [0, 58],
+                "medio_baixo": [58, 68],
+                "medio_alto": [68, 75],
+                "alto": [75, 81],
+                "muito_alto": [81, 120]
+            },
+            "envergadura": {
+                "baixa": [0, 174],
+                "media_baixa": [174, 186.5],
+                "media_alta": [186.5, 193],
+                "alta": [193, 197.5],
+                "muito_alta": [197.5, 225]
+            }
+        }
+    },
+    "feminino": {
+        "10": {
+            "altura": {
+                "baixo": [0, 142],
+                "medio_baixo": [142, 154.5],
+                "medio_alto": [154.5, 161],
+                "alto": [161, 165.5],
+                "muito_alto": [165.5, 185]
+            },
+            "peso": {
+                "baixo": [0, 33],
+                "medio_baixo": [33, 43],
+                "medio_alto": [43, 50],
+                "alto": [50, 56],
+                "muito_alto": [56, 75]
+            },
+            "envergadura": {
+                "baixa": [0, 144],
+                "media_baixa": [144, 156.5],
+                "media_alta": [156.5, 163],
+                "alta": [163, 167.5],
+                "muito_alta": [167.5, 190]
+            }
+        },
+        "11": {
+            "altura": {
+                "baixo": [0, 147],
+                "medio_baixo": [147, 159.5],
+                "medio_alto": [159.5, 166],
+                "alto": [166, 170.5],
+                "muito_alto": [170.5, 190]
+            },
+            "peso": {
+                "baixo": [0, 35],
+                "medio_baixo": [35, 45],
+                "medio_alto": [45, 52],
+                "alto": [52, 58],
+                "muito_alto": [58, 80]
+            },
+            "envergadura": {
+                "baixa": [0, 149],
+                "media_baixa": [149, 161.5],
+                "media_alta": [161.5, 168],
+                "alta": [168, 172.5],
+                "muito_alta": [172.5, 195]
+            }
+        },
+        "12": {
+            "altura": {
+                "baixo": [0, 152],
+                "medio_baixo": [152, 164.5],
+                "medio_alto": [164.5, 171],
+                "alto": [171, 175.5],
+                "muito_alto": [175.5, 195]
+            },
+            "peso": {
+                "baixo": [0, 38],
+                "medio_baixo": [38, 48],
+                "medio_alto": [48, 55],
+                "alto": [55, 61],
+                "muito_alto": [61, 85]
+            },
+            "envergadura": {
+                "baixa": [0, 154],
+                "media_baixa": [154, 166.5],
+                "media_alta": [166.5, 173],
+                "alta": [173, 177.5],
+                "muito_alta": [177.5, 200]
+            }
+        },
+        "13": {
+            "altura": {
+                "baixo": [0, 157],
+                "medio_baixo": [157, 169.5],
+                "medio_alto": [169.5, 176],
+                "alto": [176, 180.5],
+                "muito_alto": [180.5, 200]
+            },
+            "peso": {
+                "baixo": [0, 41],
+                "medio_baixo": [41, 51],
+                "medio_alto": [51, 58],
+                "alto": [58, 64],
+                "muito_alto": [64, 90]
+            },
+            "envergadura": {
+                "baixa": [0, 159],
+                "media_baixa": [159, 171.5],
+                "media_alta": [171.5, 178],
+                "alta": [178, 182.5],
+                "muito_alta": [182.5, 205]
+            }
+        },
+        "14": {
+            "altura": {
+                "baixo": [0, 157],
+                "medio_baixo": [157, 169.5],
+                "medio_alto": [169.5, 176],
+                "alto": [176, 180.5],
+                "muito_alto": [180.5, 200]
+            },
+            "peso": {
+                "baixo": [0, 43],
+                "medio_baixo": [43, 53],
+                "medio_alto": [53, 60],
+                "alto": [60, 66],
+                "muito_alto": [66, 95]
+            },
+            "envergadura": {
+                "baixa": [0, 159],
+                "media_baixa": [159, 171.5],
+                "media_alta": [171.5, 178],
+                "alta": [178, 182.5],
+                "muito_alta": [182.5, 205]
+            }
+        },
+        "15": {
+            "altura": {
+                "baixo": [0, 157],
+                "medio_baixo": [157, 169.5],
+                "medio_alto": [169.5, 176],
+                "alto": [176, 180.5],
+                "muito_alto": [180.5, 200]
+            },
+            "peso": {
+                "baixo": [0, 41],
+                "medio_baixo": [41, 51],
+                "medio_alto": [51, 60],
+                "alto": [60, 68],
+                "muito_alto": [68, 100]
+            },
+            "envergadura": {
+                "baixa": [0, 159],
+                "media_baixa": [159, 171.5],
+                "media_alta": [171.5, 178],
+                "alta": [178, 182.5],
+                "muito_alta": [182.5, 205]
+            }
+        },
+        "16-18": {
+            "altura": {
+                "baixo": [0, 158],
+                "medio_baixo": [158, 170.5],
+                "medio_alto": [170.5, 177],
+                "alto": [177, 181.5],
+                "muito_alto": [181.5, 200]
+            },
+            "peso": {
+                "baixo": [0, 43],
+                "medio_baixo": [43, 53],
+                "medio_alto": [53, 62],
+                "alto": [62, 70],
+                "muito_alto": [70, 100]
+            },
+            "envergadura": {
+                "baixa": [0, 160],
+                "media_baixa": [160, 172.5],
+                "media_alta": [172.5, 179],
+                "alta": [179, 183.5],
+                "muito_alta": [183.5, 205]
+            }
+        }
+    }
+}
