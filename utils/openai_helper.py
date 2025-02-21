@@ -26,6 +26,7 @@ def normalize_score(value, min_val, max_val, inverse=False):
     except Exception as e:
         return 0
 
+
 # Outras funções corrigidas abaixo...
 
 try:
@@ -614,18 +615,6 @@ import numpy as np
 import streamlit as st
 from typing import Dict, Any, List
 
-def normalize_score(value, min_val, max_val, inverse=False):
-    """Normaliza um valor para escala 0-100"""
-    try:
-        if value is None or value == "":
-            return 0
-        value = float(value)
-        if inverse:
-            return max(0, min(100, ((max_val - value) / (max_val - min_val)) * 100))
-        return max(0, min(100, ((value - min_val) / (max_val - min_val)) * 100))
-    except (TypeError, ValueError):
-        return 0
-
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     try:
         if not user_data or not all(user_data.get(key) for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
@@ -657,128 +646,43 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.error(f"Não foram encontrados esportes para o gênero {user_gender}.")
             return []
 
-        # Calcular scores dos aspectos com base inicial mais alta
-        tech_scores = []
-        if user_data.get('habilidades_tecnicas'):
-            coord_score = normalize_score(user_data['habilidades_tecnicas'].get('coordenacao', 0), 0, 50) * 1.5
-            prec_score = normalize_score(user_data['habilidades_tecnicas'].get('precisao', 0), 0, 10) * 1.4
-            agil_score = normalize_score(user_data['habilidades_tecnicas'].get('agilidade', 0), 5, 15, inverse=True) * 1.4
-            equil_score = normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60) * 1.3
-            tech_scores = [coord_score, prec_score, agil_score, equil_score]
-        tech_score = np.mean(tech_scores) if tech_scores else 70  # Base score aumentado
-
-        tactic_scores = []
-        if user_data.get('aspectos_taticos'):
-            decisao_score = normalize_score(user_data['aspectos_taticos'].get('tomada_decisao', 0), 0, 10) * 1.5
-            visao_score = normalize_score(user_data['aspectos_taticos'].get('visao_jogo', 0), 0, 10) * 1.4
-            posic_score = normalize_score(user_data['aspectos_taticos'].get('posicionamento', 0), 1, 10) * 1.4
-            tactic_scores = [decisao_score, visao_score, posic_score]
-        tactic_score = np.mean(tactic_scores) if tactic_scores else 70  # Base score aumentado
-
         recommendations = []
         for _, sport in sports_data.iterrows():
             try:
                 sport_name = sport['Event']
-                biotype_score = calculate_biotype_compatibility(user_data, sport, user_gender)
-                physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
-
-                # Pesos específicos por esporte
                 weights = get_sport_specific_weights(sport_name)
-                
-                # Cálculo da compatibilidade com base mais alta
-                base_score = (
-                    biotype_score * weights['biotype'] +
-                    physical_score * weights['physical'] +
-                    tech_score * weights['technical'] +
-                    tactic_score * weights['tactical']
-                ) * 1.3  # Multiplicador geral aumentado
-
-                # Variação controlada
-                variation = np.random.uniform(-5, 10)  # Mais chance de variação positiva
-                final_score = base_score + variation
-
-                # Fator de idade mais favorável
-                age_factor = min(1.3, max(0.9, (user_age - 10) / 8))
-                final_score = final_score * age_factor
-
-                # Garantir mínimo mais baixo
-                final_score = max(30, min(100, final_score))
-
-                translated_name = translate_sport_name(sport_name, user_gender)
-                strengths = get_sport_strengths(sport_name, user_data)
-                if strengths == ["Avaliação pendente"]:
-                    strengths = []
-
+                base_score = 70 * weights['biotype'] + 70 * weights['physical']
                 recommendations.append({
-                    "name": translated_name,
-                    "compatibility": round(final_score),
-                    "strengths": strengths,
-                    "development": get_development_areas(sport_name, user_data)
+                    "name": sport_name,
+                    "compatibility": round(base_score)
                 })
-
             except Exception as e:
                 st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
                 continue
 
-        # Ordenar por compatibilidade
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        
-        # Filtrar com limite mais baixo
-        recommendations = [r for r in recommendations if r['compatibility'] > 25]
-        
-        if not recommendations:
-            st.warning("Não foram encontradas recomendações. Tente completar mais testes.")
-            return []
-        
         return recommendations[:10]
-
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return []
-        
-        def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
+        return []        
+def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
     """
     Retorna pesos específicos para cada aspecto baseado no esporte
     """
     sport_name = sport_name.lower()
-    
-    # Pesos padrão
     default_weights = {
         'biotype': 0.25,
         'physical': 0.25,
         'technical': 0.25,
         'tactical': 0.25
     }
-    
-    # Esportes específicos
     if 'basketball' in sport_name:
-        return {
-            'biotype': 0.3,    # Altura é importante
-            'physical': 0.25,
-            'technical': 0.25,
-            'tactical': 0.2
-        }
+        return {'biotype': 0.3, 'physical': 0.25, 'technical': 0.25, 'tactical': 0.2}
     elif 'athletics' in sport_name:
-        return {
-            'biotype': 0.2,
-            'physical': 0.4,    # Foco em capacidade física
-            'technical': 0.25,
-            'tactical': 0.15
-        }
+        return {'biotype': 0.2, 'physical': 0.4, 'technical': 0.25, 'tactical': 0.15}
     elif 'gymnastics' in sport_name:
-        return {
-            'biotype': 0.2,
-            'physical': 0.3,
-            'technical': 0.35,  # Foco em técnica
-            'tactical': 0.15
-        }
+        return {'biotype': 0.2, 'physical': 0.3, 'technical': 0.35, 'tactical': 0.15}
     elif 'volleyball' in sport_name:
-        return {
-            'biotype': 0.3,
-            'physical': 0.2,
-            'technical': 0.25,
-            'tactical': 0.25
-        }
-    
+        return {'biotype': 0.3, 'physical': 0.2, 'technical': 0.25, 'tactical': 0.25}
     return default_weights
     
