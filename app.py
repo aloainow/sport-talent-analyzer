@@ -695,18 +695,18 @@ def show_recommendations():
     try:
         with st.spinner("Analisando seus resultados..."):
             user_data = {
-    'genero': st.session_state.personal_info.get('genero', 'Masculino'),  # Adicionei este campo
-    'idade': st.session_state.personal_info.get('idade'),
-    'biotipo': {
-        'altura': st.session_state.personal_info.get('altura'),
-        'peso': st.session_state.personal_info.get('peso'),
-        'envergadura': st.session_state.personal_info.get('envergadura')
-    },
-    'dados_fisicos': st.session_state.test_results['dados_fisicos'],
-    'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
-    'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
-    'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
-}
+                'genero': st.session_state.personal_info.get('genero', 'Masculino'),
+                'idade': st.session_state.personal_info.get('idade'),
+                'biotipo': {
+                    'altura': st.session_state.personal_info.get('altura'),
+                    'peso': st.session_state.personal_info.get('peso'),
+                    'envergadura': st.session_state.personal_info.get('envergadura')
+                },
+                'dados_fisicos': st.session_state.test_results['dados_fisicos'],
+                'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
+                'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
+                'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
+            }
 
             # Processar scores para o gráfico radar
             processed_scores = process_test_results(st.session_state.test_results)
@@ -744,7 +744,7 @@ def show_recommendations():
                 development = sport.get('development', ["Não disponível"])
 
                 strengths_html = "".join(f"<li>{s}</li>" for s in strengths)
-                development_html = "".join(f"<li>{d}</li>" for s in development)
+                development_html = "".join(f"<li>{d}</li>" for d in development)
 
                 with st.container():
                     st.markdown(
@@ -783,9 +783,13 @@ def show_recommendations():
                     )
 
     except Exception as e:
+        # Adicione este print para debug
+        import traceback
+        print(traceback.format_exc())
         st.error(f"Erro ao processar recomendações: {str(e)}")
-        return            
-def main():
+        return
+        
+        def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
         reset_session_state()
