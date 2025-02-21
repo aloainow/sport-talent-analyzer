@@ -647,99 +647,115 @@ def show_fatores_psicologicos():
             'genero': genero  # Adicionando o gênero aos dados salvos
         }
         st.success("Resultados salvos com sucesso!")
-def show_recommendations():
-    st.title("⭐ Suas Recomendações de Esportes")
-
-    # Verificar se todos os testes foram completados
-    all_tests_completed = all(st.session_state.test_results.values())
-
-    if not all_tests_completed:
-        st.warning("Complete todos os testes para ver suas recomendações completas.")
-        return
-
-    # Processar scores e gerar recomendações
+def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     try:
-        with st.spinner("Analisando seus resultados..."):
-            user_data = {
-                'altura': st.session_state.personal_info.get('altura'),
-                'peso': st.session_state.personal_info.get('peso'),
-                'envergadura': st.session_state.personal_info.get('envergadura'),
-                'dados_fisicos': st.session_state.test_results['dados_fisicos'],
-                'habilidades_tecnicas': st.session_state.test_results['habilidades_tecnicas'],
-                'aspectos_taticos': st.session_state.test_results['aspectos_taticos'],
-                'fatores_psicologicos': st.session_state.test_results['fatores_psicologicos']
-            }
+        if not user_data or not all(user_data.get(key) for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
+            st.error("Por favor, complete todos os testes antes de gerar recomendações.")
+            return []
 
+        sports_data = load_and_process_data()
+        if sports_data is None:
+            st.error("Erro ao carregar dados dos esportes. Por favor, tente novamente.")
+            return []
 
-            # Processar scores para o gráfico radar
-            processed_scores = process_test_results(st.session_state.test_results)
-            st.session_state.processed_scores = processed_scores
+        user_gender = st.session_state.personal_info.get('genero', 'Masculino')
+        user_age = st.session_state.personal_info.get('idade', 18)
 
-            # Gerar recomendações
-            st.session_state.recommendations = get_sport_recommendations(user_data)
+        # Filtragem por gênero
+        if user_gender == "Feminino":
+            sports_data = sports_data[
+                (sports_data['Event'].str.contains("Women", case=False)) |
+                (sports_data['Event'].str.contains("Mixed", case=False))
+            ]
+        else:  # Masculino
+            sports_data = sports_data[
+                (sports_data['Event'].str.contains("Men", case=False) & 
+                ~sports_data['Event'].str.contains("Women", case=False)) |
+                (sports_data['Event'].str.contains("Mixed", case=False))
+            ]
+
+        if sports_data.empty:
+            st.error(f"Não foram encontrados esportes para o gênero {user_gender}.")
+            return []
+
+        # Calcular scores dos aspectos com base inicial mais alta
+        tech_scores = []
+        if user_data.get('habilidades_tecnicas'):
+            coord_score = normalize_score(user_data['habilidades_tecnicas'].get('coordenacao', 0), 0, 50) * 1.5
+            prec_score = normalize_score(user_data['habilidades_tecnicas'].get('precisao', 0), 0, 10) * 1.4
+            agil_score = normalize_score(user_data['habilidades_tecnicas'].get('agilidade', 0), 5, 15, inverse=True) * 1.4
+            equil_score = normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60) * 1.3
+            tech_scores = [coord_score, prec_score, agil_score, equil_score]
+        tech_score = np.mean(tech_scores) if tech_scores else 70  # Base score aumentado
+
+        tactic_scores = []
+        if user_data.get('aspectos_taticos'):
+            decisao_score = normalize_score(user_data['aspectos_taticos'].get('tomada_decisao', 0), 0, 10) * 1.5
+            visao_score = normalize_score(user_data['aspectos_taticos'].get('visao_jogo', 0), 0, 10) * 1.4
+            posic_score = normalize_score(user_data['aspectos_taticos'].get('posicionamento', 0), 1, 10) * 1.4
+            tactic_scores = [decisao_score, visao_score, posic_score]
+        tactic_score = np.mean(tactic_scores) if tactic_scores else 70  # Base score aumentado
+
+        recommendations = []
+        for _, sport in sports_data.iterrows():
+            try:
+                sport_name = sport['Event']
+                biotype_score = calculate_biotype_compatibility(user_data, sport, user_gender)
+                physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
+
+                # Pesos específicos por esporte
+                weights = get_sport_specific_weights(sport_name)
+                
+                # Cálculo da compatibilidade com base mais alta
+                base_score = (
+                    biotype_score * weights['biotype'] +
+                    physical_score * weights['physical'] +
+                    tech_score * weights['technical'] +
+                    tactic_score * weights['tactical']
+                ) * 1.3  # Multiplicador geral aumentado
+
+                # Variação controlada
+                variation = np.random.uniform(-5, 10)  # Mais chance de variação positiva
+                final_score = base_score + variation
+
+                # Fator de idade mais favorável
+                age_factor = min(1.3, max(0.9, (user_age - 10) / 8))
+                final_score = final_score * age_factor
+
+                # Garantir mínimo mais baixo
+                final_score = max(30, min(100, final_score))
+
+                translated_name = translate_sport_name(sport_name, user_gender)
+                strengths = get_sport_strengths(sport_name, user_data)
+                if strengths == ["Avaliação pendente"]:
+                    strengths = []
+
+                recommendations.append({
+                    "name": translated_name,
+                    "compatibility": round(final_score),
+                    "strengths": strengths,
+                    "development": get_development_areas(sport_name, user_data)
+                })
+
+            except Exception as e:
+                st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
+                continue
+
+        # Ordenar por compatibilidade
+        recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+        
+        # Filtrar com limite mais baixo
+        recommendations = [r for r in recommendations if r['compatibility'] > 25]
+        
+        if not recommendations:
+            st.warning("Não foram encontradas recomendações. Tente completar mais testes.")
+            return []
+        
+        return recommendations[:10]
 
     except Exception as e:
-        st.error(f"Erro ao processar recomendações: {str(e)}")
-        return
-
-    # Exibir Radar Chart (Perfil do usuário)
-    st.subheader("📊 Seu Perfil")
-    fig = create_radar_chart(st.session_state.processed_scores)
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Exibir contagem de esportes recomendados
-    total_recomendacoes = len(st.session_state.recommendations)
-    st.write(f"**Esportes recomendados: {total_recomendacoes}**")
-
-    # Exibir Top 5 recomendações em cartões
-    st.subheader("🏆 Top 5 Esportes Recomendados")
-
-    # Pegar apenas os 5 primeiros esportes da lista
-    top_5_recomendacoes = st.session_state.recommendations[:5]
-
-    for index, sport in enumerate(top_5_recomendacoes, start=1):
-        strengths = sport['strengths'] or ["Não informado"]
-        development = sport['development'] or ["Não informado"]
-
-        strengths_html = "".join(f"<li>{s}</li>" for s in strengths)
-        development_html = "".join(f"<li>{d}</li>" for d in development)
-
-        with st.container():
-            st.markdown(
-                f"""
-                <div style="
-                    background-color: #1e1e1e;
-                    padding: 15px;
-                    border-radius: 12px;
-                    margin-bottom: 10px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                    color: white;
-                ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <h3 style="margin: 0; color: white;">{index}. {sport['name']}</h3>
-                        <span style="color: #4caf50; font-weight: bold; font-size: 18px;">
-                            {sport['compatibility']}% compatível
-                        </span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <div style="flex: 1; margin-right: 20px;">
-                            <strong style="color: #81c784;">Pontos Fortes:</strong>
-                            <ul style="margin-top: 5px; color: white;">
-                                {strengths_html}
-                            </ul>
-                        </div>
-                        <div style="flex: 1;">
-                            <strong style="color: #64b5f6;">Áreas para Desenvolver:</strong>
-                            <ul style="margin-top: 5px; color: white;">
-                                {development_html}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            
+        st.error(f"Erro ao gerar recomendações: {str(e)}")
+        return []            
 def main():
     # Verifica se é um reset
     if "reset" in st.query_params:
