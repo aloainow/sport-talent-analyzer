@@ -315,21 +315,25 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 tactic_score = calculate_tactical_score(user_data)
                 psych_score = calculate_psychological_score(user_data)
 
-                # Calcular score base
-                base_score = calculate_base_score(
-                    biotype_score, physical_score, tech_score, 
-                    tactic_score, psych_score, sport_name, user_data
-                )
+                try:
+    # Calcular score base
+    base_score = calculate_base_score(
+        biotype_score, physical_score, tech_score, 
+        tactic_score, psych_score, sport_name, user_data
+    )
+    recommendations.append({
+        "name": sport_name,
+        "compatibility": round(base_score),
+        "strengths": get_sport_strengths(sport_name, user_data),
+        "development": get_development_areas(sport_name, user_data)
+    })
+    processed_sports += 1
+except Exception as e:
+    # Tratamento de exceção
+    errors += 1
+    st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
+    continue
 
-                recommendations.append({
-                    "name": sport_name,
-                    "compatibility": round(base_score),
-                    "strengths": get_sport_strengths(sport_name, user_data),
-                    "development": get_development_areas(sport_name, user_data)
-                })
-                processed_sports += 1
-
-           try:
     # Seu código anterior
     except Exception as sport_e:
         errors += 1
