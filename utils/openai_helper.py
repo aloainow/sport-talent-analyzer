@@ -616,18 +616,15 @@ def normalize_score(value, min_val, max_val, inverse=False):
 
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     try:
-        # Verificar dados do usuário
         if not user_data or not all(user_data.get(key) for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
             st.error("Por favor, complete todos os testes antes de gerar recomendações.")
             return []
 
-        # Carregar dados dos esportes
         sports_data = load_and_process_data()
         if sports_data is None:
             st.error("Erro ao carregar dados dos esportes. Por favor, tente novamente.")
             return []
 
-        # Pegando gênero do usuário dos dados pessoais
         user_gender = st.session_state.personal_info.get('genero', 'Masculino')
         user_age = st.session_state.personal_info.get('idade', 18)
 
@@ -645,30 +642,89 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             ]
 
         if sports_data.empty:
-            st.error(f"Não foram encontrados esportes para o gênero {user_gender}. Por favor, tente novamente.")
+            st.error(f"Não foram encontrados esportes para o gênero {user_gender}.")
             return []
 
+        # Calcular scores dos aspectos com base inicial mais alta
+        tech_scores = []
+        if user_data.get('habilidades_tecnicas'):
+            coord_score = normalize_score(user_data['habilidades_tecnicas'].get('coordenacao', 0), 0, 50) * 1.5
+            prec_score = normalize_score(user_data['habilidades_tecnicas'].get('precisao', 0), 0, 10) * 1.4
+            agil_score = normalize_score(user_data['habilidades_tecnicas'].get('agilidade', 0), 5, 15, inverse=True) * 1.4
+            equil_score = normalize_score(user_data['habilidades_tecnicas'].get('equilibrio', 0), 0, 60) * 1.3
+            tech_scores = [coord_score, prec_score, agil_score, equil_score]
+        tech_score = np.mean(tech_scores) if tech_scores else 70  # Base score aumentado
+
+        tactic_scores = []
+        if user_data.get('aspectos_taticos'):
+            decisao_score = normalize_score(user_data['aspectos_taticos'].get('tomada_decisao', 0), 0, 10) * 1.5
+            visao_score = normalize_score(user_data['aspectos_taticos'].get('visao_jogo', 0), 0, 10) * 1.4
+            posic_score = normalize_score(user_data['aspectos_taticos'].get('posicionamento', 0), 1, 10) * 1.4
+            tactic_scores = [decisao_score, visao_score, posic_score]
+        tactic_score = np.mean(tactic_scores) if tactic_scores else 70  # Base score aumentado
+
         recommendations = []
-        
-        # [resto do seu código permanece igual até o final do processamento dos esportes]
+        for _, sport in sports_data.iterrows():
+            try:
+                sport_name = sport['Event']
+                biotype_score = calculate_biotype_compatibility(user_data, sport, user_gender)
+                physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
+
+                # Pesos específicos por esporte
+                weights = get_sport_specific_weights(sport_name)
+                
+                # Cálculo da compatibilidade com base mais alta
+                base_score = (
+                    biotype_score * weights['biotype'] +
+                    physical_score * weights['physical'] +
+                    tech_score * weights['technical'] +
+                    tactic_score * weights['tactical']
+                ) * 1.3  # Multiplicador geral aumentado
+
+                # Variação controlada
+                variation = np.random.uniform(-5, 10)  # Mais chance de variação positiva
+                final_score = base_score + variation
+
+                # Fator de idade mais favorável
+                age_factor = min(1.3, max(0.9, (user_age - 10) / 8))
+                final_score = final_score * age_factor
+
+                # Garantir mínimo mais baixo
+                final_score = max(30, min(100, final_score))
+
+                translated_name = translate_sport_name(sport_name, user_gender)
+                strengths = get_sport_strengths(sport_name, user_data)
+                if strengths == ["Avaliação pendente"]:
+                    strengths = []
+
+                recommendations.append({
+                    "name": translated_name,
+                    "compatibility": round(final_score),
+                    "strengths": strengths,
+                    "development": get_development_areas(sport_name, user_data)
+                })
+
+            except Exception as e:
+                st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
+                continue
 
         # Ordenar por compatibilidade
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
         
-        # Filtrar esportes com compatibilidade muito baixa
-        recommendations = [r for r in recommendations if r['compatibility'] > 35]
+        # Filtrar com limite mais baixo
+        recommendations = [r for r in recommendations if r['compatibility'] > 25]
         
         if not recommendations:
-            st.warning("Não foram encontradas recomendações com compatibilidade suficiente. Tente ajustar seus dados de teste.")
+            st.warning("Não foram encontradas recomendações. Tente completar mais testes.")
             return []
         
         return recommendations[:10]
 
     except Exception as e:
-        st.error(f"Ocorreu um erro ao gerar recomendações: {str(e)}")
-        st.info("Por favor, tente novamente ou entre em contato com o suporte se o problema persistir.")
+        st.error(f"Erro ao gerar recomendações: {str(e)}")
         return []
-def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
+        
+        def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
     """
     Retorna pesos específicos para cada aspecto baseado no esporte
     """
