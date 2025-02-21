@@ -1,0 +1,169 @@
+{
+    "masculino": {
+        "10-12": {
+            "dados_fisicos": {
+                "velocidade": {
+                    "excelente": {"valor": 3.8, "score": 100},
+                    "otimo": {"valor": 4.0, "score": 90},
+                    "bom": {"valor": 4.2, "score": 80},
+                    "regular": {"valor": 4.6, "score": 70},
+                    "fraco": {"valor": 5.0, "score": 60}
+                },
+                "forca_superior": {
+                    "excelente": {"valor": 20, "score": 100},
+                    "otimo": {"valor": 17, "score": 90},
+                    "bom": {"valor": 15, "score": 80},
+                    "regular": {"valor": 12, "score": 70},
+                    "fraco": {"valor": 10, "score": 60}
+                },
+                "forca_inferior": {
+                    "excelente": {"valor": 30, "score": 100},
+                    "otimo": {"valor": 27, "score": 90},
+                    "bom": {"valor": 25, "score": 80},
+                    "regular": {"valor": 22, "score": 70},
+                    "fraco": {"valor": 20, "score": 60}
+                }
+            },
+            "habilidades_tecnicas": {
+                "coordenacao": {
+                    "excelente": {"valor": 30, "score": 100},
+                    "otimo": {"valor": 27, "score": 90},
+                    "bom": {"valor": 25, "score": 80},
+                    "regular": {"valor": 22, "score": 70},
+                    "fraco": {"valor": 20, "score": 60}
+                },
+                "precisao": {
+                    "excelente": {"valor": 7, "score": 100},
+                    "otimo": {"valor": 6, "score": 90},
+                    "bom": {"valor": 5, "score": 80},
+                    "regular": {"valor": 4, "score": 70},
+                    "fraco": {"valor": 3, "score": 60}
+                },
+                "agilidade": {
+                    "excelente": {"valor": 11, "score": 100},
+                    "otimo": {"valor": 12, "score": 90},
+                    "bom": {"valor": 13, "score": 80},
+                    "regular": {"valor": 14, "score": 70},
+                    "fraco": {"valor": 15, "score": 60}
+                },
+                "equilibrio": {
+                    "excelente": {"valor": 25, "score": 100},
+                    "otimo": {"valor": 22, "score": 90},
+                    "bom": {"valor": 20, "score": 80},
+                    "regular": {"valor": 17, "score": 70},
+                    "fraco": {"valor": 15, "score": 60}
+                }
+            }
+        },
+        "13-15": {
+            "dados_fisicos": {
+                "velocidade": {
+                    "excelente": {"valor": 3.5, "score": 100},
+                    "otimo": {"valor": 3.7, "score": 90},
+                    "bom": {"valor": 3.9, "score": 80},
+                    "regular": {"valor": 4.3, "score": 70},
+                    "fraco": {"valor": 4.7, "score": 60}
+                },
+                "forca_superior": {
+                    "excelente": {"valor": 25, "score": 100},
+                    "otimo": {"valor": 22, "score": 90},
+                    "bom": {"valor": 20, "score": 80},
+                    "regular": {"valor": 17, "score": 70},
+                    "fraco": {"valor": 15, "score": 60}
+                },
+                "forca_inferior": {
+                    "excelente": {"valor": 35, "score": 100},
+                    "otimo": {"valor": 32, "score": 90},
+                    "bom": {"valor": 30, "score": 80},
+                    "regular": {"valor": 27, "score": 70},
+                    "fraco": {"valor": 25, "score": 60}
+                }
+            },
+            "habilidades_tecnicas": {
+                "coordenacao": {
+                    "excelente": {"valor": 35, "score": 100},
+                    "otimo": {"valor": 32, "score": 90},
+                    "bom": {"valor": 30, "score": 80},
+                    "regular": {"valor": 27, "score": 70},
+                    "fraco": {"valor": 25, "score": 60}
+                },
+                "precisao": {
+                    "excelente": {"valor": 8, "score": 100},
+                    "otimo": {"valor": 7, "score": 90},
+                    "bom": {"valor": 6, "score": 80},
+                    "regular": {"valor": 5, "score": 70},
+                    "fraco": {"valor": 4, "score": 60}
+                },
+                "agilidade": {
+                    "excelente": {"valor": 10, "score": 100},
+                    "otimo": {"valor": 11, "score": 90},
+                    "bom": {"valor": 12, "score": 80},
+                    "regular": {"valor": 13, "score": 70},
+                    "fraco": {"valor": 14, "score": 60}
+                },
+                "equilibrio": {
+                    "excelente": {"valor": 30, "score": 100},
+                    "otimo": {"valor": 27, "score": 90},
+                    "bom": {"valor": 25, "score": 80},
+                    "regular": {"valor": 22, "score": 70},
+                    "fraco": {"valor": 20, "score": 60}
+                }
+            }
+        },
+        "16-18": {
+            "dados_fisicos": {
+                "velocidade": {
+                    "excelente": {"valor": 3.2, "score": 100},
+                    "otimo": {"valor": 3.4, "score": 90},
+                    "bom": {"valor": 3.6, "score": 80},
+                    "regular": {"valor": 4.0, "score": 70},
+                    "fraco": {"valor": 4.4, "score": 60}
+                },
+                "forca_superior": {
+                    "excelente": {"valor": 30, "score": 100},
+                    "otimo": {"valor": 27, "score": 90},
+                    "bom": {"valor": 25, "score": 80},
+                    "regular": {"valor": 22, "score": 70},
+                    "fraco": {"valor": 20, "score": 60}
+                },
+                "forca_inferior": {
+                    "excelente": {"valor": 40, "score": 100},
+                    "otimo": {"valor": 37, "score": 90},
+                    "bom": {"valor": 35, "score": 80},
+                    "regular": {"valor": 32, "score": 70},
+                    "fraco": {"valor": 30, "score": 60}
+                }
+            },
+            "habilidades_tecnicas": {
+                "coordenacao": {
+                    "excelente": {"valor": 40, "score": 100},
+                    "otimo": {"valor": 37, "score": 90},
+                    "bom": {"valor": 35, "score": 80},
+                    "regular": {"valor": 32, "score": 70},
+                    "fraco": {"valor": 30, "score": 60}
+                },
+                "precisao": {
+                    "excelente": {"valor": 9, "score": 100},
+                    "otimo": {"valor": 8, "score": 90},
+                    "bom": {"valor": 7, "score": 80},
+                    "regular": {"valor": 6, "score": 70},
+                    "fraco": {"valor": 5, "score": 60}
+                },
+                "agilidade": {
+                    "excelente": {"valor": 9, "score": 100},
+                    "otimo": {"valor": 10, "score": 90},
+                    "bom": {"valor": 11, "score": 80},
+                    "regular": {"valor": 12, "score": 70},
+                    "fraco": {"valor": 13, "score": 60}
+                },
+                "equilibrio": {
+                    "excelente": {"valor": 35, "score": 100},
+                    "otimo": {"valor": 32, "score": 90},
+                    "bom": {"valor": 30, "score": 80},
+                    "regular": {"valor": 27, "score": 70},
+                    "fraco": {"valor": 25, "score": 60}
+                }
+            }
+        }
+    }
+}
