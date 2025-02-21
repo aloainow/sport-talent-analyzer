@@ -5,12 +5,22 @@ from typing import Dict, List, Any
 import os
 import streamlit as st
 
-def normalize_score(value, min_val, max_val, inverse=False):
-    """Normaliza um valor para escala 0-100"""
+def normalize_score(value, min_val, max_val, inverse=False, genero="Masculino"):
+    """Normaliza um valor para escala 0-100 considerando o gênero"""
     try:
-        if value is None or value == "":  # Adicionado para evitar NoneType
+        if value is None or value == "":
             return 0
         value = float(value)
+        
+        # Ajusta os limites baseado no gênero
+        if genero == "Feminino":
+            # Aumenta a tolerância em 15% para o gênero feminino
+            range_adjustment = (max_val - min_val) * 0.15
+            if inverse:
+                min_val -= range_adjustment
+            else:
+                max_val += range_adjustment
+                
         if inverse:
             if value <= min_val:
                 return 100
@@ -25,7 +35,7 @@ def normalize_score(value, min_val, max_val, inverse=False):
             return ((value - min_val) / (max_val - min_val)) * 100
     except (TypeError, ValueError):
         return 0
-
+        
 def classify_test_results(test_name: str, value: float, gender: str) -> str:
     """Classifica o resultado do teste com base no gênero"""
     classification_criteria = {
