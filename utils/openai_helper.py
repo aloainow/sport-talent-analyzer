@@ -8,32 +8,45 @@ import streamlit as st
 def normalize_score(value, min_val, max_val, inverse=False):
     """Normaliza um valor para escala 0-100"""
     try:
-        if value is None or value == "":
-            return 0
+        if value is None or value == "":  # Adicionado para evitar NoneType
+            return 50.0
         value = float(value)
         if inverse:
             if value <= min_val:
-                return 100
+                return 100.0
             elif value >= max_val:
-                return 0
-            return ((max_val - value) / (max_val - min_val)) * 100
+                return 0.0
+            return ((max_val - value) / (max_val - min_val)) * 100.0
         else:
             if value >= max_val:
-                return 100
+                return 100.0
             elif value <= min_val:
-                return 0
-            return ((value - min_val) / (max_val - min_val)) * 100
+                return 0.0
+            return ((value - min_val) / (max_val - min_val)) * 100.0
     except (TypeError, ValueError):
-        return 0
+        return 50.0
 
-# ... [Keep your existing dictionaries like SPORTS_TRANSLATIONS and EVENT_TRANSLATIONS]
+# Dicionário de traduções de termos gerais (mantido do código original)
+SPORTS_TRANSLATIONS = {
+    # ... (manter o dicionário original de SPORTS_TRANSLATIONS)
+    "Athletics": "Atletismo",
+    "Swimming": "Natação",
+    # ... outros esportes
+}
+
+# Dicionário de traduções de eventos completos (mantido do código original)
+EVENT_TRANSLATIONS = {
+    # ... (manter o dicionário original de EVENT_TRANSLATIONS)
+    "Athletics Men's 100 metres": "Atletismo 100 metros Masculino",
+    # ... outros eventos
+}
 
 def load_and_process_data() -> pd.DataFrame:
     """
     Carrega e processa os dados dos esportes olímpicos do CSV
     """
     try:
-        # Caminhos possíveis para o arquivo CSV no Streamlit Cloud
+        # Lista de possíveis caminhos para o arquivo CSV
         possible_paths = [
             'data/perfil_eventos_olimpicos_verao.csv',  # Caminho padrão no Streamlit Cloud
             './data/perfil_eventos_olimpicos_verao.csv',
@@ -77,113 +90,274 @@ def data_sports_default():
         ]
     }
 
-# Exemplo de uso
-if __name__ == '__main__':
-    df = load_and_process_data()
-    print(df)
-def translate_sport_name(sport_name: str, user_gender: str) -> str:
-    """
-    Traduz o nome completo do evento esportivo de inglês para português
-    """
-    # Your existing implementation
-
 def calculate_physical_compatibility(user_data: Dict, sport_name: str, user_age: int = 18) -> float:
     """
     Calcula compatibilidade física baseada nos testes, ajustada pela idade
     """
-    # Your existing implementation
+    try:
+        # Verificação de dados de entrada
+        if not user_data or not user_data.get('dados_fisicos'):
+            st.warning("Dados físicos não disponíveis. Retornando compatibilidade padrão.")
+            return 50.0
+        
+        dados_fisicos = user_data.get('dados_fisicos', {})
+        
+        # Verificar e definir valores padrão se não existirem
+        velocidade = dados_fisicos.get('velocidade', 5.0)
+        forca_superior = dados_fisicos.get('forca_superior', 0)
+        forca_inferior = dados_fisicos.get('forca_inferior', 0)
+        
+        # Inicializar lista de scores
+        scores = []
+        
+        # Substituir verificações por uma função mais robusta
+        def safe_normalize_score(value, min_val, max_val, inverse=False):
+            try:
+                if value is None:
+                    return 50.0  # Valor padrão
+                return normalize_score(value, min_val, max_val, inverse)
+            except Exception:
+                return 50.0
+        
+        # Velocidade (esportes que valorizam velocidade)
+        velocity_sports = ['Athletics', 'Swimming', 'Cycling', 'Sprint']
+        if any(sport in sport_name for sport in velocity_sports):
+            velocity_score = safe_normalize_score(velocidade, 2.5, 5.0, inverse=True)
+            scores.append(velocity_score * 1.5)
+        
+        # Força (esportes que valorizam força)
+        strength_sports = ['Weightlifting', 'Wrestling', 'Judo', 'Boxing']
+        if any(sport in sport_name for sport in strength_sports):
+            strength_upper = safe_normalize_score(forca_superior, 0, 50)
+            strength_lower = safe_normalize_score(forca_inferior, 0, 60)
+            scores.extend([strength_upper * 1.5, strength_lower * 1.5])
+        
+        # Calcular média dos scores disponíveis
+        if not scores:
+            return 50.0
+            
+        base_score = float(np.mean(scores))
+        
+        # Ajuste baseado na idade
+        age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
+        
+        # Retornar score final como float
+        return float(base_score * age_factor)
+            
+    except Exception as e:
+        st.error(f"Erro no cálculo de compatibilidade física: {str(e)}")
+        return 50.0
 
 def calculate_biotype_compatibility(user_data: Dict, sport: pd.Series) -> float:
     """
     Calcula a compatibilidade do biotipo do usuário com o esporte
     """
     try:
-        # Adicione prints de debug
-        print(f"Calculando compatibilidade para: {sport['Event']}")
-        print(f"Dados do usuário: {user_data}")
-
-        if not user_data or 'biotipo' not in user_data:
-            return 50  # Valor padrão se não houver dados de biotipo
+        # Verificação de dados de entrada
+        if not user_data or not user_data.get('biotipo'):
+            st.warning("Dados de biotipo não disponíveis. Retornando compatibilidade padrão.")
+            return 50.0
             
         biotype_data = user_data.get('biotipo', {})
         sport_name = sport['Event'].lower()
+        
+        # Função para normalização segura
+        def safe_normalize_score(value, min_val, max_val):
+            try:
+                if value is None:
+                    return 50.0  # Valor padrão
+                return normalize_score(value, min_val, max_val)
+            except Exception:
+                return 50.0
+        
+        # Inicializar lista de scores
         scores = []
         
         # Altura (150-220 cm)
-        if 'altura' in biotype_data:
-            height = biotype_data['altura']
-            
+        altura = biotype_data.get('altura')
+        if altura is not None:
             # Esportes que valorizam altura
             if any(s in sport_name for s in ['basketball', 'volleyball']):
-                height_score = normalize_score(height, 170, 210)
+                height_score = safe_normalize_score(altura, 170, 210)
                 scores.append(height_score * 1.5)  # Peso maior para altura
+            
+            # Esportes que valorizam altura média/baixa
+            elif any(s in sport_name for s in ['gymnastics', 'wrestling']):
+                height_score = safe_normalize_score(altura, 150, 180)
+                scores.append(height_score)
         
         # Peso (40-120 kg)
-        if 'peso' in biotype_data:
-            weight = biotype_data['peso']
-            
+        peso = biotype_data.get('peso')
+        if peso is not None:
             # Categorias de peso para esportes de combate
             if any(s in sport_name for s in ['boxing', 'wrestling', 'judo']):
+                # Simplificação das categorias de peso
                 if 'heavyweight' in sport_name:
-                    weight_score = normalize_score(weight, 80, 120)
+                    weight_score = safe_normalize_score(peso, 80, 120)
                 elif 'middleweight' in sport_name:
-                    weight_score = normalize_score(weight, 70, 85)
+                    weight_score = safe_normalize_score(peso, 70, 85)
                 elif 'lightweight' in sport_name:
-                    weight_score = normalize_score(weight, 50, 70)
+                    weight_score = safe_normalize_score(peso, 50, 70)
                 else:
-                    weight_score = normalize_score(weight, 40, 120)
+                    weight_score = safe_normalize_score(peso, 40, 120)
                 scores.append(weight_score * 1.3)
         
         # Envergadura (150-220 cm)
-        if 'envergadura' in biotype_data:
-            wingspan = biotype_data['envergadura']
-            
+        envergadura = biotype_data.get('envergadura')
+        if envergadura is not None:
             # Esportes que valorizam envergadura
             if any(s in sport_name for s in ['swimming', 'boxing', 'basketball']):
-                wingspan_score = normalize_score(wingspan, 170, 220)
+                wingspan_score = safe_normalize_score(envergadura, 170, 220)
                 scores.append(wingspan_score * 1.2)
         
         # Se não houver scores, retorna valor padrão
         if not scores:
-            return 50
+            return 50.0
             
-        # Retorna média dos scores
-        return np.mean(scores)
+        # Retorna média dos scores como float
+        return float(np.mean(scores))
         
     except Exception as e:
         st.warning(f"Erro no cálculo de compatibilidade de biotipo: {str(e)}")
-        return 50
+        return 50.0
+
+def translate_sport_name(sport_name: str, user_gender: str) -> str:
+    """
+    Traduz o nome completo do evento esportivo de inglês para português
+    """
+    try:
+        # Primeiro, tenta encontrar uma tradução direta
+        base_event = sport_name.replace("Women's", "Men's")  # Normaliza para versão masculina
+        if base_event in EVENT_TRANSLATIONS:
+            translated_name = EVENT_TRANSLATIONS[base_event]
+        else:
+            # Se não encontrar, traduz parte por parte
+            translated_name = sport_name
+            for en, pt in SPORTS_TRANSLATIONS.items():
+                translated_name = translated_name.replace(en, pt)
+        
+        # Remove menções de gênero em inglês
+        translated_name = translated_name.replace("Men's", "").replace("Women's", "").strip()
+        
+        # Adiciona o gênero em português no final
+        if "Mixed" not in sport_name and "Mista" not in translated_name:
+            if "Women's" in sport_name or user_gender == "Feminino":
+                translated_name += " Feminino"
+            elif "Men's" in sport_name or user_gender == "Masculino":
+                translated_name += " Masculino"
+        
+        # Limpa e formata o resultado final
+        translated_name = " ".join(translated_name.split())
+        return translated_name
+
+    except Exception as e:
+        st.warning(f"Erro na tradução do evento: {str(e)}")
+        return sport_name  # Retorna o nome original em caso de erro
 
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
     """
     Identifica os pontos fortes do usuário para um determinado esporte
     """
-    # Your existing implementation
+    strengths = []
+    sport_name = sport_name.lower()
+    
+    try:
+        # Avaliação de biotipo
+        if user_data.get('biotipo'):
+            if user_data['biotipo'].get('altura', 0) >= 180 and any(s in sport_name for s in ['basketball', 'volleyball']):
+                strengths.append("Altura favorável")
+            
+            if user_data['biotipo'].get('envergadura', 0) >= 190 and any(s in sport_name for s in ['swimming', 'boxing']):
+                strengths.append("Boa envergadura")
+        
+        # Avaliação física
+        if user_data.get('dados_fisicos'):
+            if user_data['dados_fisicos'].get('velocidade', 0) <= 3.0 and 'athletics' in sport_name:
+                strengths.append("Velocidade")
+                
+            if user_data['dados_fisicos'].get('forca_superior', 0) >= 40:
+                strengths.append("Força superior")
+                
+            if user_data['dados_fisicos'].get('forca_inferior', 0) >= 50:
+                strengths.append("Força inferior")
+        
+        # Avaliação técnica
+        if user_data.get('habilidades_tecnicas'):
+            if user_data['habilidades_tecnicas'].get('coordenacao', 0) >= 40:
+                strengths.append("Coordenação")
+                
+            if user_data['habilidades_tecnicas'].get('precisao', 0) >= 8:
+                strengths.append("Precisão")
+                
+            if user_data['habilidades_tecnicas'].get('equilibrio', 0) >= 50:
+                strengths.append("Equilíbrio")
+        
+        # Limitar a 3 pontos fortes principais
+        return strengths[:3] if strengths else ["Avaliação pendente"]
+        
+    except Exception as e:
+        st.warning(f"Erro ao identificar pontos fortes: {str(e)}")
+        return ["Avaliação pendente"]
 
 def get_development_areas(sport_name: str, user_data: Dict) -> List[str]:
     """
     Identifica áreas de desenvolvimento para um determinado esporte
     """
-    # Your existing implementation
+    areas = []
+    sport_name = sport_name.lower()
+    
+    try:
+        # Avaliação física
+        if user_data.get('dados_fisicos'):
+            if user_data['dados_fisicos'].get('velocidade', 6) > 4.0 and 'athletics' in sport_name:
+                areas.append("Velocidade")
+                
+            if user_data['dados_fisicos'].get('forca_superior', 0) < 30:
+                areas.append("Força superior")
+                
+            if user_data['dados_fisicos'].get('forca_inferior', 0) < 40:
+                areas.append("Força inferior")
+        
+        # Avaliação técnica
+        if user_data.get('habilidades_tecnicas'):
+            if user_data['habilidades_tecnicas'].get('coordenacao', 0) < 30:
+                areas.append("Coordenação")
+                
+            if user_data['habilidades_tecnicas'].get('precisao', 0) < 6:
+                areas.append("Precisão")
+                
+            if user_data['habilidades_tecnicas'].get('equilibrio', 0) < 40:
+                areas.append("Equilíbrio")
+            
+            if user_data['habilidades_tecnicas'].get('agilidade', 0) > 10:
+                areas.append("Agilidade")
+        
+        # Limitar a 3 áreas principais de desenvolvimento
+        return areas[:3] if areas else ["Avaliação pendente"]
+        
+    except Exception as e:
+        st.warning(f"Erro ao identificar áreas de desenvolvimento: {str(e)}")
+        return ["Avaliação pendente"]
 
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Gera recomendações de esportes baseadas nos dados do usuário
     """
     try:
+        # Verificações de entrada
         if not user_data or not all(user_data.get(key) for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
             st.error("Por favor, complete todos os testes antes de gerar recomendações.")
             return []
 
+        # Carregar dados dos esportes
         sports_data = load_and_process_data()
         if sports_data is None:
             st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
             return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
+        # Definir gênero do usuário
         user_gender = user_data.get('genero', '')
         user_age = user_data.get('idade', 18)
-        user_height = user_data.get('altura', 0)
-        user_weight = user_data.get('peso', 0)
 
         # Filtrar esportes por gênero
         if user_gender == "Feminino":
@@ -197,24 +371,15 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
         recommendations = []
 
-        # Lista expandida de esportes para considerar
-        sports_to_consider = [
-            'Basketball', 'Volleyball', 'Judo', 'Wrestling', 'Boxing', 
-            'Athletics', 'Swimming', 'Gymnastics', 'Handball', 'Rugby'
-        ]
-
         for _, sport in sports_data.iterrows():
             try:
                 sport_name = sport['Event']
                 
-                # Filtrar apenas esportes de interesse
-                if not any(s.lower() in sport_name.lower() for s in sports_to_consider):
-                    continue
-
-                # Cálculos de compatibilidade mais detalhados
+                # Calcular scores individuais
                 biotype_score = calculate_biotype_compatibility(user_data, sport)
                 physical_score = calculate_physical_compatibility(user_data, sport_name, user_age)
 
+                # Calcular scores técnicos e táticos
                 tech_score = np.mean([
                     normalize_score(user_data['habilidades_tecnicas'].get(metric, 0), 0, 50)
                     for metric in ['coordenacao', 'precisao', 'agilidade', 'equilibrio']
@@ -227,46 +392,51 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     if metric in user_data['aspectos_taticos']
                 ]) if user_data.get('aspectos_taticos') else 50
 
-                # Ajuste para altura e peso
-                height_weight_bonus = 0
-                if user_height >= 190 and 'Basketball' in sport_name:
-                    height_weight_bonus += 15
-                if user_height >= 190 and 'Volleyball' in sport_name:
-                    height_weight_bonus += 15
-                if user_weight >= 80 and ('Wrestling' in sport_name or 'Boxing' in sport_name):
-                    height_weight_bonus += 15
-
+                # Calcular score base
                 base_score = (
                     biotype_score * 0.30 +
                     physical_score * 0.25 +
                     tech_score * 0.25 +
                     tactic_score * 0.20
-                ) * 0.7 + height_weight_bonus
+                ) * 0.7
 
+                # Ajustes específicos
+                if user_data.get('biotipo', {}).get('altura', 0) >= 180 and any(s in sport_name.lower() for s in ['basketball', 'volleyball']):
+                    base_score *= 1.1
+
+                # Fator de idade
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
+
+                # Variação aleatória leve para evitar resultados idênticos
                 random_factor = np.random.uniform(0.9, 1.1)
                 
+                # Calcular score final
                 final_score = min(100, max(20, base_score * age_factor * random_factor))
 
+                # Traduzir nome do esporte
                 translated_name = translate_sport_name(sport_name, user_gender)
 
+                # Adicionar à lista de recomendações
                 recommendations.append({
                     "name": translated_name,
                     "compatibility": round(final_score),
                     "strengths": get_sport_strengths(sport_name, user_data),
                     "development": get_development_areas(sport_name, user_data)
                 })
-            except Exception as e:
-                st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
+            except Exception as sport_e:
+                st.warning(f"Erro ao processar esporte {sport_name}: {str(sport_e)}")
                 continue
 
-        # Ordena e pega os 5 melhores
+        # Ordenar recomendações por compatibilidade
         recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        return recommendations[:5]
+        
+        # Retornar top 10 recomendações
+        return recommendations[:10]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))        
+        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
+        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
@@ -334,3 +504,60 @@ def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str,
                 "development": ["Técnica", "Resistência"]
             }
         ]
+
+# Código de exemplo para teste/verificação
+if __name__ == '__main__':
+    # Exemplo de dados de usuário para teste
+    exemplo_dados_usuario = {
+        'genero': 'Masculino',
+        'idade': 16,
+        'biotipo': {
+            'altura': 175,
+            'peso': 70,
+            'envergadura': 180
+        },
+        'dados_fisicos': {
+            'velocidade': 4.0,
+            'forca_superior': 35,
+            'forca_inferior': 45
+        },
+        'habilidades_tecnicas': {
+            'coordenacao': 40,
+            'precisao': 7,
+            'agilidade': 8,
+            'equilibrio': 45
+        },
+        'aspectos_taticos': {
+            'tomada_decisao': 7,
+            'visao_jogo': 6,
+            'posicionamento': 7
+        },
+        'fatores_psicologicos': {
+            'motivacao': {
+                'dedicacao': 8,
+                'frequencia': 7,
+                'comprometimento': 8
+            },
+            'resiliencia': {
+                'derrotas': 7,
+                'criticas': 6,
+                'erros': 7
+            },
+            'trabalho_equipe': {
+                'comunicacao': 8,
+                'opinioes': 7,
+                'contribuicao': 8
+            }
+        }
+    }
+    
+    # Gerar recomendações
+    recomendacoes = get_sport_recommendations(exemplo_dados_usuario)
+    
+    # Imprimir recomendações
+    print("Recomendações de Esportes:")
+    for rec in recomendacoes:
+        print(f"\nEsporte: {rec['name']}")
+        print(f"Compatibilidade: {rec['compatibility']}%")
+        print("Pontos Fortes:", rec['strengths'])
+        print("Áreas de Desenvolvimento:", rec['development'])
