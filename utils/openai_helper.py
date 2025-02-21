@@ -738,6 +738,40 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
         return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
+        pass
+
+def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
+    # Your existing implementation
+    if gender == "Masculino":
+        return [
+            {
+                "name": "Basquete Masculino",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Agilidade", "Resistência"]
+            },
+            # Other recommendations...
+        ]
+    elif gender == "Feminino":
+        return [
+            {
+                "name": "Basquete Feminino",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Agilidade", "Resistência"]
+            },
+            # Other recommendations...
+        ]
+    else:
+        return [
+            {
+                "name": "Basquete",
+                "compatibility": 75,
+                "strengths": ["Altura", "Coordenação"],
+                "development": ["Agilidade", "Resistência"]
+            },
+            # Other recommendations...
+        ]
         
 def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
     """
