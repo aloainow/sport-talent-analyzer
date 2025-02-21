@@ -506,21 +506,19 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
             return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
-        user_gender = user_data.get('genero', '')
+        user_gender = user_data.get('genero', '').lower()
         user_age = user_data.get('idade', 18)
 
-        # 🔥 Corrigida a filtragem por gênero 🔥
-        if user_gender == "Feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Women's", case=False)]
-        elif user_gender == "Masculino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Men's", case=False)]
+        if user_gender == "feminino":
+            sports_data = sports_data[sports_data['Event'].str.contains("Women's|Mixed", case=False)]
+        elif user_gender == "masculino":
+            sports_data = sports_data[sports_data['Event'].str.contains("Men's|Mixed", case=False)]
 
         if sports_data.empty:
             st.warning("Nenhum esporte encontrado para o gênero selecionado")
             return get_recommendations_without_api(user_gender)
 
         recommendations = []
-
         for _, sport in sports_data.iterrows():
             try:
                 sport_name = sport['Event']
@@ -544,22 +542,15 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     physical_score * 0.25 +
                     tech_score * 0.25 +
                     tactic_score * 0.20
-                ) * 0.7
-
-                if user_data.get('altura', 0) >= 180 and any(s in sport_name.lower() for s in ['basketball', 'volleyball']):
-                    base_score *= 1.1
-
+                )
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
-
-                # 🔥 Correção: Variar melhor a compatibilidade 🔥
-                random_factor = np.random.uniform(0.9, 1.1)  # Pequena variação aleatória de ±10%
-                final_score = min(100, max(20, base_score * age_factor * random_factor))
+                final_score = min(90, base_score * age_factor)
 
                 translated_name = translate_sport_name(sport_name, user_gender)
 
                 recommendations.append({
                     "name": translated_name,
-                    "compatibility": round(final_score),
+                    "compatibility": round(final_score) if not np.isnan(final_score) else 0,
                     "strengths": get_sport_strengths(sport_name, user_data),
                     "development": get_development_areas(sport_name, user_data)
                 })
