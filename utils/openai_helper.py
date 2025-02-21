@@ -616,55 +616,37 @@ import streamlit as st
 from typing import Dict, Any, List
 
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    try:
-        if not user_data or not all(user_data.get(key) for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']):
-            st.error("Por favor, complete todos os testes antes de gerar recomendações.")
-            return []
-
-        sports_data = load_and_process_data()
-        if sports_data is None:
-            st.error("Erro ao carregar dados dos esportes. Por favor, tente novamente.")
-            return []
-
-        user_gender = st.session_state.personal_info.get('genero', 'Masculino')
-        user_age = st.session_state.personal_info.get('idade', 18)
-
-        # Filtragem por gênero
-        if user_gender == "Feminino":
-            sports_data = sports_data[
-                (sports_data['Event'].str.contains("Women", case=False)) |
-                (sports_data['Event'].str.contains("Mixed", case=False))
-            ]
-        else:  # Masculino
-            sports_data = sports_data[
-                (sports_data['Event'].str.contains("Men", case=False) & 
-                ~sports_data['Event'].str.contains("Women", case=False)) |
-                (sports_data['Event'].str.contains("Mixed", case=False))
-            ]
-
-        if sports_data.empty:
-            st.error(f"Não foram encontrados esportes para o gênero {user_gender}.")
-            return []
-
-        recommendations = []
-        for _, sport in sports_data.iterrows():
-            try:
-                sport_name = sport['Event']
-                weights = get_sport_specific_weights(sport_name)
-                base_score = 70 * weights['biotype'] + 70 * weights['physical']
-                recommendations.append({
-                    "name": sport_name,
-                    "compatibility": round(base_score)
-                })
-            except Exception as e:
-                st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
-                continue
-
-        recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        return recommendations[:10]
-    except Exception as e:
-        st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return []        
+    if not user_data:
+        st.error("Erro: Dados do usuário não foram fornecidos.")
+        return []
+    if not isinstance(user_data, dict):
+        st.error("Erro: user_data precisa ser um dicionário.")
+        return []
+    required_keys = ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos']
+    for key in required_keys:
+        if key not in user_data:
+            user_data[key] = {}
+    user_gender = user_data.get('genero', 'Masculino')
+    user_age = user_data.get('idade', 18)
+    sports_data = load_and_process_data()
+    if sports_data is None:
+        st.error("Erro ao carregar dados dos esportes. Por favor, tente novamente.")
+        return []
+    recommendations = []
+    for _, sport in sports_data.iterrows():
+        try:
+            sport_name = sport['Event']
+            weights = get_sport_specific_weights(sport_name)
+            base_score = 70 * weights['biotype'] + 70 * weights['physical']
+            recommendations.append({
+                "name": sport_name,
+                "compatibility": round(base_score)
+            })
+        except Exception as e:
+            st.warning(f"Erro ao processar esporte {sport_name}: {str(e)}")
+            continue
+    recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+    return recommendations[:10]
 def get_sport_specific_weights(sport_name: str) -> Dict[str, float]:
     """
     Retorna pesos específicos para cada aspecto baseado no esporte
