@@ -407,18 +407,18 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             st.warning("Falha ao carregar dados. Exibindo sugestões padrão.")
             return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
 
-        # Definir gênero do usuário
-        user_gender = user_data.get('genero', '')
-        user_age = user_data.get('idade', 18)
+        # Definir gênero do usuário - Pegar do personal_info
+        user_gender = st.session_state.personal_info.get('genero', 'Masculino')
+        user_age = st.session_state.personal_info.get('idade', 18)
 
-        # Filtrar esportes por gênero
+        # Filtrar esportes por gênero de forma mais precisa
         if user_gender == "Feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Women's", case=False)]
-        elif user_gender == "Masculino":
-            sports_data = sports_data[sports_data['Event'].str.contains("Men's", case=False)]
+            sports_data = sports_data[sports_data['Event'].str.contains("Women's", case=False, na=False)]
+        else:  # Masculino
+            sports_data = sports_data[sports_data['Event'].str.contains("Men's", case=False, na=False)]
 
         if sports_data.empty:
-            st.warning("Nenhum esporte encontrado para o gênero selecionado")
+            st.warning(f"Nenhum esporte encontrado para o gênero {user_gender}")
             return get_recommendations_without_api(user_gender)
 
         recommendations = []
@@ -444,23 +444,77 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     if metric in user_data['aspectos_taticos']
                 ]) if user_data.get('aspectos_taticos') else 50
 
-                # Calcular score base
+                # Calcular score psicológico
+                psychological_scores = []
+                if user_data.get('fatores_psicologicos'):
+                    psych_data = user_data['fatores_psicologicos']
+                    
+                    # Motivação
+                    if 'motivacao' in psych_data:
+                        mot_score = np.mean([
+                            psych_data['motivacao'].get('dedicacao', 5),
+                            psych_data['motivacao'].get('frequencia', 5),
+                            psych_data['motivacao'].get('comprometimento', 5)
+                        ])
+                        psychological_scores.append(normalize_score(mot_score, 0, 10))
+                    
+                    # Resiliência
+                    if 'resiliencia' in psych_data:
+                        res_score = np.mean([
+                            psych_data['resiliencia'].get('derrotas', 5),
+                            psych_data['resiliencia'].get('criticas', 5),
+                            psych_data['resiliencia'].get('erros', 5)
+                        ])
+                        psychological_scores.append(normalize_score(res_score, 0, 10))
+                    
+                    # Trabalho em equipe
+                    if 'trabalho_equipe' in psych_data:
+                        team_score = np.mean([
+                            psych_data['trabalho_equipe'].get('comunicacao', 5),
+                            psych_data['trabalho_equipe'].get('opinioes', 5),
+                            psych_data['trabalho_equipe'].get('contribuicao', 5)
+                        ])
+                        psychological_scores.append(normalize_score(team_score, 0, 10))
+
+                psych_score = np.mean(psychological_scores) if psychological_scores else 50
+
+                # Calcular score base com os pesos atualizados
                 base_score = (
-                    biotype_score * 0.30 +
-                    physical_score * 0.25 +
-                    tech_score * 0.25 +
-                    tactic_score * 0.20
+                    biotype_score * 0.25 +  # Reduzido de 0.30
+                    physical_score * 0.25 +  # Mantido
+                    tech_score * 0.20 +      # Reduzido de 0.25
+                    tactic_score * 0.15 +    # Reduzido de 0.20
+                    psych_score * 0.15       # Novo componente
                 ) * 0.7
 
-                # Ajustes específicos
-                if user_data.get('biotipo', {}).get('altura', 0) >= 180 and any(s in sport_name.lower() for s in ['basketball', 'volleyball']):
+                # Ajustes específicos por esporte
+                sport_name_lower = sport_name.lower()
+                
+                # Ajustes para esportes que valorizam altura
+                if user_data.get('biotipo', {}).get('altura', 0) >= 180 and any(s in sport_name_lower for s in ['basketball', 'volleyball']):
                     base_score *= 1.1
+                
+                # Ajustes para esportes que valorizam força
+                if any(s in sport_name_lower for s in ['weightlifting', 'wrestling', 'boxing']):
+                    strength_bonus = (user_data.get('dados_fisicos', {}).get('forca_superior', 0) / 50.0) * 0.1
+                    base_score *= (1 + strength_bonus)
+                
+                # Ajustes para esportes que valorizam velocidade
+                if any(s in sport_name_lower for s in ['athletics', 'swimming', 'cycling']):
+                    speed = user_data.get('dados_fisicos', {}).get('velocidade', 5.0)
+                    if speed < 4.0:  # Velocidade boa
+                        base_score *= 1.1
+                
+                # Ajustes para esportes técnicos
+                if any(s in sport_name_lower for s in ['gymnastics', 'diving', 'figure skating']):
+                    tech_bonus = (tech_score / 100.0) * 0.15
+                    base_score *= (1 + tech_bonus)
 
                 # Fator de idade
                 age_factor = min(1.0, max(0.6, (user_age - 10) / 8))
 
                 # Variação aleatória leve para evitar resultados idênticos
-                random_factor = np.random.uniform(0.9, 1.1)
+                random_factor = np.random.uniform(0.95, 1.05)
                 
                 # Calcular score final
                 final_score = min(100, max(20, base_score * age_factor * random_factor))
@@ -473,8 +527,16 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     "name": translated_name,
                     "compatibility": round(final_score),
                     "strengths": get_sport_strengths(sport_name, user_data),
-                    "development": get_development_areas(sport_name, user_data)
+                    "development": get_development_areas(sport_name, user_data),
+                    "scores": {
+                        "biotype": round(biotype_score),
+                        "physical": round(physical_score),
+                        "technical": round(tech_score),
+                        "tactical": round(tactic_score),
+                        "psychological": round(psych_score)
+                    }
                 })
+
             except Exception as sport_e:
                 st.warning(f"Erro ao processar esporte {sport_name}: {str(sport_e)}")
                 continue
@@ -487,8 +549,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
     except Exception as e:
         st.error(f"Erro ao gerar recomendações: {str(e)}")
-        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))
-        
+        return get_recommendations_without_api(user_data.get('genero', 'Masculino'))        
 def get_recommendations_without_api(gender: str = "Masculino") -> List[Dict[str, Any]]:
     """
     Retorna recomendações padrão caso haja problema com os dados
