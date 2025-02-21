@@ -362,6 +362,9 @@ def show_habilidades_tecnicas():
     
     st.info("Complete os testes técnicos abaixo. Realize cada teste conforme as instruções.")
     
+    # Pegar o gênero do usuário do session state
+    genero = st.session_state.personal_info.get('genero', 'Masculino')
+    
     # Teste de Coordenação
     with st.expander("Coordenação - Pular Corda", expanded=True):
         st.write("**Material necessário:** Corda de pular, cronômetro")
@@ -372,12 +375,19 @@ def show_habilidades_tecnicas():
         3. Conte alternâncias em 30 segundos
         """)
         st.write("**Classificação:**")
-        st.write("""
-        - Iniciante: <20 alternâncias
-        - Intermediário: 20-30 alternâncias
-        - Avançado: >30 alternâncias
-        """)
-        coordenacao = st.number_input("Número de alternâncias", min_value=0, max_value=100)
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: <20 alternâncias
+            - Intermediário: 20-30 alternâncias
+            - Avançado: >30 alternâncias
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: <25 alternâncias
+            - Intermediário: 25-35 alternâncias
+            - Avançado: >35 alternâncias
+            """)
+        coordenacao = st.number_input("Número de alternâncias", min_value=0, max_value=100, key="coord")
     
     # Teste de Precisão
     with st.expander("Precisão - Alvos", expanded=True):
@@ -389,12 +399,19 @@ def show_habilidades_tecnicas():
         3. Execute 10 tentativas
         """)
         st.write("**Classificação:**")
-        st.write("""
-        - Iniciante: 3-4 acertos
-        - Intermediário: 5-7 acertos
-        - Avançado: 8-10 acertos
-        """)
-        precisao = st.number_input("Número de acertos", min_value=0, max_value=10)
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: 3-4 acertos
+            - Intermediário: 5-7 acertos
+            - Avançado: 8-10 acertos
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: 4-5 acertos
+            - Intermediário: 6-8 acertos
+            - Avançado: 9-10 acertos
+            """)
+        precisao = st.number_input("Número de acertos", min_value=0, max_value=10, key="prec")
     
     # Teste de Agilidade
     with st.expander("Agilidade - Teste do Quadrado", expanded=True):
@@ -406,12 +423,19 @@ def show_habilidades_tecnicas():
         3. Registre o tempo
         """)
         st.write("**Classificação:**")
-        st.write("""
-        - Iniciante: >12s
-        - Intermediário: 10-12s
-        - Avançado: <10s
-        """)
-        agilidade = st.number_input("Tempo (segundos)", min_value=0.0, max_value=20.0, step=0.1)
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: >12s
+            - Intermediário: 10-12s
+            - Avançado: <10s
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: >13s
+            - Intermediário: 11-13s
+            - Avançado: <11s
+            """)
+        agilidade = st.number_input("Tempo (segundos)", min_value=0.0, max_value=20.0, step=0.1, key="agil")
     
     # Teste de Equilíbrio
     with st.expander("Equilíbrio", expanded=True):
@@ -423,22 +447,29 @@ def show_habilidades_tecnicas():
         3. Registre o tempo máximo
         """)
         st.write("**Classificação:**")
-        st.write("""
-        - Iniciante: <20s
-        - Intermediário: 20-40s
-        - Avançado: >40s
-        """)
-        equilibrio = st.number_input("Tempo de equilíbrio (segundos)", min_value=0, max_value=120)
+        if genero == "Masculino":
+            st.write("""
+            - Iniciante: <20s
+            - Intermediário: 20-40s
+            - Avançado: >40s
+            """)
+        else:  # Feminino
+            st.write("""
+            - Iniciante: <25s
+            - Intermediário: 25-45s
+            - Avançado: >45s
+            """)
+        equilibrio = st.number_input("Tempo de equilíbrio (segundos)", min_value=0, max_value=120, key="equil")
     
     if st.button("Salvar Habilidades Técnicas"):
         st.session_state.test_results['habilidades_tecnicas'] = {
             'coordenacao': coordenacao,
             'precisao': precisao,
             'agilidade': agilidade,
-            'equilibrio': equilibrio
+            'equilibrio': equilibrio,
+            'genero': genero  # Adicionando o gênero aos dados salvos
         }
         st.success("Resultados salvos com sucesso!")
-
 def show_aspectos_taticos():
     st.title("🧠 Aspectos Táticos")
     
