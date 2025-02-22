@@ -468,111 +468,65 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             
         # Ordenar por compatibilidade
         all_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        top_recommendations = all_recommendations[:20]  # Pegar os 20 melhores eventos
+        top_recommendations = all_recommendations[:5]  # Reduzindo para top 5 direto
         
-        st.write(f"Top 20 eventos selecionados. Compatibilidade máxima: {top_recommendations[0]['compatibility']}%")
+        st.write(f"Top 5 eventos selecionados. Compatibilidade máxima: {top_recommendations[0]['compatibility']}%")
         
-        # Preparar informações dos eventos para o GPT
-        eventos_info = [
-            f"{rec['name']}:\n"
-            f"- Compatibilidade: {rec['compatibility']}%\n"
-            f"- Idade média: {rec['olympic_data']['idade_media']:.1f} anos\n"
-            f"- Altura média: {rec['olympic_data']['altura_media']:.1f} cm\n"
-            f"- Peso médio: {rec['olympic_data']['peso_media']:.1f} kg"
-            for rec in top_recommendations
-        ]
-        
-        # Criar prompt para análise qualitativa
-        prompt = f"""
-        Analise os seguintes eventos olímpicos que foram pré-selecionados como mais compatíveis para o atleta.
-        Para cada evento, identifique 3 pontos fortes do atleta e 3 áreas para desenvolvimento.
-        
-        Perfil do Atleta:
-        - Gênero: {user_data['genero']}
-        - Idade: {user_data['idade']}
-        - Altura: {user_data['biotipo']['altura']} cm
-        - Peso: {user_data['biotipo']['peso']} kg
-        - Velocidade (20m): {user_data['dados_fisicos']['velocidade']} seg
-        - Força Superior: {user_data['dados_fisicos']['forca_superior']} repetições
-        - Força Inferior: {user_data['dados_fisicos']['forca_inferior']} repetições
-        - Coordenação: {user_data['habilidades_tecnicas']['coordenacao']}
-        - Precisão: {user_data['habilidades_tecnicas']['precisao']}
-        - Agilidade: {user_data['habilidades_tecnicas']['agilidade']}
-        - Equilíbrio: {user_data['habilidades_tecnicas']['equilibrio']}
-
-        Top 5 Eventos Mais Compatíveis:
-        {chr(10).join(eventos_info[:5])}
-
-        Retorne apenas um JSON válido com esta estrutura:
-        {{
-            "recommendations": [
-                {{
-                    "name": "Nome do Evento em Português",
-                    "strengths": ["Ponto Forte 1", "Ponto Forte 2", "Ponto Forte 3"],
-                    "development": ["Área 1", "Área 2", "Área 3"]
-                }}
-            ]
-        }}
-        """
-        
-        st.write("Realizando análise qualitativa dos eventos...")
-        
-        # Chamar API do OpenAI
-        try:
-            client = openai.OpenAI()
-            response = client.chat.completions.create(
-                model="gpt-4-turbo-preview",
-                messages=[
-                    {
-                        "role": "system", 
-                        "content": "Você é um especialista em identificação de talentos esportivos. Retorne apenas JSON válido sem marcadores de código."
-                    },
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=2000,
-                temperature=0.7
-            )
-
-            recommendations_str = response.choices[0].message.content.strip()
-            st.write("Resposta do GPT recebida. Processando...")
+        # Criar as recomendações finais diretamente
+        final_recommendations = []
+        for rec in top_recommendations:
+            event_name = rec['name']
             
-            clean_recommendations_str = clean_json_response(recommendations_str)
-            qualitative_data = json.loads(clean_recommendations_str)
-
-            # Combinar dados quantitativos e qualitativos
-            final_recommendations = []
-            for qual_rec in qualitative_data['recommendations'][:5]:
-                # Encontrar dados quantitativos correspondentes
-                quant_rec = next(
-                    (rec for rec in top_recommendations if rec['name'] == qual_rec['name']),
-                    None
-                )
-                
-                if quant_rec:
-                    final_recommendations.append({
-                        'name': qual_rec['name'],
-                        'compatibility': quant_rec['compatibility'],
-                        'strengths': qual_rec['strengths'],
-                        'development': qual_rec['development'],
-                        'olympic_data': quant_rec['olympic_data']
-                    })
-
-            st.write(f"Análise concluída. {len(final_recommendations)} recomendações finais geradas.")
-            return final_recommendations
-
-        except Exception as oe:
-            st.error(f"Erro na API do OpenAI: {str(oe)}")
-            # Retornar as 5 melhores recomendações mesmo sem análise qualitativa
-            backup_recommendations = [{
-                'name': rec['name'],
+            # Determinar pontos fortes e áreas de desenvolvimento com base nos dados
+            strengths = []
+            development = []
+            
+            # Análise de altura
+            if event_name.lower().find('basquete') != -1 or event_name.lower().find('vôlei') != -1:
+                if user_data['biotipo']['altura'] >= rec['olympic_data']['altura_media']:
+                    strengths.append("Altura adequada para o esporte")
+                else:
+                    development.append("Desenvolvimento de técnicas para compensar altura")
+            
+            # Análise de velocidade
+            if 'velocidade' in user_data['dados_fisicos']:
+                if user_data['dados_fisicos']['velocidade'] < 4.0:
+                    strengths.append("Boa velocidade de arranque")
+                elif user_data['dados_fisicos']['velocidade'] > 4.5:
+                    development.append("Melhorar velocidade de arranque")
+            
+            # Análise de força
+            if 'forca_superior' in user_data['dados_fisicos']:
+                if user_data['dados_fisicos']['forca_superior'] > 30:
+                    strengths.append("Boa força superior")
+                else:
+                    development.append("Desenvolver força superior")
+            
+            # Completar com pontos genéricos se necessário
+            while len(strengths) < 3:
+                strengths.append("Compatibilidade física com o esporte")
+            while len(development) < 3:
+                development.append("Aprimoramento técnico específico")
+            
+            # Criar recomendação final
+            final_recommendation = {
+                'name': event_name,
                 'compatibility': rec['compatibility'],
-                'strengths': ['Análise detalhada indisponível'],
-                'development': ['Análise detalhada indisponível'],
+                'strengths': strengths[:3],  # Garantir exatamente 3 pontos
+                'development': development[:3],  # Garantir exatamente 3 pontos
                 'olympic_data': rec['olympic_data']
-            } for rec in top_recommendations[:5]]
+            }
             
-            st.warning("Usando recomendações de backup devido a erro na análise qualitativa.")
-            return backup_recommendations
+            final_recommendations.append(final_recommendation)
+
+        st.write(f"Análise concluída. {len(final_recommendations)} recomendações finais geradas.")
+        
+        # Debug: mostrar as recomendações
+        st.write("Recomendações geradas:")
+        for rec in final_recommendations:
+            st.write(f"- {rec['name']} (Compatibilidade: {rec['compatibility']}%)")
+        
+        return final_recommendations
 
     except Exception as e:
         st.error(f"Erro na recomendação de esportes: {str(e)}")
