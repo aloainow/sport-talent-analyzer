@@ -1,105 +1,145 @@
 import pandas as pd
 import json
 
-def traduzir_evento(evento):
-    """
-    Traduz eventos olímpicos de inglês para português
-    """
-    # Dicionários de traduções base
-    traducoes_esportes = {
-        'Athletics': 'Atletismo',
+def clean_event_name(event_name: str) -> str:
+    """Remove duplicações e limpa o nome do evento"""
+    # Remover gênero em inglês
+    event_name = event_name.replace("Men's ", "").replace("Women's ", "")
+    
+    # Remover duplicações antes da tradução
+    parts = event_name.split()
+    clean_parts = []
+    for part in parts:
+        if not clean_parts or part != clean_parts[-1]:
+            clean_parts.append(part)
+    
+    return " ".join(clean_parts)
+
+def get_base_sport_name(event_name: str) -> str:
+    """Extrai o nome base do esporte do evento"""
+    # Remover gênero
+    event_name = event_name.replace("Men's ", "").replace("Women's ", "")
+    
+    # Pegar primeira ou duas primeiras palavras dependendo do caso
+    parts = event_name.split()
+    if len(parts) >= 2 and (parts[0] + " " + parts[1]) in [
+        "Beach Volleyball", "Water Polo", "Table Tennis", "Figure Skating",
+        "Speed Skating", "Ice Hockey"
+    ]:
+        return parts[0] + " " + parts[1]
+    
+    return parts[0] if parts else event_name
+
+def traduzir_evento(evento: str) -> str:
+    """Traduz eventos olímpicos de inglês para português"""
+    # Primeiro limpa o nome do evento
+    evento = clean_event_name(evento)
+    
+    # Dicionário de traduções
+    traducoes = {
+        # Esportes
         'Swimming': 'Natação',
+        'Athletics': 'Atletismo',
         'Gymnastics': 'Ginástica',
-        'Wrestling': 'Luta',
-        'Boxing': 'Boxe',
-        'Volleyball': 'Vôlei',
         'Basketball': 'Basquete',
+        'Volleyball': 'Vôlei',
+        'Beach Volleyball': 'Vôlei de Praia',
+        'Water Polo': 'Polo Aquático',
         'Football': 'Futebol',
         'Handball': 'Handebol',
-        'Hockey': 'Hóquei',
-        'Water Polo': 'Polo Aquático',
-        'Cycling': 'Ciclismo',
-        'Rowing': 'Remo',
-        'Fencing': 'Esgrima',
+        'Rugby': 'Rugby',
+        'Tennis': 'Tênis',
+        'Table Tennis': 'Tênis de Mesa',
+        'Boxing': 'Boxe',
+        'Wrestling': 'Luta Livre',
         'Judo': 'Judô',
         'Taekwondo': 'Taekwondo',
-        'Tennis': 'Tênis'
-    }
-
-    traducoes_termos = {
-        # Distâncias e medidas
-        'metres': 'metros',
-        'Marathon': 'Maratona',
-        'Individual': 'Individual',
-        'All-Around': 'Geral',
+        'Karate': 'Karatê',
+        'Fencing': 'Esgrima',
+        'Shooting': 'Tiro',
+        'Archery': 'Tiro com Arco',
+        'Cycling': 'Ciclismo',
+        'Rowing': 'Remo',
+        'Sailing': 'Vela',
+        'Canoe': 'Canoagem',
+        'Equestrian': 'Hipismo',
+        'Figure Skating': 'Patinação Artística',
+        'Speed Skating': 'Patinação de Velocidade',
+        'Alpine Skiing': 'Esqui Alpino',
+        'Cross-Country Skiing': 'Esqui Cross-Country',
+        'Ski Jumping': 'Salto de Esqui',
+        'Snowboard': 'Snowboard',
+        'Ice Hockey': 'Hóquei no Gelo',
+        'Curling': 'Curling',
+        'Bobsleigh': 'Bobsled',
+        'Luge': 'Luge',
+        'Skeleton': 'Skeleton',
+        'Biathlon': 'Biatlo',
+        
+        # Eventos específicos
+        'Singles': 'Individual',
+        'Doubles': 'Duplas',
+        'Mixed Doubles': 'Duplas Mistas',
         'Team': 'Equipe',
-        'Road Race': 'Corrida de Estrada',
-        
-        # Modalidades de nado
-        'Freestyle': 'Nado Livre',
-        'Backstroke': 'Costas', 
-        'Breaststroke': 'Peito',
-        'Butterfly': 'Borboleta',
-        
-        # Eventos ginástica
-        'Floor Exercise': 'Solo',
-        'Horizontal Bar': 'Barra Fixa',
-        'Parallel Bars': 'Barras Paralelas',
-        'Rings': 'Argolas',
-        'Balance Beam': 'Trave',
-        'Uneven Bars': 'Barras Assimétricas',
-        
-        # Saltos e arremessos
+        'Relay': 'Revezamento',
+        'Marathon': 'Maratona',
+        'Race': 'Corrida',
+        'Sprint': 'Velocidade',
+        'Long Jump': 'Salto em Distância',
         'High Jump': 'Salto em Altura',
-        'Long Jump': 'Salto em Distância', 
         'Triple Jump': 'Salto Triplo',
         'Pole Vault': 'Salto com Vara',
         'Shot Put': 'Arremesso de Peso',
         'Discus Throw': 'Lançamento de Disco',
-        'Hammer Throw': 'Lançamento de Martelo', 
+        'Hammer Throw': 'Lançamento de Martelo',
         'Javelin Throw': 'Lançamento de Dardo',
+        'Decathlon': 'Decatlo',
+        'Heptathlon': 'Heptatlo',
+        'Floor Exercise': 'Solo',
+        'Balance Beam': 'Trave',
+        'Uneven Bars': 'Barras Assimétricas',
+        'Parallel Bars': 'Barras Paralelas',
+        'Horizontal Bar': 'Barra Fixa',
+        'Rings': 'Argolas',
+        'Pommel Horse': 'Cavalo com Alças',
+        'Vault': 'Salto',
+        'All-Around': 'Individual Geral',
+        
+        # Estilos de natação
+        'Freestyle': 'Livre',
+        'Backstroke': 'Costas',
+        'Breaststroke': 'Peito',
+        'Butterfly': 'Borboleta',
+        'Medley': 'Medley',
+        
+        # Unidades de medida
+        'metres': 'metros',
+        'm': 'm',
+        'km': 'km',
         
         # Categorias de peso
         'Flyweight': 'Peso Mosca',
         'Bantamweight': 'Peso Galo',
-        'Featherweight': 'Peso Pena', 
+        'Featherweight': 'Peso Pena',
         'Lightweight': 'Peso Leve',
         'Welterweight': 'Peso Meio-Médio',
-        'Middleweight': 'Peso Médio', 
-        'Light-Heavyweight': 'Peso Meio-Pesado',
+        'Middleweight': 'Peso Médio',
+        'Light Heavyweight': 'Peso Meio-Pesado',
         'Heavyweight': 'Peso Pesado',
-        
-        # Tipos de lutas
-        'Greco-Roman': 'Greco-Romana',
-        'Freestyle': 'Estilo Livre'
+        'Super Heavyweight': 'Peso Super-Pesado'
     }
-
-    # Substituições em ordem
-    for en, pt in sorted(traducoes_esportes.items(), key=len, reverse=True):
+    
+    # Traduzir usando o dicionário
+    for en, pt in sorted(traducoes.items(), key=len, reverse=True):
         evento = evento.replace(en, pt)
     
-    for en, pt in sorted(traducoes_termos.items(), key=len, reverse=True):
-        evento = evento.replace(en, pt)
-    
-    # Ajustar gênero
+    # Adicionar gênero no final
     if "Men's" in evento:
         evento = evento.replace("Men's", "").strip() + " Masculino"
     elif "Women's" in evento:
         evento = evento.replace("Women's", "").strip() + " Feminino"
+        
+    # Limpar espaços extras
+    evento = ' '.join(evento.split())
     
-    return evento.strip()
-
-# Ler o CSV de eventos olímpicos
-df = pd.read_csv('data/perfil_eventos_olimpicos_verao.csv')
-
-# Gerar dicionário de traduções
-EVENT_TRANSLATIONS = {event: traduzir_evento(event) for event in df['Event'].unique()}
-
-# Salvar traduções em JSON para verificação
-with open('event_translations.json', 'w', encoding='utf-8') as f:
-    json.dump(EVENT_TRANSLATIONS, f, ensure_ascii=False, indent=2)
-
-# Imprimir algumas traduções
-print("Traduções de exemplo:")
-for orig, trad in list(EVENT_TRANSLATIONS.items())[:20]:
-    print(f"{orig}: {trad}")
+    return evento
