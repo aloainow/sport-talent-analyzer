@@ -377,8 +377,65 @@ def clean_json_response(response_str: str) -> str:
         return response_str[start_idx:end_idx]
     return response_str
 
+def process_events_batch(filtered_events, user_data, batch_size=100):
+    """Processa um lote de eventos e retorna as recomendações"""
+    all_recommendations = []
+    
+    # Processar eventos em lotes
+    for start_idx in range(0, len(filtered_events), batch_size):
+        end_idx = start_idx + batch_size
+        batch_events = filtered_events.iloc[start_idx:end_idx]
+        
+        # Para cada evento no lote, calcular score de compatibilidade
+        for _, event in batch_events.iterrows():
+            # Calcular compatibilidade biométrica
+            altura_diff = abs(user_data['biotipo']['altura'] - event['altura_media'])
+            peso_diff = abs(user_data['biotipo']['peso'] - event['peso_media'])
+            idade_diff = abs(user_data['idade'] - event['idade_media'])
+            
+            # Calcular score base
+            biometric_score = 100
+            if altura_diff > 20: biometric_score -= 20
+            if peso_diff > 20: biometric_score -= 20
+            if idade_diff > 5: biometric_score -= 20
+            
+            # Ajustar score baseado em requisitos físicos específicos
+            evento_nome = event['Event'].lower()
+            
+            # Velocidade é importante
+            if any(x in evento_nome for x in ['sprint', 'running', '100m', '200m']):
+                if user_data['dados_fisicos']['velocidade'] < 3.5:
+                    biometric_score += 20
+                elif user_data['dados_fisicos']['velocidade'] > 4.5:
+                    biometric_score -= 20
+            
+            # Força é importante
+            if any(x in evento_nome for x in ['throw', 'weightlifting', 'shot put']):
+                if user_data['dados_fisicos']['forca_superior'] > 40:
+                    biometric_score += 20
+            
+            # Equilíbrio é importante
+            if any(x in evento_nome for x in ['gymnastics', 'beam', 'balance']):
+                if user_data['habilidades_tecnicas']['equilibrio'] > 50:
+                    biometric_score += 20
+            
+            # Adicionar à lista de recomendações
+            if biometric_score >= 70:  # Filtrar apenas eventos com boa compatibilidade
+                all_recommendations.append({
+                    'name': traduzir_evento(event['Event']),
+                    'compatibility': biometric_score,
+                    'olympic_data': {
+                        'idade_media': float(event['idade_media']),
+                        'altura_media': float(event['altura_media']),
+                        'peso_media': float(event['peso_media']),
+                        'total_atletas': int(event['total_atletas'])
+                    }
+                })
+    
+    return all_recommendations
+
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Gera recomendações de eventos esportivos usando IA"""
+    """Gera recomendações de eventos esportivos considerando todos os eventos"""
     try:
         # Carregar dados olímpicos
         olympic_data = pd.read_csv('data/perfil_eventos_olimpicos_verao.csv')
@@ -387,92 +444,56 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         gender_key = "Men's" if user_data['genero'] == "Masculino" else "Women's"
         filtered_events = olympic_data[olympic_data['Event'].str.contains(gender_key)]
         
-        # Criar mapeamento de nomes traduzidos para originais
-        nome_original_para_traduzido = {
-            event: traduzir_evento(event) 
-            for event in filtered_events['Event']
-        }
-        nome_traduzido_para_original = {
-            v: k for k, v in nome_original_para_traduzido.items()
-        }
+        # Processar todos os eventos
+        all_recommendations = process_events_batch(filtered_events, user_data)
         
-        # Preparar informações dos eventos
-        eventos_info = []
-        for _, event in filtered_events.iterrows():
-            event_info = (
-                f"{traduzir_evento(event['Event'])}:\n"
-                f"- Idade média: {event['idade_media']:.1f} anos\n"
-                f"- Altura média: {event['altura_media']:.1f} cm\n"
-                f"- Peso médio: {event['peso_media']:.1f} kg\n"
-                f"- Total de atletas: {event['total_atletas']}"
-            )
-            eventos_info.append(event_info)
-
-        # Criar o prompt com exemplo de estrutura JSON
-        json_structure = '''
-{
-    "recommendations": [
-        {
-            "name": "Nome do Evento em Português",
-            "compatibility": 85,
-            "strengths": ["Ponto Forte 1", "Ponto Forte 2", "Ponto Forte 3"],
-            "development": ["Área 1", "Área 2", "Área 3"]
-        }
-    ]
-}'''
+        # Ordenar por compatibilidade
+        all_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+        top_recommendations = all_recommendations[:20]  # Pegar os 20 melhores eventos
         
-        # Preparar prompt atualizado com eventos traduzidos
+        # Usar GPT para adicionar pontos fortes e áreas de desenvolvimento para os top eventos
+        eventos_info = [
+            f"{rec['name']}:\n"
+            f"- Compatibilidade: {rec['compatibility']}%\n"
+            f"- Idade média: {rec['olympic_data']['idade_media']:.1f} anos\n"
+            f"- Altura média: {rec['olympic_data']['altura_media']:.1f} cm\n"
+            f"- Peso médio: {rec['olympic_data']['peso_media']:.1f} kg"
+            for rec in top_recommendations
+        ]
+        
         prompt = f"""
-        Você é um especialista em identificação de talentos esportivos.
-        Analise os dados de um atleta e recomende os 5 melhores eventos olímpicos.
-        IMPORTANTE: Use EXATAMENTE os nomes dos eventos conforme listados abaixo.
-
-        Dados do Atleta:
+        Analise os seguintes eventos olímpicos que foram pré-selecionados como mais compatíveis para o atleta:
+        
+        Perfil do Atleta:
         - Gênero: {user_data['genero']}
         - Idade: {user_data['idade']}
         - Altura: {user_data['biotipo']['altura']} cm
         - Peso: {user_data['biotipo']['peso']} kg
-
-        Dados Físicos:
         - Velocidade (20m): {user_data['dados_fisicos']['velocidade']} seg
         - Força Superior: {user_data['dados_fisicos']['forca_superior']} repetições
         - Força Inferior: {user_data['dados_fisicos']['forca_inferior']} repetições
-
-        Habilidades Técnicas:
         - Coordenação: {user_data['habilidades_tecnicas']['coordenacao']}
         - Precisão: {user_data['habilidades_tecnicas']['precisao']}
         - Agilidade: {user_data['habilidades_tecnicas']['agilidade']}
         - Equilíbrio: {user_data['habilidades_tecnicas']['equilibrio']}
 
-        Aspectos Táticos:
-        - Tomada de Decisão: {user_data['aspectos_taticos']['tomada_decisao']}
-        - Visão de Jogo: {user_data['aspectos_taticos']['visao_jogo']}
-        - Posicionamento: {user_data['aspectos_taticos']['posicionamento']}
+        Eventos Pré-Selecionados:
+        {chr(10).join(eventos_info)}
 
-        Fatores Psicológicos:
-        - Motivação: {np.mean([
-            user_data['fatores_psicologicos']['motivacao']['dedicacao'],
-            user_data['fatores_psicologicos']['motivacao']['frequencia'],
-            user_data['fatores_psicologicos']['motivacao']['comprometimento']
-        ]):.1f}
-        - Resiliência: {np.mean([
-            user_data['fatores_psicologicos']['resiliencia']['derrotas'],
-            user_data['fatores_psicologicos']['resiliencia']['criticas'],
-            user_data['fatores_psicologicos']['resiliencia']['erros']
-        ]):.1f}
-        - Trabalho em Equipe: {np.mean([
-            user_data['fatores_psicologicos']['trabalho_equipe']['comunicacao'],
-            user_data['fatores_psicologicos']['trabalho_equipe']['opinioes'],
-            user_data['fatores_psicologicos']['trabalho_equipe']['contribuicao']
-        ]):.1f}
-
-        Eventos Olímpicos Disponíveis:
-        {chr(10).join(eventos_info[:50])}
-
-        Retorne um JSON válido SEM marcadores de código (```), seguindo exatamente esta estrutura:
-        {json_structure}
+        Para os 5 eventos mais compatíveis, identifique 3 pontos fortes do atleta que o tornam adequado para o evento e 3 áreas que precisam ser desenvolvidas.
+        
+        Retorne apenas um JSON válido com esta estrutura:
+        {{
+            "recommendations": [
+                {{
+                    "name": "Nome do Evento em Português",
+                    "strengths": ["Ponto Forte 1", "Ponto Forte 2", "Ponto Forte 3"],
+                    "development": ["Área 1", "Área 2", "Área 3"]
+                }}
+            ]
+        }}
         """
-
+        
         # Chamar API do OpenAI
         try:
             client = openai.OpenAI()
@@ -490,59 +511,39 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             )
 
             recommendations_str = response.choices[0].message.content.strip()
-            # Limpar a resposta antes de fazer o parse
             clean_recommendations_str = clean_json_response(recommendations_str)
-            
-            try:
-                recommendations_dict = json.loads(clean_recommendations_str)
-            except json.JSONDecodeError as je:
-                st.error(f"Erro ao decodificar JSON: {str(je)}")
-                st.write("JSON recebido:", clean_recommendations_str)
-                return []
+            qualitative_data = json.loads(clean_recommendations_str)
 
-            # Processar recomendações
+            # Combinar dados quantitativos e qualitativos
             final_recommendations = []
-            for rec in recommendations_dict['recommendations']:
-                event_name_pt = rec['name']
-                # Buscar o nome original em inglês
-                event_name_en = nome_traduzido_para_original.get(event_name_pt)
+            for qual_rec in qualitative_data['recommendations'][:5]:
+                # Encontrar dados quantitativos correspondentes
+                quant_rec = next(
+                    (rec for rec in top_recommendations if rec['name'] == qual_rec['name']),
+                    None
+                )
                 
-                if event_name_en:
-                    event_data = filtered_events[filtered_events['Event'] == event_name_en]
-                    
-                    if not event_data.empty:
-                        # Calcular compatibilidade biométrica
-                        altura_diff = abs(user_data['biotipo']['altura'] - event_data['altura_media'].iloc[0])
-                        peso_diff = abs(user_data['biotipo']['peso'] - event_data['peso_media'].iloc[0])
-                        idade_diff = abs(user_data['idade'] - event_data['idade_media'].iloc[0])
-                        
-                        # Ajustar score de compatibilidade
-                        biometric_score = 100
-                        if altura_diff > 20: biometric_score -= 20
-                        if peso_diff > 20: biometric_score -= 20
-                        if idade_diff > 5: biometric_score -= 20
-                        
-                        rec['compatibility'] = int((rec['compatibility'] + biometric_score) / 2)
-                        
-                        # Manter o nome traduzido e adicionar dados olímpicos
-                        rec['name'] = event_name_pt
-                        rec['olympic_data'] = {
-                            'idade_media': float(event_data['idade_media'].iloc[0]),
-                            'altura_media': float(event_data['altura_media'].iloc[0]),
-                            'peso_media': float(event_data['peso_media'].iloc[0]),
-                            'total_atletas': int(event_data['total_atletas'].iloc[0])
-                        }
-                        
-                        final_recommendations.append(rec)
+                if quant_rec:
+                    final_recommendations.append({
+                        'name': qual_rec['name'],
+                        'compatibility': quant_rec['compatibility'],
+                        'strengths': qual_rec['strengths'],
+                        'development': qual_rec['development'],
+                        'olympic_data': quant_rec['olympic_data']
+                    })
 
-            # Ordenar e retornar top 5
-            final_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-            return final_recommendations[:5]
+            return final_recommendations
 
         except Exception as oe:
             st.error(f"Erro na API do OpenAI: {str(oe)}")
-            st.write("Resposta recebida:", recommendations_str)
-            return []
+            # Retornar as 5 melhores recomendações mesmo sem análise qualitativa
+            return [{
+                'name': rec['name'],
+                'compatibility': rec['compatibility'],
+                'strengths': ['Análise detalhada indisponível'],
+                'development': ['Análise detalhada indisponível'],
+                'olympic_data': rec['olympic_data']
+            } for rec in top_recommendations[:5]]
 
     except Exception as e:
         st.error(f"Erro na recomendação de esportes: {str(e)}")
