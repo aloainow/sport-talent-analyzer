@@ -312,17 +312,69 @@ def calculate_base_score(biotype_score: float, physical_score: float, tech_score
     except Exception as e:
         st.warning(f"Erro no cálculo do score base: {str(e)}")
         return 50.0
+def merge_sports_data(sports_data, olympic_data):
+    """Combina os dados dos esportes com os dados olímpicos"""
+    merged_data = []
+    
+    for _, sport in sports_data.iterrows():
+        # Encontrar dados olímpicos correspondentes
+        olympic_info = olympic_data[olympic_data['Event'].str.contains(sport['Event'], case=False, na=False)]
+        
+        if not olympic_info.empty:
+            sport_dict = sport.to_dict()
+            # Adicionar informações olímpicas
+            sport_dict.update({
+                'idade_media': olympic_info['idade_media'].mean(),
+                'altura_media': olympic_info['altura_media'].mean(),
+                'peso_media': olympic_info['peso_media'].mean(),
+                'total_atletas': olympic_info['total_atletas'].sum()
+            })
+            merged_data.append(sport_dict)
+            
+    return pd.DataFrame(merged_data)
+
+def evaluate_biometric_compatibility(user_data, sport_data):
+    """Avalia a compatibilidade biométrica do atleta com o esporte"""
+    score = 100
+    
+    # Verificar altura
+    if 'altura_media' in sport_data and sport_data['altura_media'] > 0:
+        altura_diff = abs(user_data['biotipo']['altura'] - sport_data['altura_media'])
+        if altura_diff > 20:
+            score -= 20
+        elif altura_diff > 10:
+            score -= 10
+            
+    # Verificar peso
+    if 'peso_media' in sport_data and sport_data['peso_media'] > 0:
+        peso_diff = abs(user_data['biotipo']['peso'] - sport_data['peso_media'])
+        if peso_diff > 20:
+            score -= 20
+        elif peso_diff > 10:
+            score -= 10
+            
+    # Verificar idade
+    if 'idade_media' in sport_data and sport_data['idade_media'] > 0:
+        idade_diff = abs(user_data['idade'] - sport_data['idade_media'])
+        if idade_diff > 5:
+            score -= 15
+        elif idade_diff > 3:
+            score -= 5
+            
+    return max(0, score)
+
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Gera recomendações de esportes usando IA"""
+    """Gera recomendações de esportes usando IA e dados olímpicos"""
     try:
-        # Carregar dados de referência
+        # Carregar e combinar dados
         sports_data = load_and_process_data()
         if sports_data is None:
             raise ValueError("Não foi possível carregar os dados dos esportes")
             
         olympic_data = pd.read_csv('data/perfil_eventos_olimpicos_verao.csv')
+        merged_data = merge_sports_data(sports_data, olympic_data)
         
-        # Preparar prompt para o GPT
+        # Preparar prompt atualizado com dados olímpicos
         prompt = f"""
         Você é um especialista em identificação de talentos esportivos.
         Analise os dados de um atleta e recomende os 5 melhores esportes.
@@ -366,7 +418,8 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             user_data['fatores_psicologicos']['trabalho_equipe']['contribuicao']
         ])}
 
-        Eventos Disponíveis: {', '.join(sports_data['Event'].unique())}
+        Eventos Disponíveis (com dados olímpicos):
+        {merged_data.apply(lambda x: f"{x['Event']} (média: {x['idade_media']:.1f} anos, {x['altura_media']:.1f}cm, {x['peso_media']:.1f}kg)", axis=1).to_list()}
 
         Retorne um JSON válido com a seguinte estrutura exata, sem adicionar outros campos:
         {{
@@ -381,7 +434,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         }}
         """
 
-        # Chamar API do OpenAI com a nova sintaxe
+        # Chamar API do OpenAI
         try:
             client = openai.OpenAI()
             response = client.chat.completions.create(
@@ -394,36 +447,26 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 temperature=0.7
             )
 
-            # Processar resposta com validação adicional
             recommendations_str = response.choices[0].message.content.strip()
-            
-            # Remover qualquer texto antes ou depois do JSON
-            start_idx = recommendations_str.find('{')
-            end_idx = recommendations_str.rfind('}') + 1
-            if start_idx != -1 and end_idx != -1:
-                recommendations_str = recommendations_str[start_idx:end_idx]
-            
-            # Tentar parsear o JSON com tratamento de erro específico
-            try:
-                recommendations_dict = json.loads(recommendations_str)
-            except json.JSONDecodeError as je:
-                st.error(f"Erro ao decodificar JSON da resposta: {str(je)}")
-                st.write("Resposta recebida:", recommendations_str)
-                return []
+            recommendations_dict = json.loads(recommendations_str)
 
-            # Validar estrutura do JSON
-            if not isinstance(recommendations_dict, dict) or 'recommendations' not in recommendations_dict:
-                raise ValueError("Formato de resposta inválido")
-
-            # Filtrar por gênero
+            # Filtrar e ajustar recomendações com dados olímpicos
             filtered_recommendations = []
             for rec in recommendations_dict['recommendations']:
                 if user_data['genero'] == "Feminino" and "Feminino" in rec['name']:
+                    sport_data = merged_data[merged_data['Event'] == rec['name']].iloc[0]
+                    biometric_score = evaluate_biometric_compatibility(user_data, sport_data)
+                    rec['compatibility'] = int((rec['compatibility'] + biometric_score) / 2)
                     filtered_recommendations.append(rec)
                 elif user_data['genero'] == "Masculino" and "Masculino" in rec['name']:
+                    sport_data = merged_data[merged_data['Event'] == rec['name']].iloc[0]
+                    biometric_score = evaluate_biometric_compatibility(user_data, sport_data)
+                    rec['compatibility'] = int((rec['compatibility'] + biometric_score) / 2)
                     filtered_recommendations.append(rec)
 
-            return filtered_recommendations[:5]  # Garantir máximo de 5 recomendações
+            # Ordenar por compatibilidade e retornar top 5
+            filtered_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+            return filtered_recommendations[:5]
 
         except Exception as oe:
             st.error(f"Erro na API do OpenAI: {str(oe)}")
