@@ -747,7 +747,7 @@ def show_recommendations():
                 development_html = "".join(f"<li>{d}</li>" for d in development)
 
                 with st.container():
-                    st.markdown(
+                st.markdown(
                         f"""
                         <div style="
                             background-color: #1e1e1e;
@@ -760,7 +760,7 @@ def show_recommendations():
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <h3 style="margin: 0; color: white;">{index}. {sport['name']}</h3>
                                 <span style="color: #4caf50; font-weight: bold; font-size: 18px;">
-                                    {sport['compatibility']}% compatível
+                                    {sport['compatibility']:.2f}% compatível
                                 </span>
                             </div>
                             <div style="display: flex; justify-content: space-between;">
@@ -781,7 +781,6 @@ def show_recommendations():
                         """,
                         unsafe_allow_html=True
                     )
-
     except Exception as e:
         # Adicione este print para debug
         import traceback
