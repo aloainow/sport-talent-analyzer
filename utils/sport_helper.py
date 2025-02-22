@@ -317,9 +317,12 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
     try:
         # Carregar dados de referência
         sports_data = load_and_process_data()
+        if sports_data is None:
+            raise ValueError("Não foi possível carregar os dados dos esportes")
+            
         olympic_data = pd.read_csv('data/perfil_eventos_olimpicos_verao.csv')
         
-        # Preparar prompt para o GPT
+        # Preparar prompt para o GPT (mantém o seu prompt atual)
         prompt = f"""
         Você é um especialista em identificação de talentos esportivos.
         Analise os dados de um atleta e recomende os 5 melhores esportes.
@@ -363,64 +366,73 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             user_data['fatores_psicologicos']['trabalho_equipe']['contribuicao']
         ])}
 
-        Eventos Olímpicos Disponíveis: {', '.join(sports_data['Event'].unique())}
+        Eventos Disponíveis: {', '.join(sports_data['Event'].unique())}
 
-        Instruções:
-        1. Recomende até 5 esportes
-        2. Calcule compatibilidade de 0-100%
-        3. Liste 3 pontos fortes para cada esporte
-        4. Liste 3 áreas para desenvolvimento
-        5. Justifique brevemente cada recomendação
-        6. Responda APENAS em formato JSON válido
-
-        Formato de Resposta:
-        {
+        Retorne um JSON válido com a seguinte estrutura exata, sem adicionar outros campos:
+        {{
             "recommendations": [
-                {
+                {{
                     "name": "Nome do Esporte",
                     "compatibility": 85,
                     "strengths": ["Ponto Forte 1", "Ponto Forte 2", "Ponto Forte 3"],
-                    "development": ["Área 1", "Área 2", "Área 3"],
-                    "justification": "Explicação breve"
-                }
+                    "development": ["Área 1", "Área 2", "Área 3"]
+                }}
             ]
-        }
+        }}
         """
 
-        # Chamar API do OpenAI
-        response = openai.ChatCompletion.create(
-            model="gpt-4-turbo-preview",
-            messages=[
-                {"role": "system", "content": "Você é um especialista em identificação de talentos esportivos."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=1000,
-            temperature=0.7
-        )
+        # Chamar API do OpenAI com tratamento de erro específico
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4-turbo-preview",
+                messages=[
+                    {"role": "system", "content": "Você é um especialista em identificação de talentos esportivos. Retorne apenas JSON válido conforme o formato especificado."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.7
+            )
 
-        # Processar resposta
-        recommendations_str = response.choices[0].message.content.strip()
-        recommendations_dict = json.loads(recommendations_str)
+            # Processar resposta com validação adicional
+            recommendations_str = response.choices[0].message.content.strip()
+            
+            # Remover qualquer texto antes ou depois do JSON
+            start_idx = recommendations_str.find('{')
+            end_idx = recommendations_str.rfind('}') + 1
+            if start_idx != -1 and end_idx != -1:
+                recommendations_str = recommendations_str[start_idx:end_idx]
+            
+            # Tentar parsear o JSON com tratamento de erro específico
+            try:
+                recommendations_dict = json.loads(recommendations_str)
+            except json.JSONDecodeError as je:
+                st.error(f"Erro ao decodificar JSON da resposta: {str(je)}")
+                st.write("Resposta recebida:", recommendations_str)
+                return []
 
-        # Filtrar por gênero
-        if user_data['genero'] == "Feminino":
-            recommendations_dict['recommendations'] = [
-                rec for rec in recommendations_dict['recommendations'] 
-                if "Feminino" in rec['name']
-            ]
-        else:
-            recommendations_dict['recommendations'] = [
-                rec for rec in recommendations_dict['recommendations'] 
-                if "Masculino" in rec['name']
-            ]
+            # Validar estrutura do JSON
+            if not isinstance(recommendations_dict, dict) or 'recommendations' not in recommendations_dict:
+                raise ValueError("Formato de resposta inválido")
 
-        # Formato final de retorno
-        return recommendations_dict['recommendations']
+            # Filtrar por gênero
+            filtered_recommendations = []
+            for rec in recommendations_dict['recommendations']:
+                if user_data['genero'] == "Feminino" and "Feminino" in rec['name']:
+                    filtered_recommendations.append(rec)
+                elif user_data['genero'] == "Masculino" and "Masculino" in rec['name']:
+                    filtered_recommendations.append(rec)
+
+            return filtered_recommendations[:5]  # Garantir máximo de 5 recomendações
+
+        except openai.error.OpenAIError as oe:
+            st.error(f"Erro na API do OpenAI: {str(oe)}")
+            return []
 
     except Exception as e:
-        st.error(f"Erro na recomendação de esportes por IA: {str(e)}")
+        st.error(f"Erro na recomendação de esportes: {str(e)}")
+        import traceback
+        st.error(f"Detalhes do erro: {traceback.format_exc()}")
         return []
-
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
     """Identifica os pontos fortes do usuário para um determinado esporte"""
     try:
