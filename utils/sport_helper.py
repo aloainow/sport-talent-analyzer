@@ -364,12 +364,12 @@ def evaluate_biometric_compatibility(user_data, sport_data):
             
     return max(0, score)
 
-def calculate_biometric_compatibility(user_data: Dict, event: pd.Series) -> float:
+def calculate_biometric_compatibility(user_data: Dict, event: Dict) -> float:
     """Calcula a compatibilidade biométrica do usuário com o evento"""
     score = 100
     
     # Altura
-    if not pd.isna(event['altura_media']):
+    if event['altura_media'] and not pd.isna(event['altura_media']):
         altura_diff = abs(user_data['biotipo']['altura'] - event['altura_media'])
         if altura_diff > 20:
             score -= 20
@@ -377,7 +377,7 @@ def calculate_biometric_compatibility(user_data: Dict, event: pd.Series) -> floa
             score -= 10
     
     # Peso
-    if not pd.isna(event['peso_media']):
+    if event['peso_media'] and not pd.isna(event['peso_media']):
         peso_diff = abs(user_data['biotipo']['peso'] - event['peso_media'])
         if peso_diff > 20:
             score -= 20
@@ -385,7 +385,7 @@ def calculate_biometric_compatibility(user_data: Dict, event: pd.Series) -> floa
             score -= 10
     
     # Idade
-    if not pd.isna(event['idade_media']):
+    if event['idade_media'] and not pd.isna(event['idade_media']):
         idade_diff = abs(user_data['idade'] - event['idade_media'])
         if idade_diff > 5:
             score -= 15
@@ -393,7 +393,7 @@ def calculate_biometric_compatibility(user_data: Dict, event: pd.Series) -> floa
             score -= 5
     
     return max(0, score)
-
+    
 def clean_json_response(response_str: str) -> str:
     """Limpa a resposta do GPT para extrair apenas o JSON válido"""
     # Remover marcadores de código markdown
@@ -490,11 +490,12 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         
         # Agrupar eventos por modalidade esportiva base
         base_sports = {}
-        for _, event in filtered_events.iterrows():
-            sport_name = event['Event'].split()[1]  # Pega o nome base do esporte
+        for idx, event in filtered_events.iterrows():
+            event_data = event.to_dict()  # Converter Series para dictionary
+            sport_name = event_data['Event'].split()[1]  # Pega o nome base do esporte
             if sport_name not in base_sports:
                 base_sports[sport_name] = []
-            base_sports[sport_name].append(event)
+            base_sports[sport_name].append(event_data)
             
         all_recommendations = []
         
@@ -506,7 +507,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             for event in events:
                 # Calcular score para o evento
                 biometric_score = calculate_biometric_compatibility(user_data, event)
-                physical_score = calculate_physical_compatibility(user_data, event)
+                physical_score = calculate_physical_compatibility(user_data, event['Event'])
                 technical_score = calculate_technical_score(user_data)
                 
                 # Score final ponderado
@@ -516,7 +517,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                     best_score = final_score
                     best_event = event
             
-            if best_event and best_score >= 70:
+            if best_event is not None and best_score >= 70:
                 # Gerar pontos fortes específicos
                 strengths = []
                 
@@ -569,7 +570,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 # Adicionar recomendação
                 recommendation = {
                     'name': traduzir_evento(best_event['Event']),
-                    'compatibility': min(100, best_score),  # Garantir máximo de, 100
+                    'compatibility': min(100, best_score),  # Garantir máximo de 100
                     'strengths': strengths[:3],  # Pegar os 3 principais pontos fortes
                     'development': development[:3],  # Pegar as 3 principais áreas
                     'olympic_data': {
@@ -586,10 +587,15 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         final_recommendations = all_recommendations[:5]
         
         # Ajustar compatibilidade para ter variação
-        max_compat = final_recommendations[0]['compatibility']
-        for i, rec in enumerate(final_recommendations):
-            rec['compatibility'] = max(70, min(100, max_compat - (i * 5)))
+        if final_recommendations:
+            max_compat = final_recommendations[0]['compatibility']
+            for i, rec in enumerate(final_recommendations):
+                rec['compatibility'] = max(70, min(100, max_compat - (i * 5)))
         
+        if not final_recommendations:
+            st.warning("Não foram encontradas recomendações que atendam aos critérios mínimos.")
+            return []
+            
         return final_recommendations
 
     except Exception as e:
