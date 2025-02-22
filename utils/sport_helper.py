@@ -6,7 +6,7 @@ import json
 import numpy as np
 import openai
 from typing import Dict, List, Any
-from generate_translations import traduzir_evento
+from generate_translations import traduzir_evento, clean_event_name, get_base_sport_name
 
 def load_and_process_data():
     """
@@ -492,7 +492,8 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         base_sports = {}
         for idx, event in filtered_events.iterrows():
             event_data = event.to_dict()  # Converter Series para dictionary
-            sport_name = event_data['Event'].split()[1]  # Pega o nome base do esporte
+            # Usar get_base_sport_name para extrair o nome base do esporte corretamente
+            sport_name = get_base_sport_name(event_data['Event'])
             if sport_name not in base_sports:
                 base_sports[sport_name] = []
             base_sports[sport_name].append(event_data)
@@ -523,53 +524,57 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 
                 # Análise física
                 if user_data['dados_fisicos']['velocidade'] < 4.0:
-                    strengths.append(f"Velocidade excepcional para {sport_name}")
+                    strengths.append(f"Velocidade excepcional para {traduzir_evento(sport_name)}")
                 if user_data['dados_fisicos']['forca_superior'] > 30:
-                    strengths.append(f"Força adequada para {sport_name}")
+                    strengths.append(f"Força adequada para {traduzir_evento(sport_name)}")
                     
                 # Análise técnica
                 if user_data['habilidades_tecnicas']['coordenacao'] > 35:
-                    strengths.append(f"Boa coordenação motora para {sport_name}")
+                    strengths.append(f"Boa coordenação motora para {traduzir_evento(sport_name)}")
                 if user_data['habilidades_tecnicas']['equilibrio'] > 45:
-                    strengths.append(f"Equilíbrio adequado para {sport_name}")
+                    strengths.append(f"Equilíbrio adequado para {traduzir_evento(sport_name)}")
                 if user_data['habilidades_tecnicas']['precisao'] > 7:
-                    strengths.append(f"Precisão técnica para {sport_name}")
+                    strengths.append(f"Precisão técnica para {traduzir_evento(sport_name)}")
                     
                 # Análise tática
                 if user_data['aspectos_taticos']['tomada_decisao'] > 7:
-                    strengths.append(f"Boa tomada de decisão para {sport_name}")
+                    strengths.append(f"Boa tomada de decisão para {traduzir_evento(sport_name)}")
                 if user_data['aspectos_taticos']['visao_jogo'] > 7:
-                    strengths.append(f"Visão de jogo desenvolvida para {sport_name}")
+                    strengths.append(f"Visão de jogo desenvolvida para {traduzir_evento(sport_name)}")
                     
                 # Análise psicológica
                 if user_data['fatores_psicologicos']['motivacao']['comprometimento'] > 7:
-                    strengths.append(f"Alto comprometimento necessário em {sport_name}")
+                    strengths.append(f"Alto comprometimento necessário em {traduzir_evento(sport_name)}")
                 
                 # Garantir pelo menos 3 pontos fortes
                 while len(strengths) < 3:
-                    strengths.append(f"Potencial físico para {sport_name}")
+                    strengths.append(f"Potencial físico para {traduzir_evento(sport_name)}")
                 
                 # Áreas para desenvolver
                 development = []
                 
                 if user_data['dados_fisicos']['velocidade'] > 4.0:
-                    development.append("Melhorar velocidade")
+                    development.append(f"Melhorar velocidade para {traduzir_evento(sport_name)}")
                 if user_data['dados_fisicos']['forca_superior'] < 30:
-                    development.append("Desenvolver força superior")
+                    development.append(f"Desenvolver força superior")
                 if user_data['habilidades_tecnicas']['coordenacao'] < 35:
-                    development.append("Aprimorar coordenação motora")
+                    development.append(f"Aprimorar coordenação motora")
                 if user_data['habilidades_tecnicas']['precisao'] < 7:
-                    development.append("Trabalhar precisão técnica")
+                    development.append(f"Trabalhar precisão técnica")
                 if user_data['aspectos_taticos']['tomada_decisao'] < 7:
-                    development.append("Desenvolver tomada de decisão")
+                    development.append(f"Desenvolver tomada de decisão")
                     
                 # Garantir pelo menos 3 áreas de desenvolvimento
                 while len(development) < 3:
                     development.append("Aprimoramento técnico específico")
                 
+                # Usar clean_event_name antes de traduzir o evento
+                cleaned_event_name = clean_event_name(best_event['Event'])
+                translated_event_name = traduzir_evento(cleaned_event_name)
+                
                 # Adicionar recomendação
                 recommendation = {
-                    'name': traduzir_evento(best_event['Event']),
+                    'name': translated_event_name,
                     'compatibility': min(100, best_score),  # Garantir máximo de 100
                     'strengths': strengths[:3],  # Pegar os 3 principais pontos fortes
                     'development': development[:3],  # Pegar as 3 principais áreas
