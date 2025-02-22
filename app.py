@@ -746,41 +746,41 @@ def show_recommendations():
                 strengths_html = "".join(f"<li>{s}</li>" for s in strengths)
                 development_html = "".join(f"<li>{d}</li>" for d in development)
 
-                with st.container():
                 st.markdown(
-                        f"""
-                        <div style="
-                            background-color: #1e1e1e;
-                            padding: 15px;
-                            border-radius: 12px;
-                            margin-bottom: 10px;
-                            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-                            color: white;
-                        ">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <h3 style="margin: 0; color: white;">{index}. {sport['name']}</h3>
-                                <span style="color: #4caf50; font-weight: bold; font-size: 18px;">
-                                    {sport['compatibility']:.2f}% compatível
-                                </span>
+                    f"""
+                    <div style="
+                        background-color: #1e1e1e;
+                        padding: 15px;
+                        border-radius: 12px;
+                        margin-bottom: 10px;
+                        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        color: white;
+                    ">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h3 style="margin: 0; color: white;">{index}. {sport['name']}</h3>
+                            <span style="color: #4caf50; font-weight: bold; font-size: 18px;">
+                                {sport['compatibility']:.2f}% compatível
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <div style="flex: 1; margin-right: 20px;">
+                                <strong style="color: #81c784;">Pontos Fortes:</strong>
+                                <ul style="margin-top: 5px; color: white;">
+                                    {strengths_html}
+                                </ul>
                             </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <div style="flex: 1; margin-right: 20px;">
-                                    <strong style="color: #81c784;">Pontos Fortes:</strong>
-                                    <ul style="margin-top: 5px; color: white;">
-                                        {strengths_html}
-                                    </ul>
-                                </div>
-                                <div style="flex: 1;">
-                                    <strong style="color: #64b5f6;">Áreas para Desenvolver:</strong>
-                                    <ul style="margin-top: 5px; color: white;">
-                                        {development_html}
-                                    </ul>
-                                </div>
+                            <div style="flex: 1;">
+                                <strong style="color: #64b5f6;">Áreas para Desenvolver:</strong>
+                                <ul style="margin-top: 5px; color: white;">
+                                    {development_html}
+                                </ul>
                             </div>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
     except Exception as e:
         # Adicione este print para debug
         import traceback
