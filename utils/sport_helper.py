@@ -322,7 +322,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             
         olympic_data = pd.read_csv('data/perfil_eventos_olimpicos_verao.csv')
         
-        # Preparar prompt para o GPT (mantém o seu prompt atual)
+        # Preparar prompt para o GPT
         prompt = f"""
         Você é um especialista em identificação de talentos esportivos.
         Analise os dados de um atleta e recomende os 5 melhores esportes.
@@ -381,9 +381,10 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         }}
         """
 
-        # Chamar API do OpenAI com tratamento de erro específico
+        # Chamar API do OpenAI com a nova sintaxe
         try:
-            response = openai.ChatCompletion.create(
+            client = openai.OpenAI()
+            response = client.chat.completions.create(
                 model="gpt-4-turbo-preview",
                 messages=[
                     {"role": "system", "content": "Você é um especialista em identificação de talentos esportivos. Retorne apenas JSON válido conforme o formato especificado."},
@@ -424,7 +425,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
 
             return filtered_recommendations[:5]  # Garantir máximo de 5 recomendações
 
-        except openai.error.OpenAIError as oe:
+        except Exception as oe:
             st.error(f"Erro na API do OpenAI: {str(oe)}")
             return []
 
