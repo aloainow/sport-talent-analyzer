@@ -407,6 +407,19 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 f"- Total de atletas: {event['total_atletas']}"
             )
             eventos_info.append(event_info)
+
+        # Criar o prompt com exemplo de estrutura JSON
+        json_structure = '''
+{
+    "recommendations": [
+        {
+            "name": "Nome do Evento em Português",
+            "compatibility": 85,
+            "strengths": ["Ponto Forte 1", "Ponto Forte 2", "Ponto Forte 3"],
+            "development": ["Área 1", "Área 2", "Área 3"]
+        }
+    ]
+}'''
         
         # Preparar prompt atualizado com eventos traduzidos
         prompt = f"""
@@ -456,17 +469,8 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         Eventos Olímpicos Disponíveis:
         {chr(10).join(eventos_info[:50])}
 
-        Retorne um JSON válido SEM marcadores de código (```), com a seguinte estrutura:
-        {
-            "recommendations": [
-                {
-                    "name": "Nome do Evento em Português",
-                    "compatibility": 85,
-                    "strengths": ["Ponto Forte 1", "Ponto Forte 2", "Ponto Forte 3"],
-                    "development": ["Área 1", "Área 2", "Área 3"]
-                }
-            ]
-        }
+        Retorne um JSON válido SEM marcadores de código (```), seguindo exatamente esta estrutura:
+        {json_structure}
         """
 
         # Chamar API do OpenAI
