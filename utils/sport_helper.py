@@ -486,13 +486,13 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         
         # Filtrar eventos por gênero
         gender_key = "Men's" if user_data['genero'] == "Masculino" else "Women's"
+        gender_pt = "Masculino" if user_data['genero'] == "Masculino" else "Feminino"
         filtered_events = olympic_data[olympic_data['Event'].str.contains(gender_key)]
         
         # Agrupar eventos por modalidade esportiva base
         base_sports = {}
         for idx, event in filtered_events.iterrows():
             event_data = event.to_dict()  # Converter Series para dictionary
-            # Usar get_base_sport_name para extrair o nome base do esporte corretamente
             sport_name = get_base_sport_name(event_data['Event'])
             if sport_name not in base_sports:
                 base_sports[sport_name] = []
@@ -521,61 +521,58 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             if best_event is not None and best_score >= 70:
                 # Gerar pontos fortes específicos
                 strengths = []
+                sport_pt = traduzir_evento(sport_name).replace(" Masculino", "").replace(" Feminino", "")
                 
                 # Análise física
                 if user_data['dados_fisicos']['velocidade'] < 4.0:
-                    strengths.append(f"Velocidade excepcional para {traduzir_evento(sport_name)}")
+                    strengths.append(f"Velocidade excepcional para {sport_pt}")
                 if user_data['dados_fisicos']['forca_superior'] > 30:
-                    strengths.append(f"Força adequada para {traduzir_evento(sport_name)}")
+                    strengths.append(f"Força adequada para {sport_pt}")
                     
                 # Análise técnica
                 if user_data['habilidades_tecnicas']['coordenacao'] > 35:
-                    strengths.append(f"Boa coordenação motora para {traduzir_evento(sport_name)}")
+                    strengths.append(f"Boa coordenação motora para {sport_pt}")
                 if user_data['habilidades_tecnicas']['equilibrio'] > 45:
-                    strengths.append(f"Equilíbrio adequado para {traduzir_evento(sport_name)}")
+                    strengths.append(f"Equilíbrio adequado para {sport_pt}")
                 if user_data['habilidades_tecnicas']['precisao'] > 7:
-                    strengths.append(f"Precisão técnica para {traduzir_evento(sport_name)}")
+                    strengths.append(f"Precisão técnica para {sport_pt}")
                     
                 # Análise tática
                 if user_data['aspectos_taticos']['tomada_decisao'] > 7:
-                    strengths.append(f"Boa tomada de decisão para {traduzir_evento(sport_name)}")
+                    strengths.append(f"Boa tomada de decisão para {sport_pt}")
                 if user_data['aspectos_taticos']['visao_jogo'] > 7:
-                    strengths.append(f"Visão de jogo desenvolvida para {traduzir_evento(sport_name)}")
+                    strengths.append(f"Visão de jogo desenvolvida para {sport_pt}")
                     
                 # Análise psicológica
                 if user_data['fatores_psicologicos']['motivacao']['comprometimento'] > 7:
-                    strengths.append(f"Alto comprometimento necessário em {traduzir_evento(sport_name)}")
+                    strengths.append(f"Alto comprometimento necessário em {sport_pt}")
                 
                 # Garantir pelo menos 3 pontos fortes
                 while len(strengths) < 3:
-                    strengths.append(f"Potencial físico para {traduzir_evento(sport_name)}")
+                    strengths.append(f"Potencial físico para {sport_pt}")
                 
                 # Áreas para desenvolver
                 development = []
                 
                 if user_data['dados_fisicos']['velocidade'] > 4.0:
-                    development.append(f"Melhorar velocidade para {traduzir_evento(sport_name)}")
+                    development.append("Melhorar velocidade")
                 if user_data['dados_fisicos']['forca_superior'] < 30:
-                    development.append(f"Desenvolver força superior")
+                    development.append("Desenvolver força superior")
                 if user_data['habilidades_tecnicas']['coordenacao'] < 35:
-                    development.append(f"Aprimorar coordenação motora")
+                    development.append("Aprimorar coordenação motora")
                 if user_data['habilidades_tecnicas']['precisao'] < 7:
-                    development.append(f"Trabalhar precisão técnica")
+                    development.append("Trabalhar precisão técnica")
                 if user_data['aspectos_taticos']['tomada_decisao'] < 7:
-                    development.append(f"Desenvolver tomada de decisão")
+                    development.append("Desenvolver tomada de decisão")
                     
                 # Garantir pelo menos 3 áreas de desenvolvimento
                 while len(development) < 3:
                     development.append("Aprimoramento técnico específico")
                 
-                # Usar clean_event_name antes de traduzir o evento
-                cleaned_event_name = clean_event_name(best_event['Event'])
-                translated_event_name = traduzir_evento(cleaned_event_name)
-                
                 # Adicionar recomendação
                 recommendation = {
-                    'name': translated_event_name,
-                    'compatibility': min(100, best_score),  # Garantir máximo de 100
+                    'name': traduzir_evento(best_event['Event']),
+                    'compatibility': round(min(100, best_score), 2),  # Arredondar para 2 casas decimais
                     'strengths': strengths[:3],  # Pegar os 3 principais pontos fortes
                     'development': development[:3],  # Pegar as 3 principais áreas
                     'olympic_data': {
@@ -595,7 +592,12 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         if final_recommendations:
             max_compat = final_recommendations[0]['compatibility']
             for i, rec in enumerate(final_recommendations):
-                rec['compatibility'] = max(70, min(100, max_compat - (i * 5)))
+                rec['compatibility'] = round(max(70, min(100, max_compat - (i * 5))), 2)
+        
+        # Se não houver recomendações suficientes, adicionar mais opções
+        while len(final_recommendations) < 5 and len(all_recommendations) > 0:
+            final_recommendations.append(all_recommendations[0])
+            all_recommendations = all_recommendations[1:]
         
         if not final_recommendations:
             st.warning("Não foram encontradas recomendações que atendam aos critérios mínimos.")
