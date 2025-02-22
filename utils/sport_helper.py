@@ -364,6 +364,19 @@ def evaluate_biometric_compatibility(user_data, sport_data):
             
     return max(0, score)
 
+def clean_json_response(response_str: str) -> str:
+    """Limpa a resposta do GPT para extrair apenas o JSON válido"""
+    # Remover marcadores de código markdown
+    response_str = response_str.replace('```json', '').replace('```', '')
+    
+    # Encontrar o início e fim do JSON
+    start_idx = response_str.find('{')
+    end_idx = response_str.rfind('}') + 1
+    
+    if start_idx != -1 and end_idx != -1:
+        return response_str[start_idx:end_idx]
+    return response_str
+
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Gera recomendações de eventos esportivos usando IA"""
     try:
@@ -441,19 +454,19 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         ]):.1f}
 
         Eventos Olímpicos Disponíveis:
-        {chr(10).join(eventos_info[:50])}  # Limitando para não exceder o contexto
+        {chr(10).join(eventos_info[:50])}
 
-        Retorne um JSON válido com a seguinte estrutura:
-        {{
+        Retorne um JSON válido SEM marcadores de código (```), com a seguinte estrutura:
+        {
             "recommendations": [
-                {{
+                {
                     "name": "Nome do Evento em Português",
                     "compatibility": 85,
                     "strengths": ["Ponto Forte 1", "Ponto Forte 2", "Ponto Forte 3"],
                     "development": ["Área 1", "Área 2", "Área 3"]
-                }}
+                }
             ]
-        }}
+        }
         """
 
         # Chamar API do OpenAI
@@ -464,7 +477,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
                 messages=[
                     {
                         "role": "system", 
-                        "content": "Você é um especialista em identificação de talentos esportivos. Retorne apenas JSON válido conforme o formato especificado, usando os nomes dos eventos em português."
+                        "content": "Você é um especialista em identificação de talentos esportivos. Retorne apenas JSON válido sem marcadores de código."
                     },
                     {"role": "user", "content": prompt}
                 ],
@@ -473,7 +486,15 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             )
 
             recommendations_str = response.choices[0].message.content.strip()
-            recommendations_dict = json.loads(recommendations_str)
+            # Limpar a resposta antes de fazer o parse
+            clean_recommendations_str = clean_json_response(recommendations_str)
+            
+            try:
+                recommendations_dict = json.loads(clean_recommendations_str)
+            except json.JSONDecodeError as je:
+                st.error(f"Erro ao decodificar JSON: {str(je)}")
+                st.write("JSON recebido:", clean_recommendations_str)
+                return []
 
             # Processar recomendações
             final_recommendations = []
