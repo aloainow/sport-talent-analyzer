@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import json
 import numpy as np
+import openai
 from typing import Dict, List, Any
 
 def load_and_process_data():
@@ -312,83 +313,112 @@ def calculate_base_score(biotype_score: float, physical_score: float, tech_score
         st.warning(f"Erro no cálculo do score base: {str(e)}")
         return 50.0
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Gera recomendações de esportes baseadas nos dados do usuário"""
+    """Gera recomendações de esportes usando IA"""
     try:
-        # Verificar se todos os testes foram completados
-        missing_tests = [
-            key.replace('_', ' ').title() 
-            for key in ['dados_fisicos', 'habilidades_tecnicas', 'aspectos_taticos', 'fatores_psicologicos'] 
-            if not user_data.get(key)
-        ]
-        
-        if missing_tests:
-            st.error(f"Por favor, complete os seguintes testes: {', '.join(missing_tests)}")
-            return []
-
-        # Carregar dados dos esportes
+        # Carregar dados de referência
         sports_data = load_and_process_data()
-        if sports_data is None or sports_data.empty:
-            st.error("Erro ao carregar dados dos esportes. Por favor, tente novamente mais tarde.")
-            return []
+        olympic_data = pd.read_csv('data/perfil_eventos_olimpicos_verao.csv')
+        
+        # Preparar prompt para o GPT
+        prompt = f"""
+        Você é um especialista em identificação de talentos esportivos.
+        Analise os dados de um atleta e recomende os 5 melhores esportes.
 
-        # Filtrar esportes por gênero (modificado)
+        Dados do Atleta:
+        - Gênero: {user_data['genero']}
+        - Idade: {user_data['idade']}
+        - Altura: {user_data['biotipo']['altura']} cm
+        - Peso: {user_data['biotipo']['peso']} kg
+
+        Dados Físicos:
+        - Velocidade (20m): {user_data['dados_fisicos']['velocidade']} seg
+        - Força Superior: {user_data['dados_fisicos']['forca_superior']} repetições
+        - Força Inferior: {user_data['dados_fisicos']['forca_inferior']} repetições
+
+        Habilidades Técnicas:
+        - Coordenação: {user_data['habilidades_tecnicas']['coordenacao']}
+        - Precisão: {user_data['habilidades_tecnicas']['precisao']}
+        - Agilidade: {user_data['habilidades_tecnicas']['agilidade']}
+        - Equilíbrio: {user_data['habilidades_tecnicas']['equilibrio']}
+
+        Aspectos Táticos:
+        - Tomada de Decisão: {user_data['aspectos_taticos']['tomada_decisao']}
+        - Visão de Jogo: {user_data['aspectos_taticos']['visao_jogo']}
+        - Posicionamento: {user_data['aspectos_taticos']['posicionamento']}
+
+        Fatores Psicológicos:
+        - Motivação: {np.mean([
+            user_data['fatores_psicologicos']['motivacao']['dedicacao'],
+            user_data['fatores_psicologicos']['motivacao']['frequencia'],
+            user_data['fatores_psicologicos']['motivacao']['comprometimento']
+        ])}
+        - Resiliência: {np.mean([
+            user_data['fatores_psicologicos']['resiliencia']['derrotas'],
+            user_data['fatores_psicologicos']['resiliencia']['criticas'],
+            user_data['fatores_psicologicos']['resiliencia']['erros']
+        ])}
+        - Trabalho em Equipe: {np.mean([
+            user_data['fatores_psicologicos']['trabalho_equipe']['comunicacao'],
+            user_data['fatores_psicologicos']['trabalho_equipe']['opinioes'],
+            user_data['fatores_psicologicos']['trabalho_equipe']['contribuicao']
+        ])}
+
+        Eventos Olímpicos Disponíveis: {', '.join(sports_data['Event'].unique())}
+
+        Instruções:
+        1. Recomende até 5 esportes
+        2. Calcule compatibilidade de 0-100%
+        3. Liste 3 pontos fortes para cada esporte
+        4. Liste 3 áreas para desenvolvimento
+        5. Justifique brevemente cada recomendação
+        6. Responda APENAS em formato JSON válido
+
+        Formato de Resposta:
+        {
+            "recommendations": [
+                {
+                    "name": "Nome do Esporte",
+                    "compatibility": 85,
+                    "strengths": ["Ponto Forte 1", "Ponto Forte 2", "Ponto Forte 3"],
+                    "development": ["Área 1", "Área 2", "Área 3"],
+                    "justification": "Explicação breve"
+                }
+            ]
+        }
+        """
+
+        # Chamar API do OpenAI
+        response = openai.ChatCompletion.create(
+            model="gpt-4-turbo-preview",
+            messages=[
+                {"role": "system", "content": "Você é um especialista em identificação de talentos esportivos."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=1000,
+            temperature=0.7
+        )
+
+        # Processar resposta
+        recommendations_str = response.choices[0].message.content.strip()
+        recommendations_dict = json.loads(recommendations_str)
+
+        # Filtrar por gênero
         if user_data['genero'] == "Feminino":
-            sports_data = sports_data[sports_data['Event'].str.contains('Feminino', case=False, na=False)]
+            recommendations_dict['recommendations'] = [
+                rec for rec in recommendations_dict['recommendations'] 
+                if "Feminino" in rec['name']
+            ]
         else:
-            sports_data = sports_data[sports_data['Event'].str.contains('Masculino', case=False, na=False)]
-                
-        if sports_data.empty:
-            st.error(f"Não foram encontrados esportes para o gênero {user_data['genero']}")
-            return []
+            recommendations_dict['recommendations'] = [
+                rec for rec in recommendations_dict['recommendations'] 
+                if "Masculino" in rec['name']
+            ]
 
-        recommendations = []
-        processed_sports = 0
-        errors = 0
-
-        for _, sport in sports_data.iterrows():
-            try:
-                sport_name = sport['Event']
-                
-                # Calcular scores individuais
-                biotype_score = calculate_biotype_compatibility(user_data, sport)
-                physical_score = calculate_physical_compatibility(user_data, sport_name, user_data['idade'])
-                tech_score = calculate_technical_score(user_data)
-                tactic_score = calculate_tactical_score(user_data)
-                psych_score = calculate_psychological_score(user_data)
-
-                # Calcular score base
-                base_score = calculate_base_score(
-                    biotype_score, physical_score, tech_score, 
-                    tactic_score, psych_score, sport_name, user_data
-                )
-                
-                recommendations.append({
-                    "name": sport_name,
-                    "compatibility": round(base_score),
-                    "strengths": get_sport_strengths(sport_name, user_data),
-                    "development": get_development_areas(sport_name, user_data)
-                })
-                processed_sports += 1
-
-            except Exception as sport_e:
-                errors += 1
-                st.warning(f"Erro ao processar esporte {sport_name}: {str(sport_e)}")
-                continue
-
-        # Verificações finais após processamento
-        if not recommendations:
-            st.error("Não foi possível gerar recomendações. Por favor, verifique seus dados e tente novamente.")
-            return []
-        
-        if errors > 0:
-            st.warning(f"Alguns esportes ({errors}) não puderam ser processados, mas encontramos {processed_sports} recomendações para você.")
-        
-        # Ordenar recomendações
-        recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        return recommendations[:10]
+        # Formato final de retorno
+        return recommendations_dict['recommendations']
 
     except Exception as e:
-        st.error(f"Erro inesperado ao gerar recomendações: {str(e)}")
+        st.error(f"Erro na recomendação de esportes por IA: {str(e)}")
         return []
 
 def get_sport_strengths(sport_name: str, user_data: Dict) -> List[str]:
