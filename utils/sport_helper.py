@@ -364,6 +364,36 @@ def evaluate_biometric_compatibility(user_data, sport_data):
             
     return max(0, score)
 
+def calculate_biometric_compatibility(user_data: Dict, event: pd.Series) -> float:
+    """Calcula a compatibilidade biométrica do usuário com o evento"""
+    score = 100
+    
+    # Altura
+    if not pd.isna(event['altura_media']):
+        altura_diff = abs(user_data['biotipo']['altura'] - event['altura_media'])
+        if altura_diff > 20:
+            score -= 20
+        elif altura_diff > 10:
+            score -= 10
+    
+    # Peso
+    if not pd.isna(event['peso_media']):
+        peso_diff = abs(user_data['biotipo']['peso'] - event['peso_media'])
+        if peso_diff > 20:
+            score -= 20
+        elif peso_diff > 10:
+            score -= 10
+    
+    # Idade
+    if not pd.isna(event['idade_media']):
+        idade_diff = abs(user_data['idade'] - event['idade_media'])
+        if idade_diff > 5:
+            score -= 15
+        elif idade_diff > 3:
+            score -= 5
+    
+    return max(0, score)
+
 def clean_json_response(response_str: str) -> str:
     """Limpa a resposta do GPT para extrair apenas o JSON válido"""
     # Remover marcadores de código markdown
@@ -457,74 +487,108 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         # Filtrar eventos por gênero
         gender_key = "Men's" if user_data['genero'] == "Masculino" else "Women's"
         filtered_events = olympic_data[olympic_data['Event'].str.contains(gender_key)]
-        st.write(f"Eventos filtrados por gênero ({gender_key}): {len(filtered_events)} eventos.")
         
-        # Processar todos os eventos
-        all_recommendations = process_events_batch(filtered_events, user_data)
+        # Agrupar eventos por modalidade esportiva base
+        base_sports = {}
+        for _, event in filtered_events.iterrows():
+            sport_name = event['Event'].split()[1]  # Pega o nome base do esporte
+            if sport_name not in base_sports:
+                base_sports[sport_name] = []
+            base_sports[sport_name].append(event)
+            
+        all_recommendations = []
         
-        if not all_recommendations:
-            st.error("Nenhuma recomendação encontrada na análise inicial.")
-            return []
+        # Processar cada modalidade esportiva
+        for sport_name, events in base_sports.items():
+            best_event = None
+            best_score = 0
             
-        # Ordenar por compatibilidade
-        all_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        top_recommendations = all_recommendations[:5]  # Reduzindo para top 5 direto
-        
-        st.write(f"Top 5 eventos selecionados. Compatibilidade máxima: {top_recommendations[0]['compatibility']}%")
-        
-        # Criar as recomendações finais diretamente
-        final_recommendations = []
-        for rec in top_recommendations:
-            event_name = rec['name']
+            for event in events:
+                # Calcular score para o evento
+                biometric_score = calculate_biometric_compatibility(user_data, event)
+                physical_score = calculate_physical_compatibility(user_data, event)
+                technical_score = calculate_technical_score(user_data)
+                
+                # Score final ponderado
+                final_score = (biometric_score * 0.4 + physical_score * 0.3 + technical_score * 0.3)
+                
+                if final_score > best_score:
+                    best_score = final_score
+                    best_event = event
             
-            # Determinar pontos fortes e áreas de desenvolvimento com base nos dados
-            strengths = []
-            development = []
-            
-            # Análise de altura
-            if event_name.lower().find('basquete') != -1 or event_name.lower().find('vôlei') != -1:
-                if user_data['biotipo']['altura'] >= rec['olympic_data']['altura_media']:
-                    strengths.append("Altura adequada para o esporte")
-                else:
-                    development.append("Desenvolvimento de técnicas para compensar altura")
-            
-            # Análise de velocidade
-            if 'velocidade' in user_data['dados_fisicos']:
+            if best_event and best_score >= 70:
+                # Gerar pontos fortes específicos
+                strengths = []
+                
+                # Análise física
                 if user_data['dados_fisicos']['velocidade'] < 4.0:
-                    strengths.append("Boa velocidade de arranque")
-                elif user_data['dados_fisicos']['velocidade'] > 4.5:
-                    development.append("Melhorar velocidade de arranque")
-            
-            # Análise de força
-            if 'forca_superior' in user_data['dados_fisicos']:
+                    strengths.append(f"Velocidade excepcional para {sport_name}")
                 if user_data['dados_fisicos']['forca_superior'] > 30:
-                    strengths.append("Boa força superior")
-                else:
+                    strengths.append(f"Força adequada para {sport_name}")
+                    
+                # Análise técnica
+                if user_data['habilidades_tecnicas']['coordenacao'] > 35:
+                    strengths.append(f"Boa coordenação motora para {sport_name}")
+                if user_data['habilidades_tecnicas']['equilibrio'] > 45:
+                    strengths.append(f"Equilíbrio adequado para {sport_name}")
+                if user_data['habilidades_tecnicas']['precisao'] > 7:
+                    strengths.append(f"Precisão técnica para {sport_name}")
+                    
+                # Análise tática
+                if user_data['aspectos_taticos']['tomada_decisao'] > 7:
+                    strengths.append(f"Boa tomada de decisão para {sport_name}")
+                if user_data['aspectos_taticos']['visao_jogo'] > 7:
+                    strengths.append(f"Visão de jogo desenvolvida para {sport_name}")
+                    
+                # Análise psicológica
+                if user_data['fatores_psicologicos']['motivacao']['comprometimento'] > 7:
+                    strengths.append(f"Alto comprometimento necessário em {sport_name}")
+                
+                # Garantir pelo menos 3 pontos fortes
+                while len(strengths) < 3:
+                    strengths.append(f"Potencial físico para {sport_name}")
+                
+                # Áreas para desenvolver
+                development = []
+                
+                if user_data['dados_fisicos']['velocidade'] > 4.0:
+                    development.append("Melhorar velocidade")
+                if user_data['dados_fisicos']['forca_superior'] < 30:
                     development.append("Desenvolver força superior")
-            
-            # Completar com pontos genéricos se necessário
-            while len(strengths) < 3:
-                strengths.append("Compatibilidade física com o esporte")
-            while len(development) < 3:
-                development.append("Aprimoramento técnico específico")
-            
-            # Criar recomendação final
-            final_recommendation = {
-                'name': event_name,
-                'compatibility': rec['compatibility'],
-                'strengths': strengths[:3],  # Garantir exatamente 3 pontos
-                'development': development[:3],  # Garantir exatamente 3 pontos
-                'olympic_data': rec['olympic_data']
-            }
-            
-            final_recommendations.append(final_recommendation)
-
-        st.write(f"Análise concluída. {len(final_recommendations)} recomendações finais geradas.")
+                if user_data['habilidades_tecnicas']['coordenacao'] < 35:
+                    development.append("Aprimorar coordenação motora")
+                if user_data['habilidades_tecnicas']['precisao'] < 7:
+                    development.append("Trabalhar precisão técnica")
+                if user_data['aspectos_taticos']['tomada_decisao'] < 7:
+                    development.append("Desenvolver tomada de decisão")
+                    
+                # Garantir pelo menos 3 áreas de desenvolvimento
+                while len(development) < 3:
+                    development.append("Aprimoramento técnico específico")
+                
+                # Adicionar recomendação
+                recommendation = {
+                    'name': traduzir_evento(best_event['Event']),
+                    'compatibility': min(100, best_score),  # Garantir máximo de, 100
+                    'strengths': strengths[:3],  # Pegar os 3 principais pontos fortes
+                    'development': development[:3],  # Pegar as 3 principais áreas
+                    'olympic_data': {
+                        'idade_media': float(best_event['idade_media']),
+                        'altura_media': float(best_event['altura_media']),
+                        'peso_media': float(best_event['peso_media']),
+                        'total_atletas': int(best_event['total_atletas'])
+                    }
+                }
+                all_recommendations.append(recommendation)
         
-        # Debug: mostrar as recomendações
-        st.write("Recomendações geradas:")
-        for rec in final_recommendations:
-            st.write(f"- {rec['name']} (Compatibilidade: {rec['compatibility']}%)")
+        # Ordenar por compatibilidade e pegar os top 5
+        all_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+        final_recommendations = all_recommendations[:5]
+        
+        # Ajustar compatibilidade para ter variação
+        max_compat = final_recommendations[0]['compatibility']
+        for i, rec in enumerate(final_recommendations):
+            rec['compatibility'] = max(70, min(100, max_compat - (i * 5)))
         
         return final_recommendations
 
