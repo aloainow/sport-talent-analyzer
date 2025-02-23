@@ -587,7 +587,6 @@ def create_sport_recommendation(sport_name: str, event: Dict, score: float, user
             'total_atletas': int(event['total_atletas'])
         }
     }
-
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Gera recomendações de eventos esportivos considerando todos os eventos"""
     try:
@@ -595,6 +594,7 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         
         # Carregar dados olímpicos
         olympic_data = pd.read_csv('data/perfil_eventos_olimpicos_verao.csv')
+        st.write(f"Dados olímpicos carregados: {len(olympic_data)} eventos.")
         
         # Filtrar eventos por gênero
         gender_key = "Men's" if user_data['genero'] == "Masculino" else "Women's"
@@ -656,26 +656,43 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         team_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
         individual_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
         
-        # Combinar recomendações garantindo mix de esportes
+        # Combinar recomendações com a melhor primeiro e depois 70-30 para individuais
         final_recommendations = []
-        team_index = 0
-        indiv_index = 0
         
-        while len(final_recommendations) < 5:
-            # Adicionar esporte coletivo se disponível
-            if team_index < len(team_recommendations):
-                final_recommendations.append(team_recommendations[team_index])
-                team_index += 1
+        # Encontrar a melhor recomendação geral
+        all_sports = team_recommendations + individual_recommendations
+        if all_sports:
+            best_overall = max(all_sports, key=lambda x: x['compatibility'])
+            final_recommendations.append(best_overall)
             
-            # Adicionar esporte individual se disponível e ainda há espaço
-            if len(final_recommendations) < 5 and indiv_index < len(individual_recommendations):
-                final_recommendations.append(individual_recommendations[indiv_index])
-                indiv_index += 1
+            # Remover a melhor recomendação das listas originais
+            if best_overall in team_recommendations:
+                team_recommendations.remove(best_overall)
+            else:
+                individual_recommendations.remove(best_overall)
             
-            # Se não há mais recomendações de nenhum tipo, sair do loop
-            if (team_index >= len(team_recommendations) and 
-                indiv_index >= len(individual_recommendations)):
-                break
+            # Para as 4 recomendações restantes, seguir proporção 70-30
+            remaining_slots = 4  # já usamos 1 slot para a melhor recomendação
+            num_individual = 3  # ~70% de 4 restantes
+            num_team = 1       # ~30% de 4 restantes
+            
+            # Adicionar esportes individuais
+            for i in range(min(num_individual, len(individual_recommendations))):
+                final_recommendations.append(individual_recommendations[i])
+                
+            # Adicionar esportes coletivos
+            for i in range(min(num_team, len(team_recommendations))):
+                final_recommendations.append(team_recommendations[i])
+                
+            # Se ainda faltam slots, preencher com mais individuais
+            remaining_slots = 5 - len(final_recommendations)
+            if remaining_slots > 0:
+                start_idx = len(final_recommendations) - 1  # -1 porque já incluímos a melhor recomendação
+                for i in range(remaining_slots):
+                    if start_idx + i < len(individual_recommendations):
+                        final_recommendations.append(individual_recommendations[start_idx + i])
+                    elif i < len(team_recommendations):
+                        final_recommendations.append(team_recommendations[i])
         
         # Ajustar compatibilidade para ter variação
         if final_recommendations:
@@ -683,6 +700,10 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             for i, rec in enumerate(final_recommendations):
                 rec['compatibility'] = round(max(70, min(100, max_compat - (i * 5))), 2)
         
+        if not final_recommendations:
+            st.warning("Não foram encontradas recomendações que atendam aos critérios mínimos.")
+            return []
+            
         return final_recommendations
 
     except Exception as e:
