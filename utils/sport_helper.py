@@ -521,6 +521,73 @@ def is_team_sport(sport_name: str) -> bool:
     }
     return any(sport.lower() in sport_name.lower() for sport in team_sports)
 
+def create_sport_recommendation(sport_name: str, event: Dict, score: float, user_data: Dict) -> Dict:
+    """Cria uma recomendação de esporte com pontos fortes e áreas para desenvolver"""
+    sport_pt = traduzir_evento(sport_name).replace(" Masculino", "").replace(" Feminino", "")
+    
+    # Gerar pontos fortes específicos
+    strengths = []
+    
+    # Análise física
+    if user_data['dados_fisicos']['velocidade'] < 4.0:
+        strengths.append(f"Velocidade excepcional para {sport_pt}")
+    if user_data['dados_fisicos']['forca_superior'] > 30:
+        strengths.append(f"Força adequada para {sport_pt}")
+        
+    # Análise técnica
+    if user_data['habilidades_tecnicas']['coordenacao'] > 35:
+        strengths.append(f"Boa coordenação motora para {sport_pt}")
+    if user_data['habilidades_tecnicas']['equilibrio'] > 45:
+        strengths.append(f"Equilíbrio adequado para {sport_pt}")
+    if user_data['habilidades_tecnicas']['precisao'] > 7:
+        strengths.append(f"Precisão técnica para {sport_pt}")
+        
+    # Análise tática
+    if user_data['aspectos_taticos']['tomada_decisao'] > 7:
+        strengths.append(f"Boa tomada de decisão para {sport_pt}")
+    if user_data['aspectos_taticos']['visao_jogo'] > 7:
+        strengths.append(f"Visão de jogo desenvolvida para {sport_pt}")
+        
+    # Análise psicológica
+    if user_data['fatores_psicologicos']['motivacao']['comprometimento'] > 7:
+        strengths.append(f"Alto comprometimento necessário em {sport_pt}")
+    
+    # Garantir pelo menos 3 pontos fortes
+    while len(strengths) < 3:
+        strengths.append(f"Potencial físico para {sport_pt}")
+    
+    # Áreas para desenvolver
+    development = []
+    
+    if user_data['dados_fisicos']['velocidade'] > 4.0:
+        development.append("Melhorar velocidade")
+    if user_data['dados_fisicos']['forca_superior'] < 30:
+        development.append("Desenvolver força superior")
+    if user_data['habilidades_tecnicas']['coordenacao'] < 35:
+        development.append("Aprimorar coordenação motora")
+    if user_data['habilidades_tecnicas']['precisao'] < 7:
+        development.append("Trabalhar precisão técnica")
+    if user_data['aspectos_taticos']['tomada_decisao'] < 7:
+        development.append("Desenvolver tomada de decisão")
+        
+    # Garantir pelo menos 3 áreas de desenvolvimento
+    while len(development) < 3:
+        development.append("Aprimoramento técnico específico")
+    
+    # Criar recomendação
+    return {
+        'name': traduzir_evento(event['Event']),
+        'compatibility': round(min(100, score), 2),  # Arredondar para 2 casas decimais
+        'strengths': strengths[:3],  # Pegar os 3 principais pontos fortes
+        'development': development[:3],  # Pegar as 3 principais áreas
+        'olympic_data': {
+            'idade_media': float(event['idade_media']),
+            'altura_media': float(event['altura_media']),
+            'peso_media': float(event['peso_media']),
+            'total_atletas': int(event['total_atletas'])
+        }
+    }
+
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Gera recomendações de eventos esportivos considerando todos os eventos"""
     try:
