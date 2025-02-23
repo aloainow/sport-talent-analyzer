@@ -475,6 +475,52 @@ def process_events_batch(filtered_events, user_data, batch_size=100):
         st.error(f"Erro no processamento dos eventos: {str(e)}")
         return []
 
+def calculate_team_sport_compatibility(user_data: Dict) -> float:
+    """Calcula compatibilidade específica para esportes coletivos"""
+    score = 70  # Base score for team sports
+    
+    # Fatores psicológicos são mais importantes em esportes coletivos
+    psic_data = user_data.get('fatores_psicologicos', {})
+    if psic_data:
+        # Trabalho em equipe
+        team_scores = []
+        if 'trabalho_equipe' in psic_data:
+            team = psic_data['trabalho_equipe']
+            team_scores.extend([
+                team.get('comunicacao', 5),
+                team.get('opinioes', 5),
+                team.get('contribuicao', 5)
+            ])
+        
+        # Média do trabalho em equipe
+        if team_scores:
+            team_avg = sum(team_scores) / len(team_scores)
+            if team_avg >= 7:
+                score += 15
+            elif team_avg >= 5:
+                score += 10
+    
+    # Aspectos táticos são importantes
+    tatic_data = user_data.get('aspectos_taticos', {})
+    if tatic_data:
+        # Visão de jogo e tomada de decisão
+        if tatic_data.get('visao_jogo', 0) >= 7:
+            score += 10
+        if tatic_data.get('tomada_decisao', 0) >= 7:
+            score += 10
+    
+    return min(100, score)
+
+def is_team_sport(sport_name: str) -> bool:
+    """Identifica se é um esporte coletivo"""
+    team_sports = {
+        'Volleyball', 'Beach Volleyball', 'Basketball', 'Football', 
+        'Handball', 'Water Polo', 'Rugby', 'Hockey', 'Baseball', 
+        'Softball', 'Vôlei', 'Basquete', 'Futebol', 'Handebol', 
+        'Polo Aquático', 'Vôlei de Praia'
+    }
+    return any(sport.lower() in sport_name.lower() for sport in team_sports)
+
 def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Gera recomendações de eventos esportivos considerando todos os eventos"""
     try:
@@ -482,23 +528,23 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
         
         # Carregar dados olímpicos
         olympic_data = pd.read_csv('data/perfil_eventos_olimpicos_verao.csv')
-        st.write(f"Dados olímpicos carregados: {len(olympic_data)} eventos.")
         
         # Filtrar eventos por gênero
         gender_key = "Men's" if user_data['genero'] == "Masculino" else "Women's"
-        gender_pt = "Masculino" if user_data['genero'] == "Masculino" else "Feminino"
         filtered_events = olympic_data[olympic_data['Event'].str.contains(gender_key)]
         
         # Agrupar eventos por modalidade esportiva base
         base_sports = {}
         for idx, event in filtered_events.iterrows():
-            event_data = event.to_dict()  # Converter Series para dictionary
+            event_data = event.to_dict()
             sport_name = get_base_sport_name(event_data['Event'])
             if sport_name not in base_sports:
                 base_sports[sport_name] = []
             base_sports[sport_name].append(event_data)
             
         all_recommendations = []
+        team_recommendations = []
+        individual_recommendations = []
         
         # Processar cada modalidade esportiva
         for sport_name, events in base_sports.items():
@@ -506,87 +552,63 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             best_score = 0
             
             for event in events:
-                # Calcular score para o evento
+                # Calcular scores base
                 biometric_score = calculate_biometric_compatibility(user_data, event)
                 physical_score = calculate_physical_compatibility(user_data, event['Event'])
                 technical_score = calculate_technical_score(user_data)
                 
-                # Score final ponderado
-                final_score = (biometric_score * 0.4 + physical_score * 0.3 + technical_score * 0.3)
+                # Ajustar score baseado no tipo de esporte
+                if is_team_sport(sport_name):
+                    team_score = calculate_team_sport_compatibility(user_data)
+                    final_score = (biometric_score * 0.3 + 
+                                 physical_score * 0.2 + 
+                                 technical_score * 0.2 + 
+                                 team_score * 0.3)
+                else:
+                    final_score = (biometric_score * 0.4 + 
+                                 physical_score * 0.3 + 
+                                 technical_score * 0.3)
                 
                 if final_score > best_score:
                     best_score = final_score
                     best_event = event
             
             if best_event is not None and best_score >= 70:
-                # Gerar pontos fortes específicos
-                strengths = []
-                sport_pt = traduzir_evento(sport_name).replace(" Masculino", "").replace(" Feminino", "")
+                # Criar recomendação
+                recommendation = create_sport_recommendation(
+                    sport_name, best_event, best_score, user_data
+                )
                 
-                # Análise física
-                if user_data['dados_fisicos']['velocidade'] < 4.0:
-                    strengths.append(f"Velocidade excepcional para {sport_pt}")
-                if user_data['dados_fisicos']['forca_superior'] > 30:
-                    strengths.append(f"Força adequada para {sport_pt}")
-                    
-                # Análise técnica
-                if user_data['habilidades_tecnicas']['coordenacao'] > 35:
-                    strengths.append(f"Boa coordenação motora para {sport_pt}")
-                if user_data['habilidades_tecnicas']['equilibrio'] > 45:
-                    strengths.append(f"Equilíbrio adequado para {sport_pt}")
-                if user_data['habilidades_tecnicas']['precisao'] > 7:
-                    strengths.append(f"Precisão técnica para {sport_pt}")
-                    
-                # Análise tática
-                if user_data['aspectos_taticos']['tomada_decisao'] > 7:
-                    strengths.append(f"Boa tomada de decisão para {sport_pt}")
-                if user_data['aspectos_taticos']['visao_jogo'] > 7:
-                    strengths.append(f"Visão de jogo desenvolvida para {sport_pt}")
-                    
-                # Análise psicológica
-                if user_data['fatores_psicologicos']['motivacao']['comprometimento'] > 7:
-                    strengths.append(f"Alto comprometimento necessário em {sport_pt}")
-                
-                # Garantir pelo menos 3 pontos fortes
-                while len(strengths) < 3:
-                    strengths.append(f"Potencial físico para {sport_pt}")
-                
-                # Áreas para desenvolver
-                development = []
-                
-                if user_data['dados_fisicos']['velocidade'] > 4.0:
-                    development.append("Melhorar velocidade")
-                if user_data['dados_fisicos']['forca_superior'] < 30:
-                    development.append("Desenvolver força superior")
-                if user_data['habilidades_tecnicas']['coordenacao'] < 35:
-                    development.append("Aprimorar coordenação motora")
-                if user_data['habilidades_tecnicas']['precisao'] < 7:
-                    development.append("Trabalhar precisão técnica")
-                if user_data['aspectos_taticos']['tomada_decisao'] < 7:
-                    development.append("Desenvolver tomada de decisão")
-                    
-                # Garantir pelo menos 3 áreas de desenvolvimento
-                while len(development) < 3:
-                    development.append("Aprimoramento técnico específico")
-                
-                # Adicionar recomendação
-                recommendation = {
-                    'name': traduzir_evento(best_event['Event']),
-                    'compatibility': round(min(100, best_score), 2),  # Arredondar para 2 casas decimais
-                    'strengths': strengths[:3],  # Pegar os 3 principais pontos fortes
-                    'development': development[:3],  # Pegar as 3 principais áreas
-                    'olympic_data': {
-                        'idade_media': float(best_event['idade_media']),
-                        'altura_media': float(best_event['altura_media']),
-                        'peso_media': float(best_event['peso_media']),
-                        'total_atletas': int(best_event['total_atletas'])
-                    }
-                }
-                all_recommendations.append(recommendation)
+                # Separar em coletivos e individuais
+                if is_team_sport(sport_name):
+                    team_recommendations.append(recommendation)
+                else:
+                    individual_recommendations.append(recommendation)
         
-        # Ordenar por compatibilidade e pegar os top 5
-        all_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
-        final_recommendations = all_recommendations[:5]
+        # Ordenar cada lista por compatibilidade
+        team_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+        individual_recommendations.sort(key=lambda x: x['compatibility'], reverse=True)
+        
+        # Combinar recomendações garantindo mix de esportes
+        final_recommendations = []
+        team_index = 0
+        indiv_index = 0
+        
+        while len(final_recommendations) < 5:
+            # Adicionar esporte coletivo se disponível
+            if team_index < len(team_recommendations):
+                final_recommendations.append(team_recommendations[team_index])
+                team_index += 1
+            
+            # Adicionar esporte individual se disponível e ainda há espaço
+            if len(final_recommendations) < 5 and indiv_index < len(individual_recommendations):
+                final_recommendations.append(individual_recommendations[indiv_index])
+                indiv_index += 1
+            
+            # Se não há mais recomendações de nenhum tipo, sair do loop
+            if (team_index >= len(team_recommendations) and 
+                indiv_index >= len(individual_recommendations)):
+                break
         
         # Ajustar compatibilidade para ter variação
         if final_recommendations:
@@ -594,15 +616,6 @@ def get_sport_recommendations(user_data: Dict[str, Any]) -> List[Dict[str, Any]]
             for i, rec in enumerate(final_recommendations):
                 rec['compatibility'] = round(max(70, min(100, max_compat - (i * 5))), 2)
         
-        # Se não houver recomendações suficientes, adicionar mais opções
-        while len(final_recommendations) < 5 and len(all_recommendations) > 0:
-            final_recommendations.append(all_recommendations[0])
-            all_recommendations = all_recommendations[1:]
-        
-        if not final_recommendations:
-            st.warning("Não foram encontradas recomendações que atendam aos critérios mínimos.")
-            return []
-            
         return final_recommendations
 
     except Exception as e:
